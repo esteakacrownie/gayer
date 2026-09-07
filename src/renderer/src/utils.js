@@ -34,7 +34,7 @@ export const getSortedFiles = async (f) => {
   return { songs, timed }
 }
 
-export const getSortedFilesAt = async (p) => {
+export const getSortedFilesAt = async (p, filterMusicFiles = false) => {
   const t = await window.electron.ipcRenderer.invoke('ls_sorted', {
     path: p
   })
@@ -46,8 +46,8 @@ export const getSortedFilesAt = async (p) => {
       created: elt[key].mtimeMs
     }
   })
-  timed = timed.toSorted((a, b) => a.created - b.created)
-  const songs = timed.map((elt) => elt.path)
+  timed = timed.toSorted((a, b) => a.created - b.created).filter((elt) => filterMusicFiles ? isMusicFile(elt.path) : true)
+  const songs = timed.map((elt) => elt.path).filter((elt) => filterMusicFiles ? isMusicFile(elt) : true)
 
   return { songs, timed }
 }

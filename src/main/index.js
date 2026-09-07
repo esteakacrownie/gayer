@@ -1,10 +1,12 @@
 import appDirs from 'appdirsjs'
-import { app, shell, BrowserWindow, ipcMain, protocol } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, protocol, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { readFile, writeFile, stat, readdir } from 'fs/promises'
 
 const appName = 'com.integraxseras.Gayer'
+
+console.log(process.argv)
 
 const dirs = appDirs({ appName })
 
@@ -22,16 +24,18 @@ const sortedFileList = async (files, base) => {
 function createWindow() {
 	// Create the browser window.
 	const mainWindow = new BrowserWindow({
-		width: 900,
-		height: 670,
+		name: "main",
+		width: 1024,
+		height: 768,
 		show: false,
 		autoHideMenuBar: true,
+		windowStatePersistence: true,
 		// ...(process.platform === 'linux' ? {} : {}),
 		webPreferences: {
 			preload: join(__dirname, '../preload/index.js'),
 			sandbox: false,
 			webSecurity: false,
-			allowRunningInsecureContent: true
+			allowRunningInsecureContent: true,
 		}
 	})
 
@@ -156,6 +160,15 @@ app.whenReady().then(() => {
 				}
 			}
 			return res
+		} catch (error) {
+			console.log(error)
+			return error
+		}
+	})
+	ipcMain.handle('open_folder', async (event, args) => {
+		try {
+			const folder = await dialog.showOpenDialog({ title: "Select a directory", properties: ["openDirectory"] })
+			return folder.filePaths[0]
 		} catch (error) {
 			console.log(error)
 			return error

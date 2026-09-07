@@ -57,10 +57,7 @@ export default function LibraryTab() {
 	}
 
 	const addLocation = async () => {
-		const dir = await open({
-			multiple: false,
-			directory: true,
-		})
+		const dir = await window.electron.ipcRenderer.invoke("open_folder", {})
 		if (!dir) return
 		if (!libraryLocations.includes(dir)) {
 			setLibraryLocations([...new Set(libraryLocations.concat(dir))])

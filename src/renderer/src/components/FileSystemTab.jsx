@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { FaFolder } from "react-icons/fa6"
 import SongFilesList from "./SongFilesList"
-import { getFolderName, getSortedFiles, shuffleArray } from "../utils"
+import { getFolderName, getSortedFilesAt, shuffleArray } from "../utils"
 import { useFilesStore } from "../stores/useFilesStore"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import {
@@ -27,16 +27,10 @@ export default function FileSystemTab() {
 	const [folder, setFolder] = useState("")
 
 	const openFolder = async () => {
-		const dir = await open({
-			multiple: false,
-			directory: true,
-		})
+		const dir = await window.electron.ipcRenderer.invoke("open_folder", {})
 		if (!dir) return
 		setFolder(dir)
-		const f = await readDir(dir)
-		const { songs, timed } = await getSortedFiles(
-			f.map((elt) => dir + "/" + elt.name),
-		)
+		const { songs, timed } = await getSortedFilesAt(dir, true)
 		setFiles(timed)
 		setFolderSongs(songs)
 	}
