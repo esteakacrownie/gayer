@@ -1,10 +1,11 @@
 {
   "name": "gayer-electron",
   "version": "1.0.0",
-  "description": "An Electron application with React",
+  "description": "Gleamy Audio Player",
   "main": "./out/main/index.js",
-  "author": "example.com",
+  "author": "esteakacrownie",
   "homepage": "https://electron-vite.org",
+  "desktopName": "com.integraxseras.Gayer",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
@@ -23,6 +24,7 @@
     "@sglara/cn": "^1.0.0",
     "@tailwindcss/vite": "^4.3.3",
     "album-art": "^4.0.4",
+    "electron-settings": "^4.0.4",
     "electron-updater": "^6.3.9",
     "motion": "^13.1.1",
     "react": "^19.1.0",

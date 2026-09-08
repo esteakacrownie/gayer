@@ -3,21 +3,26 @@ import { app, shell, BrowserWindow, ipcMain, protocol, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { readFile, writeFile, stat, readdir } from 'fs/promises'
+import { windowStateKeeper } from "./stateKeeper"
 
 const appName = 'com.integraxseras.Gayer'
 
 const dirs = appDirs({ appName })
 
 
-function createWindow() {
+async function createWindow() {
+
+	const mainWindowStateKeeper = await windowStateKeeper('gayer');
+
 	// Create the browser window.
 	const mainWindow = new BrowserWindow({
-		name: "main",
-		width: 1024,
-		height: 768,
+		name: "gayer",
+		x: mainWindowStateKeeper.x,
+		y: mainWindowStateKeeper.y,
+		width: mainWindowStateKeeper.width,
+		height: mainWindowStateKeeper.height,
 		show: false,
 		autoHideMenuBar: true,
-		windowStatePersistence: true,
 		// ...(process.platform === 'linux' ? {} : {}),
 		webPreferences: {
 			preload: join(__dirname, '../preload/index.js'),
@@ -26,6 +31,10 @@ function createWindow() {
 			allowRunningInsecureContent: true,
 		}
 	})
+
+	// Track window state
+	mainWindowStateKeeper.track(mainWindow);
+
 
 	mainWindow.on('ready-to-show', () => {
 		mainWindow.show()
