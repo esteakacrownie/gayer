@@ -213,7 +213,7 @@ export default function Player() {
 	useHotkeys("ctrl+up", (e) => { e.preventDefault(); volumeUp() })
 	useHotkeys("ctrl+down", (e) => { e.preventDefault(); volumeDown() })
 	useHotkeys("ctrl+l", (e) => { e.preventDefault(); handleLoopMode() })
-	useHotkeys("ctrl+r", (e) => { e.preventDefault(); setShufflePlay(!shufflePlay) })
+	useHotkeys("ctrl+s", (e) => { e.preventDefault(); setShufflePlay(!shufflePlay) })
 
 	return (
 		<div className="flex flex-col justify-center gap-4 fixed bottom-0 p-4 w-full ">
