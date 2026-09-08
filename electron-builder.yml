@@ -34,7 +34,6 @@ linux:
     - deb
   maintainer: https://github.com/esteakacrownie
   category: Audio
-  StartupWmClass: Audio
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
