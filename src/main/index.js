@@ -36,6 +36,8 @@ async function createWindow() {
 		y: mainWindowStateKeeper.y,
 		width: mainWindowStateKeeper.width,
 		height: mainWindowStateKeeper.height,
+		minWidth: 432,
+		minHeight: 432,
 		show: false,
 		autoHideMenuBar: true,
 		// ...(process.platform === 'linux' ? {} : {}),
