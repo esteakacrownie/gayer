@@ -6,20 +6,8 @@ import { readFile, writeFile, stat, readdir } from 'fs/promises'
 
 const appName = 'com.integraxseras.Gayer'
 
-console.log(process.argv)
-
 const dirs = appDirs({ appName })
 
-const sortedFileList = async (files, base) => {
-	const res = []
-	for (let file of files) {
-		const elt = {}
-		const path = join(base, file)
-		elt[path] = { mtimeMs: (await stat(path)).mtimeMs, atimeMs: (await stat(path)).atimeMs }
-		res.push(elt)
-	}
-	return res
-}
 
 function createWindow() {
 	// Create the browser window.
@@ -55,6 +43,17 @@ function createWindow() {
 	} else {
 		mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
 	}
+}
+
+const sortedFileList = async (files, base) => {
+	const res = []
+	for (let file of files) {
+		const elt = {}
+		const path = join(base, file)
+		elt[path] = { mtimeMs: (await stat(path)).mtimeMs, atimeMs: (await stat(path)).atimeMs }
+		res.push(elt)
+	}
+	return res
 }
 
 protocol.registerSchemesAsPrivileged([
@@ -169,6 +168,14 @@ app.whenReady().then(() => {
 		try {
 			const folder = await dialog.showOpenDialog({ title: "Select a directory", properties: ["openDirectory"] })
 			return folder.filePaths[0]
+		} catch (error) {
+			console.log(error)
+			return error
+		}
+	})
+	ipcMain.handle('get_args', async (event, args) => {
+		try {
+			return process.argv
 		} catch (error) {
 			console.log(error)
 			return error

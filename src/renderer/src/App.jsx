@@ -34,19 +34,19 @@ function App() {
 			.then((d) => setCache(JSON.parse(d)))
 			.catch(() => console.log("Couldn't parse cache file"))
 		// parse arguments
-		// getMatches()
-		//   .then((elt) => {
-		//     // console.log(elt)
-		//     return handleDropped(elt.args.files.value)
-		//   })
-		//   .then((songs) => {
-		//     // const songs = elt.args.files.value.filter((v) => isMusicFile(v))
-		//     if (songs && songs.length < 1) return
-		//     setAutoplay(true)
-		//     setQueue([...new Set(shufflePlayOnStart ? shuffleArray(songs) : songs)])
-		//     setNextAction('setArgQueue')
-		//   })
-		//   .catch((e) => console.log(e))
+		window.electron.ipcRenderer.invoke("get_args", {})
+			.then((elt) => {
+				// console.log(elt)
+				return handleDropped(elt)
+			})
+			.then((songs) => {
+				// const songs = elt.args.files.value.filter((v) => isMusicFile(v))
+				if (songs && songs.length < 1) return
+				setAutoplay(true)
+				setQueue([...new Set(shufflePlayOnStart ? shuffleArray(songs) : songs)])
+				setNextAction('setArgQueue')
+			})
+			.catch((e) => console.log(e))
 	}, [])
 
 	return (
