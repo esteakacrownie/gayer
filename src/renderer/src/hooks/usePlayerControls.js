@@ -153,6 +153,28 @@ export default function usePlayerControls() {
 		[currentTrack, setCurrentTrack, history, setHistory, setIsPlaying, autoplay, shufflePlay, loopMode]
 	)
 
+	const playSongs = useCallback(
+		(ps, manageNextAction = true) => {
+			if (!ps || ps.length == 0) return
+			if (shufflePlay) {
+				ps = shuffleArray(ps)
+			}
+			if (currentTrack) {
+				if (loopMode == 'queue') {
+					setQueue([...new Set([...ps.slice(1), ...queue, currentTrack])])
+				} else {
+					setQueue([...new Set([...ps.slice(1), ...queue])])
+				}
+				setHistory([currentTrack, ...history])
+			} else {
+				setQueue([...new Set([...ps.slice(1), ...queue])])
+			}
+			setCurrentTrack(ps[0])
+			if (autoplay && manageNextAction) setIsPlaying(true) //setNextAction('playCurrent')
+		},
+		[currentTrack, setCurrentTrack, history, setHistory, setIsPlaying, autoplay, shufflePlay, loopMode]
+	)
+
 	const playNext = useCallback(
 		(p) => {
 			if (!isMusicFile(p)) return
@@ -160,6 +182,15 @@ export default function usePlayerControls() {
 			setHistory([currentTrack, ...history])
 		},
 		[queue, setQueue, history, setHistory, currentTrack]
+	)
+
+	const playBatchNext = useCallback(
+		(ps) => {
+			if (!ps || ps.length == 0) return
+			setQueue([...new Set([...(shufflePlay ? shuffleArray(ps) : ps), ...queue])])
+			setHistory([currentTrack, ...history])
+		},
+		[queue, setQueue, history, setHistory, currentTrack, shufflePlay]
 	)
 
 	const playFromQueue = useCallback(
@@ -240,7 +271,9 @@ export default function usePlayerControls() {
 		previousSong,
 		nextSong,
 		playSong,
+		playSongs,
 		playNext,
+		playBatchNext,
 		playFromQueue,
 		pause,
 		resume,

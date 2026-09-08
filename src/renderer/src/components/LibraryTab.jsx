@@ -20,6 +20,7 @@ import {
 } from "../utils"
 import SongElement from "./SongElement"
 import { usePlayerStore } from "../stores/usePlayerStore"
+import PlaylistElement from "./PlaylistElement"
 
 export default function LibraryTab() {
 	const maxLength = 25
@@ -154,6 +155,8 @@ export default function LibraryTab() {
 	}
 
 	const refreshLocationsContent = () => {
+		setSongs([])
+		setAlbumSongsCount([])
 		fetchSongs()
 			.then((s) => setSongs(s))
 			.catch(() => console.log("Couldn't fetch songs"))
@@ -366,14 +369,7 @@ export default function LibraryTab() {
 			{libraryFilter == "playlists" && (
 				<div className="flex flex-col gap-2">
 					{filteredAlbums.map((elt) => (
-						<li
-							key={elt.path}
-							className="relative p-2 flex flex-col justify-around items-start rounded-lg overflow-clip font-bold text-white/75 bg-slate-800 transition ease-out duration-200 select-none hover:bg-slate-700 border-2 border-slate-400/50"
-						>
-							<span className="ml-2 line-clamp-1 text-shadow-lg text-shadow-black/25">
-								{getFolderName(elt.path)}
-							</span>
-						</li>
+						<PlaylistElement key={elt.path} playlist={elt.path} />
 					))}
 				</div>
 			)}

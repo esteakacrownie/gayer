@@ -1,59 +1,64 @@
 import { cn } from "@sglara/cn"
 import usePlayerControls from "../hooks/usePlayerControls"
 import { usePlayerStore } from "../stores/usePlayerStore"
-import { getSongName, isMusicFile } from "../utils"
+import { getFolderName, getSortedFilesAt, shuffleArray } from "../utils"
 import { FaPlay, FaStepForward } from "react-icons/fa"
-import { MdAddCircleOutline, MdPlaylistAdd } from "react-icons/md"
+import { MdPlaylistAdd } from "react-icons/md"
 import CoverImage from "./CoverImage"
 import { motion } from "motion/react"
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
+import { useSettingsStore } from "../stores/useSettingsStore"
 
-export default function SongElement({
-	song,
-	queueIdx,
-	fromQueue = false,
+export default function PlaylistElement({
+	playlist,
+	isPlaylist = false,
 	isGrabbable = false,
 	showPlayNext = true,
 	showAddToQueue = true,
-	showAddToPlaylist = true,
-	highlightIfPlaying = true,
 }) {
-	const { autoplay, setAutoplay, currentTrack, queue, setQueue, setNextAction } = usePlayerStore()
+	const { autoplay, setAutoplay, queue, setQueue, setNextAction, currentTrack } = usePlayerStore()
 
-	const { playSong, playNext, playFromQueue } = usePlayerControls()
+	const { shufflePlay } = useSettingsStore()
+
+	const { playSongs, playBatchNext } = usePlayerControls()
 
 	const [showOptions, setShowOptions] = useState(false)
 
-	const setMusic = (p) => {
+	const [songs, setSongs] = useState([])
+
+	const fetchSongs = useCallback(async () => {
+		const { songs: res } = await getSortedFilesAt(playlist)
+		if (res) setSongs(res)
+	}, [playlist])
+
+	useEffect(() => {
+		fetchSongs()
+	}, [playlist])
+
+	const handlePlay = useCallback(() => {
 		// console.log(p)
 		setAutoplay(true)
-		playSong(p)
-	}
+		playSongs(songs)
+	}, [songs])
 
-	const handlePlayNext = (p) => {
+	const handlePlayNext = useCallback(() => {
+		if (!songs) return
 		setAutoplay(true)
-		playNext(p)
-	}
+		playBatchNext(songs)
+	}, [songs])
 
-	const handleAddToQueue = useCallback((p) => {
-		if (!isMusicFile(p)) return
-		setQueue([...new Set([...queue, p])])
+	const handleAddToQueue = useCallback(() => {
+		if (!songs) return
+		setQueue([...new Set([...queue, ...(shufflePlay ? shuffleArray(songs) : songs)])])
 		if (autoplay && !currentTrack) {
 			setNextAction("setNext")
 		}
-	}, [autoplay, queue, setQueue, setNextAction, currentTrack])
-
-	const handleAddToPlaylist = () => {
-		//TODO
-	}
+	}, [songs, shufflePlay, autoplay, setNextAction, queue, setQueue, currentTrack])
 
 	return (
 		<motion.div
 			className={cn(
-				"relative flex flex-row jutify-start items-center rounded-lg bg-linear-90 font-bold text-white/75 from-slate-800 to-slate-700 transition ease-out duration-200 select-none brightness-120",
-				highlightIfPlaying && currentTrack == song
-					? "bg-linear-90 from-pink-950 to-pink-900 brightness-175 border-2 border-pink-400 shadow-pink-500/40 shadow-[0_0_7px_7px]"
-					: "brightness-110 hover:brightness-150 border-2 border-slate-400/50 hover:brightness-175",
+				"relative flex flex-row jutify-start items-center rounded-lg bg-linear-90 font-bold text-white/75 from-slate-800 to-slate-700 transition ease-out duration-200 select-none brightness-110 hover:brightness-150 border-2 border-slate-400/50 hover:brightness-175",
 				isGrabbable ? "cursor-grab" : "cursor-pointer",
 			)}
 		>
@@ -73,9 +78,7 @@ export default function SongElement({
 					className="hover:bg-pink-500/45 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 					onClick={(e) => {
 						e.stopPropagation()
-						fromQueue && queueIdx
-							? playFromQueue(queueIdx)
-							: setMusic(song)
+						handlePlay()
 						setShowOptions(false)
 					}}
 				>
@@ -88,7 +91,7 @@ export default function SongElement({
 								className="hover:bg-pink-500/45 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 								onClick={(e) => {
 									e.stopPropagation()
-									handlePlayNext(song)
+									handlePlayNext()
 									setShowOptions(false)
 								}}
 							>
@@ -100,29 +103,17 @@ export default function SongElement({
 								className="hover:bg-pink-500/45 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 								onClick={(e) => {
 									e.stopPropagation()
-									handleAddToQueue(song)
+									handleAddToQueue()
 									setShowOptions(false)
 								}}
 							>
 								<MdPlaylistAdd size={20} />
 							</motion.div>
 						)}
-						{showAddToPlaylist && (
-							<motion.div
-								className="hover:bg-pink-500/45 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
-								onClick={(e) => {
-									e.stopPropagation()
-									handleAddToPlaylist(song)
-									setShowOptions(false)
-								}}
-							>
-								<MdAddCircleOutline size={20} />
-							</motion.div>
-						)}
 					</>
 				)}
 			</motion.div>
-			<CoverImage song={song} />
+			<CoverImage song={songs[0] ?? null} />
 			<motion.p
 				layout
 				transition={{
@@ -130,7 +121,7 @@ export default function SongElement({
 				}}
 				className="ml-2 line-clamp-1 text-shadow-lg text-shadow-black/75"
 			>
-				{getSongName(song)}
+				{isPlaylist ? playlist : getFolderName(playlist)}
 			</motion.p>
 		</motion.div>
 	)

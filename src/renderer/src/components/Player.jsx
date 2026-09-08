@@ -13,6 +13,7 @@ import AlbumWorker from "../workers/AlbumWorker"
 import { useFilesStore } from "../stores/useFilesStore"
 import TimeLine from "./TimeLine"
 import { useCacheStore } from "../stores/useCacheStore"
+import { useHotkeys } from "react-hotkeys-hook"
 
 export default function Player() {
 
@@ -39,6 +40,18 @@ export default function Player() {
 	const getVolumeLabel = (v) => {
 		return v > 0 ? (v > 0.5 ? "high" : "low") : "mute"
 	}
+
+	const setVolumeClamped = useCallback((v) => {
+		setUiVolume(Math.min(Math.max(v, 0.0), 1.0))
+	}, [setUiVolume])
+
+	const volumeUp = useCallback(() => {
+		setVolumeClamped(uiVolume + 0.05)
+	}, [uiVolume, setUiVolume])
+
+	const volumeDown = useCallback(() => {
+		setVolumeClamped(uiVolume - 0.05)
+	}, [uiVolume, setUiVolume])
 
 	const fetchCoverArts = useCallback(
 		async (f) => {
@@ -187,12 +200,20 @@ export default function Player() {
 			artwork: [
 				{
 					src: thumbnailCache[currentTrack] ?? "#",
-					sizes: "1024x1024",
+					sizes: "512x512",
 					type: "image/png"
 				}
 			]
 		})
 	}, [currentTrack, thumbnailCache])
+
+	useHotkeys("space", (e) => { e.preventDefault(); togglePlay() })
+	useHotkeys(["ctrl+right", "ctrl+n"], (e) => { e.preventDefault(); setNextAction("setNext") })
+	useHotkeys(["ctrl+left", "ctrl+p"], (e) => { e.preventDefault(); setNextAction("setPrevious") })
+	useHotkeys("ctrl+up", (e) => { e.preventDefault(); volumeUp() })
+	useHotkeys("ctrl+down", (e) => { e.preventDefault(); volumeDown() })
+	useHotkeys("ctrl+l", (e) => { e.preventDefault(); handleLoopMode() })
+	useHotkeys("ctrl+r", (e) => { e.preventDefault(); setShufflePlay(!shufflePlay) })
 
 	return (
 		<div className="flex flex-col justify-center gap-4 fixed bottom-0 p-4 w-full ">
@@ -276,7 +297,7 @@ export default function Player() {
 									step={0.025}
 									max={1.0}
 									value={uiVolume}
-									onChange={(e) => setUiVolume(e.target.value)}
+									onChange={(e) => setVolumeClamped(e.target.value)}
 								/>
 							</div>
 						</div>
