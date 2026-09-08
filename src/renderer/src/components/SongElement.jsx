@@ -19,6 +19,7 @@ import { usePlayerStore } from "../stores/usePlayerStore"
 import { getSongName, isMusicFile } from "../utils"
 import { FaPlay, FaStepForward } from "react-icons/fa"
 import { MdAddCircleOutline, MdPlaylistAdd } from "react-icons/md"
+import { IoMusicalNotes } from "react-icons/io5";
 import CoverImage from "./CoverImage"
 import { motion } from "motion/react"
 import { useCallback, useState } from "react"
@@ -65,13 +66,16 @@ export default function SongElement({
 	return (
 		<motion.div
 			className={cn(
-				"relative flex flex-row jutify-start items-center rounded-lg bg-linear-90 font-bold text-white/75 from-slate-800 to-slate-700 transition ease-out duration-200 select-none brightness-120",
+				"relative flex flex-row overflow-clip jutify-start items-center rounded-lg bg-linear-90 font-bold text-white/75 from-slate-800 to-slate-700 transition ease-out duration-200 select-none",
 				highlightIfPlaying && currentTrack == song
 					? "bg-linear-90 from-pink-950 to-pink-900 brightness-175 border-2 border-pink-400 shadow-pink-500/40 shadow-[0_0_7px_7px]"
-					: "brightness-110 hover:brightness-150 border-2 border-slate-400/50 hover:brightness-175",
+					: "brightness-110 hover:brightness-150 border-2 border-slate-400/50",
 				isGrabbable ? "cursor-grab" : "cursor-pointer",
 			)}
 		>
+			<div className="absolute top-0 right-0 brightness-125 text-pink-400/50 bg-slate-900/75 outline-2 outline-pink-400/50 rounded-bl-lg">
+				<IoMusicalNotes className="m-0.5 scale-95" size={20} />
+			</div>
 			<motion.div
 				layout
 				transition={{

@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import { cn } from "@sglara/cn"
+import { GiCompactDisc } from "react-icons/gi";
 import usePlayerControls from "../hooks/usePlayerControls"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import { getFolderName, getSortedFilesAt, shuffleArray } from "../utils"
@@ -73,10 +74,13 @@ export default function PlaylistElement({
 	return (
 		<motion.div
 			className={cn(
-				"relative flex flex-row jutify-start items-center rounded-lg bg-linear-90 font-bold text-white/75 from-slate-800 to-slate-700 transition ease-out duration-200 select-none brightness-110 hover:brightness-150 border-2 border-slate-400/50 hover:brightness-175",
+				"relative flex flex-row overflow-clip jutify-start items-center rounded-lg bg-linear-90 font-bold text-white/75 from-slate-800 to-slate-700 transition ease-out duration-200 select-none brightness-110 hover:brightness-150 border-2 border-slate-400/50",
 				isGrabbable ? "cursor-grab" : "cursor-pointer",
 			)}
 		>
+			<div className="absolute top-0 right-0 brightness-125 text-pink-400/50 bg-slate-900/75 outline-2 outline-pink-400/50 rounded-bl-lg">
+				<GiCompactDisc className="m-0.5" size={20} />
+			</div>
 			<motion.div
 				layout
 				transition={{
