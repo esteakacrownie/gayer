@@ -210,16 +210,18 @@ export default function Player() {
 
 	// system media metadata
 	useEffect(() => {
-		navigator.mediaSession.metadata = new MediaMetadata({
-			title: getSongName(currentTrack),
-			artwork: [
-				{
-					src: thumbnailCache[currentTrack] ?? "#",
-					sizes: "512x512",
-					type: "image/png"
-				}
-			]
-		})
+		if (currentTrack) {
+			navigator.mediaSession.metadata = new MediaMetadata({
+				title: getSongName(currentTrack),
+				artwork: [
+					{
+						src: thumbnailCache[currentTrack] ?? "#",
+						sizes: "512x512",
+						type: "image/png"
+					}
+				]
+			})
+		}
 	}, [currentTrack, thumbnailCache])
 
 	useHotkeys("space", (e) => { e.preventDefault(); togglePlay() })

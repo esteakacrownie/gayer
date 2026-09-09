@@ -64,6 +64,25 @@ export default function TimeLine() {
 		}
 	}, [audioRef, progressRef, progressContentRef, positionLabel, duration])
 
+	const updateAudioData = useCallback(() => {
+		setDuration(audioRef.current.duration)
+		const currentTime = audioRef.current?.currentTime || 0.0
+		navigator.mediaSession.setPositionState({
+			duration: duration || 0,
+			position: Math.min(currentTime || 0, duration || 0),
+			playbackRate: 1.0
+		})
+	}, [audioRef, duration, setDuration])
+
+	const seekPosition = useCallback(
+		(t) => {
+			if (!audioRef.current) return
+			audioRef.current.currentTime = t
+			updateProgressVisuals(t)
+		},
+		[audioRef]
+	)
+
 	// animation function
 	const repeat = useCallback(() => {
 		const currentTime = audioRef.current?.currentTime || 0.0
@@ -94,19 +113,6 @@ export default function TimeLine() {
 			// cancelAnimationFrame(playAnimationRef.current)
 		}
 	}, [isPlaying, audioRef, repeat])
-
-	const updateAudioData = useCallback(() => {
-		setDuration(audioRef.current.duration)
-	}, [audioRef, duration, setDuration])
-
-	const seekPosition = useCallback(
-		(t) => {
-			if (!audioRef.current) return
-			audioRef.current.currentTime = t
-			updateProgressVisuals(t)
-		},
-		[audioRef]
-	)
 
 	// update volume from UI slide and save value
 	useEffect(() => {

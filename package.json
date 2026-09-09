@@ -1,6 +1,6 @@
 {
   "name": "gayer",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Gleamy Audio Player",
   "main": "./out/main/index.js",
   "author": "esteakacrownie",
