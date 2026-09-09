@@ -1,6 +1,8 @@
 # Gleamy Audio Player
 
-Local audio/music player, made without AI assistance (if that's something you value :3)
+Local audio/music player.
+
+<div style="height: 256px"><img src="build/icon.png" /></div>
 
 ## Features
 
@@ -50,3 +52,11 @@ $ npm run build:mac
 # For Linux
 $ npm run build:linux
 ```
+
+## Disclaimer
+
+Fuck AI
+
+---
+
+🇵🇸🇺🇦🏳️‍⚧️🏳️‍🌈
