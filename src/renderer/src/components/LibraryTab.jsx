@@ -384,7 +384,7 @@ export default function LibraryTab() {
 			{libraryFilter == "playlists" && (
 				<div className="flex flex-col gap-2">
 					{filteredAlbums.map((elt) => (
-						<PlaylistElement key={elt.path} playlist={elt.path} />
+						<PlaylistElement key={elt.path} playlist={elt.path} count={elt.count} />
 					))}
 				</div>
 			)}

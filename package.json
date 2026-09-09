@@ -1,6 +1,6 @@
 {
-  "name": "gayer-electron",
-  "version": "0.9.0",
+  "name": "gayer",
+  "version": "0.9.1",
   "description": "Gleamy Audio Player",
   "main": "./out/main/index.js",
   "author": "esteakacrownie",

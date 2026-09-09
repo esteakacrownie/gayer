@@ -27,6 +27,7 @@ import { useSettingsStore } from "../stores/useSettingsStore"
 
 export default function PlaylistElement({
 	playlist,
+	count = 0,
 	isPlaylist = false,
 	isGrabbable = false,
 	showPlayNext = true,
@@ -89,12 +90,13 @@ export default function PlaylistElement({
 				onHoverStart={() => setShowOptions(true)}
 				onHoverEnd={() => setShowOptions(false)}
 				className={cn(
-					"flex flex-row bg-slate-400/25 overflow-clip rounded-lg",
+					"flex flex-row bg-slate-500/50 overflow-clip rounded-lg",
 					showOptions ? "" : "max-w-12",
 				)}
 			>
 				<motion.div
-					className="hover:bg-pink-500/45 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+					title="Play now"
+					className="hover:bg-pink-600/50 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 					onClick={(e) => {
 						e.stopPropagation()
 						handlePlay()
@@ -107,7 +109,8 @@ export default function PlaylistElement({
 					<>
 						{showPlayNext && (
 							<motion.div
-								className="hover:bg-pink-500/45 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+								title="Play next"
+								className="hover:bg-pink-600/50 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 								onClick={(e) => {
 									e.stopPropagation()
 									handlePlayNext()
@@ -119,7 +122,8 @@ export default function PlaylistElement({
 						)}
 						{showAddToQueue && (
 							<motion.div
-								className="hover:bg-pink-500/45 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+								title="Add to queue"
+								className="hover:bg-pink-600/50 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 								onClick={(e) => {
 									e.stopPropagation()
 									handleAddToQueue()
@@ -138,9 +142,12 @@ export default function PlaylistElement({
 				transition={{
 					duration: 0.2,
 				}}
-				className="ml-2 line-clamp-1 text-shadow-lg text-shadow-black/75"
+				className="ml-2 text-shadow-lg text-shadow-black/75"
 			>
-				{isPlaylist ? playlist : getFolderName(playlist)}
+				<p className="line-clamp-1">
+					{isPlaylist ? playlist : getFolderName(playlist)}
+				</p>
+				<p className="line-clamp-1 text-xs brightness-90">{`${count} items`}</p>
 			</motion.p>
 		</motion.div>
 	)

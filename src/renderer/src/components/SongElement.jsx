@@ -84,12 +84,13 @@ export default function SongElement({
 				onHoverStart={() => setShowOptions(true)}
 				onHoverEnd={() => setShowOptions(false)}
 				className={cn(
-					"flex flex-row bg-slate-400/25 overflow-clip rounded-lg",
+					"flex flex-row bg-slate-500/50 overflow-clip rounded-lg",
 					showOptions ? "" : "max-w-12",
 				)}
 			>
 				<motion.div
-					className="hover:bg-pink-500/45 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+					title="Play now"
+					className="hover:bg-pink-600/50 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 					onClick={(e) => {
 						e.stopPropagation()
 						fromQueue && queueIdx
@@ -104,7 +105,8 @@ export default function SongElement({
 					<>
 						{showPlayNext && (
 							<motion.div
-								className="hover:bg-pink-500/45 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+								title="Play next"
+								className="hover:bg-pink-600/50 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 								onClick={(e) => {
 									e.stopPropagation()
 									handlePlayNext(song)
@@ -116,7 +118,8 @@ export default function SongElement({
 						)}
 						{showAddToQueue && (
 							<motion.div
-								className="hover:bg-pink-500/45 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+								title="Add to queue"
+								className="hover:bg-pink-600/50 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 								onClick={(e) => {
 									e.stopPropagation()
 									handleAddToQueue(song)
@@ -128,7 +131,8 @@ export default function SongElement({
 						)}
 						{showAddToPlaylist && (
 							<motion.div
-								className="hover:bg-pink-500/45 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+								title="Add to playlist"
+								className="hover:bg-pink-600/50 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 								onClick={(e) => {
 									e.stopPropagation()
 									handleAddToPlaylist(song)
