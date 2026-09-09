@@ -19,10 +19,10 @@ import { usePlayerStore } from "../stores/usePlayerStore"
 import { getSongName, isMusicFile } from "../utils"
 import { FaPlay, FaStepForward } from "react-icons/fa"
 import { MdAddCircleOutline, MdPlaylistAdd } from "react-icons/md"
-import { IoMusicalNotes } from "react-icons/io5";
+import { IoMusicalNotes } from "react-icons/io5"
 import CoverImage from "./CoverImage"
 import { motion } from "motion/react"
-import { useCallback, useState } from "react"
+import { useCallback } from "react"
 
 export default function SongElement({
 	song,
@@ -37,8 +37,6 @@ export default function SongElement({
 	const { autoplay, setAutoplay, currentTrack, queue, setQueue, setNextAction } = usePlayerStore()
 
 	const { playSong, playNext, playFromQueue } = usePlayerControls()
-
-	const [showOptions, setShowOptions] = useState(false)
 
 	const setMusic = (p) => {
 		// console.log(p)
@@ -81,68 +79,66 @@ export default function SongElement({
 				transition={{
 					duration: 0.2,
 				}}
-				onHoverStart={() => setShowOptions(true)}
-				onHoverEnd={() => setShowOptions(false)}
+				initial={{
+					width: "40px"
+				}}
+				animate={{
+					width: "40px"
+				}}
+				whileHover={{
+					width: "auto"
+				}}
 				className={cn(
-					"flex flex-row bg-slate-500/50 overflow-clip rounded-lg",
-					showOptions ? "" : "max-w-12",
+					"flex flex-row bg-slate-600/75 overflow-clip rounded-lg",
 				)}
 			>
 				<motion.div
 					title="Play now"
-					className="hover:bg-pink-600/50 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+					className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 					onClick={(e) => {
 						e.stopPropagation()
 						fromQueue && queueIdx
 							? playFromQueue(queueIdx)
 							: setMusic(song)
-						setShowOptions(false)
 					}}
 				>
 					<FaPlay size={16} />
 				</motion.div>
-				{showOptions && (
-					<>
-						{showPlayNext && (
-							<motion.div
-								title="Play next"
-								className="hover:bg-pink-600/50 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
-								onClick={(e) => {
-									e.stopPropagation()
-									handlePlayNext(song)
-									setShowOptions(false)
-								}}
-							>
-								<FaStepForward size={16} />
-							</motion.div>
-						)}
-						{showAddToQueue && (
-							<motion.div
-								title="Add to queue"
-								className="hover:bg-pink-600/50 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
-								onClick={(e) => {
-									e.stopPropagation()
-									handleAddToQueue(song)
-									setShowOptions(false)
-								}}
-							>
-								<MdPlaylistAdd size={20} />
-							</motion.div>
-						)}
-						{showAddToPlaylist && (
-							<motion.div
-								title="Add to playlist"
-								className="hover:bg-pink-600/50 rounded-lg flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
-								onClick={(e) => {
-									e.stopPropagation()
-									handleAddToPlaylist(song)
-									setShowOptions(false)
-								}}
-							>
-								<MdAddCircleOutline size={20} />
-							</motion.div>
-						)}
-					</>
+				{showPlayNext && (
+					<motion.div
+						title="Play next"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						onClick={(e) => {
+							e.stopPropagation()
+							handlePlayNext(song)
+						}}
+					>
+						<FaStepForward size={16} />
+					</motion.div>
+				)}
+				{showAddToQueue && (
+					<motion.div
+						title="Add to queue"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						onClick={(e) => {
+							e.stopPropagation()
+							handleAddToQueue(song)
+						}}
+					>
+						<MdPlaylistAdd size={20} />
+					</motion.div>
+				)}
+				{showAddToPlaylist && (
+					<motion.div
+						title="Add to playlist"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						onClick={(e) => {
+							e.stopPropagation()
+							handleAddToPlaylist(song)
+						}}
+					>
+						<MdAddCircleOutline size={20} />
+					</motion.div>
 				)}
 			</motion.div>
 			<CoverImage song={song} />
@@ -151,7 +147,7 @@ export default function SongElement({
 				transition={{
 					duration: 0.2,
 				}}
-				className="ml-2 line-clamp-1 text-shadow-lg text-shadow-black/75"
+				className="ml-2 pr-6 line-clamp-1 text-shadow-lg text-shadow-black/75"
 			>
 				{getSongName(song)}
 			</motion.p>

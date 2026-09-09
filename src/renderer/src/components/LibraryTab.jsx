@@ -18,6 +18,9 @@ import { useSettingsStore } from "../stores/useSettingsStore"
 import PowerSavingButton from "./PowerSavingButton"
 import { useEffect, useMemo, useState } from "react"
 import { IoMdClose } from "react-icons/io"
+import { GiCompactDisc } from "react-icons/gi"
+import { IoMusicalNotes, IoChevronBack } from "react-icons/io5"
+import { FaFolder } from "react-icons/fa6"
 import {
 	MdAddCircleOutline,
 	MdInfoOutline,
@@ -40,7 +43,7 @@ import PlaylistElement from "./PlaylistElement"
 export default function LibraryTab() {
 	const maxLength = 25
 
-	const { queue, setQueue, currentTrack, setAutoplay, setNextAction } =
+	const { queue, setQueue, currentTrack, setAutoplay, setNextAction, selectedPlaylist, setSelectedPlaylist } =
 		usePlayerStore()
 
 	const {
@@ -80,10 +83,20 @@ export default function LibraryTab() {
 		}
 	}
 
+	const [selectedPlaylistSongs, setSelectedPlaylistSongs] = useState([])
+
+	useEffect(() => {
+		if (selectedPlaylist) {
+			fetchSelectedPlaylistSongs()
+		} else {
+			setSelectedPlaylistSongs([])
+		}
+	}, [selectedPlaylist])
+
 	const handlePlayAll = () => {
 		if (filteredSongs.length == 0) return
 		let list =
-			libraryFilter == "songs" ? filteredSongs : filteredAlbumsSongs
+			libraryFilter == "songs" ? filteredSongs : (selectedPlaylist ? filteredSelectedPlaylistSongs : filteredAlbumsSongs)
 		if (shufflePlay) {
 			list = shuffleArray(list)
 		}
@@ -96,7 +109,7 @@ export default function LibraryTab() {
 	const handleAddAllToQueue = () => {
 		if (filteredSongs.length == 0) return
 		let list =
-			libraryFilter == "songs" ? filteredSongs : filteredAlbumsSongs
+			libraryFilter == "songs" ? filteredSongs : (selectedPlaylist ? filteredSelectedPlaylistSongs : filteredAlbumsSongs)
 		if (shufflePlay) {
 			list = shuffleArray(list)
 		}
@@ -149,6 +162,12 @@ export default function LibraryTab() {
 		return allSongs
 	}
 
+	const fetchSelectedPlaylistSongs = async () => {
+		const { songs: album_sorted } = await getSortedFilesAt(selectedPlaylist)
+		console.log(album_sorted)
+		setSelectedPlaylistSongs(album_sorted.filter((s) => isMusicFile(s)))
+	}
+
 	// [ {AlbumPath: song count} ]
 	const fetchAlbumsSongsCount = async () => {
 		let allAlbums = []
@@ -172,6 +191,7 @@ export default function LibraryTab() {
 	const refreshLocationsContent = () => {
 		setSongs([])
 		setAlbumSongsCount([])
+		setSelectedPlaylistSongs([])
 		fetchSongs()
 			.then((s) => setSongs(s))
 			.catch(() => console.log("Couldn't fetch songs"))
@@ -204,6 +224,14 @@ export default function LibraryTab() {
 		})
 		return list
 	}, [songs, filteredAlbums, search])
+
+	const filteredSelectedPlaylistSongs = useMemo(() => {
+		return selectedPlaylistSongs.filter((n) =>
+			toSearchString(`${getFolderName(n)} - ${getSongName(n)}`).includes(
+				toSearchString(search),
+			),
+		)
+	}, [selectedPlaylistSongs, search])
 
 	useEffect(() => {
 		refreshLocationsContent()
@@ -298,6 +326,7 @@ export default function LibraryTab() {
 						setLibraryFilter("locations")
 					}}
 				>
+					<FaFolder size={12} />
 					<span>Locations</span>
 					<div
 						className={cn(
@@ -315,6 +344,7 @@ export default function LibraryTab() {
 						setLibraryFilter("playlists")
 					}}
 				>
+					<GiCompactDisc size={14} />
 					<span>Playlists</span>
 					<div
 						className={cn(
@@ -331,6 +361,7 @@ export default function LibraryTab() {
 						setLibraryFilter("songs")
 					}}
 				>
+					<IoMusicalNotes size={14} />
 					<span>Songs</span>
 					<div
 						className={cn(
@@ -382,11 +413,35 @@ export default function LibraryTab() {
 				</div>
 			)}
 			{libraryFilter == "playlists" && (
-				<div className="flex flex-col gap-2">
-					{filteredAlbums.map((elt) => (
-						<PlaylistElement key={elt.path} playlist={elt.path} count={elt.count} />
-					))}
-				</div>
+				<>
+					{selectedPlaylist ? (
+						<>
+							<div className="flex flex-col gap-2">
+								<div className="flex flex-row justify-start gap-2">
+									<div className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200" onClick={() => setSelectedPlaylist("")}>
+										<IoChevronBack size={20} />
+									</div>
+									<div className="w-full flex flex-col pr-12 text-center justify-center">
+										<p className="font-bold text-lg line-clamp-1">{getFolderName(selectedPlaylist)}</p>
+										<p className="font-bold text-xs line-clamp-1">{selectedPlaylistSongs.length > 0 ? selectedPlaylistSongs.length : ""}&nbsp;{selectedPlaylistSongs.length > 0 ? "items" : ""}</p>
+									</div>
+								</div>
+								<div className="flex flex-col gap-2">
+									{filteredSelectedPlaylistSongs
+										.map((elt) => (
+											<SongElement key={elt} song={elt} />
+										))}
+								</div>
+							</div>
+						</>
+					) : (
+						<div className="flex flex-col gap-2">
+							{filteredAlbums.map((elt) => (
+								<PlaylistElement key={elt.path} playlist={elt.path} count={elt.count} />
+							))}
+						</div>
+					)}
+				</>
 			)}
 			{libraryFilter == "songs" && (
 				<div className="flex flex-col gap-2">

@@ -14,11 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import { useEffect, useMemo, useRef, useCallback, useState } from 'react'
-import { motion } from 'motion/react'
 import { getSongName, toMinsSecs, uiVolume2Volume } from '../utils'
 import { usePlayerStore } from '../stores/usePlayerStore'
 import { cn } from '@sglara/cn'
-import usePlayerControls from '../hooks/usePlayerControls'
 import { useSettingsStore } from '../stores/useSettingsStore'
 
 export default function TimeLine() {
@@ -134,8 +132,6 @@ export default function TimeLine() {
 		}
 	}, [currentTrack])
 
-	const songProgress = useState()
-
 	const songName = useMemo(() => getSongName(currentTrack), [currentTrack])
 
 	return (
@@ -165,7 +161,7 @@ export default function TimeLine() {
 				/>
 			</div>
 			<div className="flex flex-row gap-2 justify-between w-full font-bold text-sm relative -my-4 px-2 bottom-0 -translate-y-5 pointer-events-none">
-				<span ref={positionLabel} className={cn('text-center', songName == '' ? 'opacity-70' : '')} />
+				<span ref={positionLabel} className={cn('text-center', songName == '' ? 'opacity-70' : '')}>0:00</span>
 				<span
 					className={cn(
 						'text-center overflow-clip line-clamp-1',

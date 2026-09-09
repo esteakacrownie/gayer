@@ -28,7 +28,7 @@ export default function CoverImage({ song }) {
 			<img
 				className={cn(
 					'w-full object-cover scale-105 brightness-50 transition ease-out duration-200 pointer-events-none',
-					thumbnailCache[song] ? (currentTrack == song ? 'opacity-50' : 'opacity-70') : 'opacity-0',
+					thumbnailCache[song] ? (currentTrack == song ? 'opacity-50' : 'opacity-35') : 'opacity-0',
 					powerSavingMode ? '' : 'blur-[2px]'
 				)}
 				src={thumbnailCache[song] ?? '#'}
