@@ -40,7 +40,6 @@ async function createWindow() {
 		minHeight: 432,
 		show: false,
 		autoHideMenuBar: true,
-		// ...(process.platform === 'linux' ? {} : {}),
 		webPreferences: {
 			preload: join(__dirname, '../preload/index.js'),
 			sandbox: false,
