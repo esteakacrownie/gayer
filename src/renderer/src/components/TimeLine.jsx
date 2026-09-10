@@ -54,6 +54,15 @@ export default function TimeLine() {
 		}
 	}, [currentTrack, autoplay, setIsPlaying, loopMode, queue, audioRef])
 
+	const updateMediasessionTime = useCallback(() => {
+		const currentTime = audioRef.current?.currentTime || 0.0
+		navigator.mediaSession.setPositionState({
+			duration: duration || 0,
+			position: Math.min(currentTime || 0, duration || 0),
+			playbackRate: 1.0
+		})
+	}, [audioRef, duration])
+
 	const updateProgressVisuals = useCallback((t) => {
 		const p = Math.min(duration, t)
 		positionLabel.current.innerText = toMinsSecs(p)
@@ -62,17 +71,14 @@ export default function TimeLine() {
 		if (progressContentRef.current) {
 			progressContentRef.current.style.width = `${parseInt(maxWidth * (p / duration))}px`
 		}
-	}, [audioRef, progressRef, progressContentRef, positionLabel, duration])
+
+		updateMediasessionTime()
+	}, [audioRef, progressRef, progressContentRef, positionLabel, duration, updateMediasessionTime])
 
 	const updateAudioData = useCallback(() => {
 		setDuration(audioRef.current.duration)
-		const currentTime = audioRef.current?.currentTime || 0.0
-		navigator.mediaSession.setPositionState({
-			duration: duration || 0,
-			position: Math.min(currentTime || 0, duration || 0),
-			playbackRate: 1.0
-		})
-	}, [audioRef, duration, setDuration])
+		updateMediasessionTime()
+	}, [audioRef, duration, setDuration, updateMediasessionTime])
 
 	const seekPosition = useCallback(
 		(t) => {
@@ -80,7 +86,7 @@ export default function TimeLine() {
 			audioRef.current.currentTime = t
 			updateProgressVisuals(t)
 		},
-		[audioRef]
+		[audioRef, duration]
 	)
 
 	// animation function
@@ -99,7 +105,7 @@ export default function TimeLine() {
 		})
 
 		playAnimationRef.current = requestAnimationFrame(repeat)
-	}, [audioRef, progressRef, duration, currentTrack])
+	}, [audioRef, progressRef, duration, currentTrack, updateProgressVisuals])
 
 	// control animation and audio on play / pause
 	useEffect(() => {
@@ -144,7 +150,7 @@ export default function TimeLine() {
 		<>
 			<div className="relative w-full select-none">
 				{currentTrack && (
-					<audio ref={audioRef} onLoadedMetadata={updateAudioData} onEnded={handleTrackEnded} src={currentTrack ? `file://${currentTrack}` : null} />
+					<audio ref={audioRef} onLoadedMetadata={updateAudioData} onSeeked={updateMediasessionTime} onEnded={handleTrackEnded} src={currentTrack ? `file://${currentTrack}` : null} />
 				)}
 				<div
 					ref={progressRef}
