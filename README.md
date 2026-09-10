@@ -2,7 +2,7 @@
 
 Local audio/music player.
 
-<div style="height: 256px"><img src="build/icon.png" /></div>
+<img src="build/icon.png" width=256 />
 
 ## Features
 
