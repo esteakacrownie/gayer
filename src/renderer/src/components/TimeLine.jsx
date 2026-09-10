@@ -65,7 +65,9 @@ export default function TimeLine() {
 
 	const updateProgressVisuals = useCallback((t) => {
 		const p = Math.min(duration, t)
-		positionLabel.current.innerText = toMinsSecs(p)
+		if (positionLabel.current) {
+			positionLabel.current.innerText = toMinsSecs(p)
+		}
 
 		const maxWidth = progressRef.current?.getBoundingClientRect().width || 0
 		if (progressContentRef.current) {

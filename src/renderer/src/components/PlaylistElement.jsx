@@ -50,19 +50,22 @@ export default function PlaylistElement({
 		fetchSongs()
 	}, [playlist])
 
-	const handlePlay = useCallback(() => {
+	const handleBatchPlay = useCallback(() => {
 		// console.log(p)
 		setAutoplay(true)
 		playSongs(songs)
 	}, [songs])
 
-	const handlePlayNext = useCallback(() => {
+	const handleBatchPlayNext = useCallback(() => {
 		if (!songs) return
 		setAutoplay(true)
 		playBatchNext(songs)
-	}, [songs])
+		if (autoplay && !currentTrack) {
+			setNextAction("setNext")
+		}
+	}, [songs, autoplay, setAutoplay, currentTrack, setNextAction, playBatchNext])
 
-	const handleAddToQueue = useCallback(() => {
+	const handleBatchAddToQueue = useCallback(() => {
 		if (!songs) return
 		setQueue([...new Set([...queue, ...(shufflePlay ? shuffleArray(songs) : songs)])])
 		if (autoplay && !currentTrack) {
@@ -104,7 +107,20 @@ export default function PlaylistElement({
 					className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 					onClick={(e) => {
 						e.stopPropagation()
-						handlePlay()
+						handleBatchPlay()
+					}}
+					initial={{
+						scale: 1.0
+					}}
+					animate={{
+						scale: 1.0
+					}}
+					whileTap={{
+						scale: 0.8
+					}}
+					transition={{
+						duration: 0.025,
+						ease: "easeOut"
 					}}
 				>
 					<FaPlay size={16} />
@@ -115,7 +131,20 @@ export default function PlaylistElement({
 						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation()
-							handlePlayNext()
+							handleBatchPlayNext()
+						}}
+						initial={{
+							scale: 1.0
+						}}
+						animate={{
+							scale: 1.0
+						}}
+						whileTap={{
+							scale: 0.8
+						}}
+						transition={{
+							duration: 0.025,
+							ease: "easeOut"
 						}}
 					>
 						<FaStepForward size={16} />
@@ -127,7 +156,20 @@ export default function PlaylistElement({
 						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation()
-							handleAddToQueue()
+							handleBatchAddToQueue()
+						}}
+						initial={{
+							scale: 1.0
+						}}
+						animate={{
+							scale: 1.0
+						}}
+						whileTap={{
+							scale: 0.8
+						}}
+						transition={{
+							duration: 0.025,
+							ease: "easeOut"
 						}}
 					>
 						<MdPlaylistAdd size={20} />

@@ -15,7 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import { useCallback } from 'react'
 import { usePlayerStore } from '../stores/usePlayerStore'
-import { isMusicFile, shuffleArray, uiVolume2Volume } from '../utils'
+import { isMusicFile, shuffleArray } from '../utils'
 import { useSettingsStore } from '../stores/useSettingsStore'
 
 export default function usePlayerControls() {
@@ -24,6 +24,7 @@ export default function usePlayerControls() {
 		setCurrentTrack,
 		queue,
 		autoplay,
+		setAutoplay,
 		setQueue,
 		history,
 		setHistory,
@@ -31,7 +32,7 @@ export default function usePlayerControls() {
 		setIsPlaying
 	} = usePlayerStore()
 
-	const { shufflePlay, loopMode, volume } = useSettingsStore()
+	const { shufflePlay, loopMode } = useSettingsStore()
 
 	const nextSong = useCallback(
 		(manageNextAction = true) => {
@@ -168,6 +169,45 @@ export default function usePlayerControls() {
 		[currentTrack, setCurrentTrack, history, setHistory, setIsPlaying, autoplay, shufflePlay, loopMode]
 	)
 
+	const playNext = useCallback(
+		(p) => {
+			if (!isMusicFile(p)) return
+			setQueue([...new Set([p, ...queue])])
+			setHistory([currentTrack, ...history])
+		},
+		[queue, setQueue, history, setHistory, currentTrack]
+	)
+
+	const setMusic = useCallback((p) => {
+		// console.log(p)
+		setAutoplay(true)
+		playSong(p)
+	}, [setAutoplay, playSong])
+
+	const handlePlayNext = useCallback((p) => {
+		setAutoplay(true)
+		playNext(p)
+		if (autoplay && !currentTrack) {
+			setNextAction("setNext")
+		}
+	}, [autoplay, setAutoplay, currentTrack, setNextAction, playNext])
+
+	const handleAddToQueue = useCallback((p) => {
+		if (!isMusicFile(p)) return
+		setQueue([...new Set([...queue, p])])
+		if (autoplay && !currentTrack) {
+			setNextAction("setNext")
+		}
+	}, [autoplay, queue, setQueue, setNextAction, currentTrack])
+
+	const handleRemoveFromQueue = useCallback((p) => {
+		if (!isMusicFile(p)) return
+		setQueue([...new Set([...queue.filter((elt) => elt != p)])])
+		if (autoplay && !currentTrack) {
+			setNextAction("setNext")
+		}
+	}, [autoplay, queue, setQueue, setNextAction, currentTrack])
+
 	const playSongs = useCallback(
 		(ps, manageNextAction = true) => {
 			if (!ps || ps.length == 0) return
@@ -188,15 +228,6 @@ export default function usePlayerControls() {
 			if (autoplay && manageNextAction) setIsPlaying(true) //setNextAction('playCurrent')
 		},
 		[currentTrack, setCurrentTrack, history, setHistory, setIsPlaying, autoplay, shufflePlay, loopMode]
-	)
-
-	const playNext = useCallback(
-		(p) => {
-			if (!isMusicFile(p)) return
-			setQueue([...new Set([p, ...queue])])
-			setHistory([currentTrack, ...history])
-		},
-		[queue, setQueue, history, setHistory, currentTrack]
 	)
 
 	const playBatchNext = useCallback(
@@ -269,7 +300,7 @@ export default function usePlayerControls() {
 
 	const resume = useCallback(async () => {
 		if (!currentTrack) {
-			if (queue.length < 1) return console.log(`bowomp, ${currentTrack}`)
+			if (queue.length < 1) return // console.log(`bowomp, ${currentTrack}`)
 			else setNextAction('setNext')
 		} else {
 			setIsPlaying(true)
@@ -278,7 +309,7 @@ export default function usePlayerControls() {
 
 	const resetPlay = async (path, manageNextAction = true) => {
 		if (!path) return
-		await playSong(path, manageNextAction)
+		playSong(path, manageNextAction)
 		if (manageNextAction) resume()
 	}
 
@@ -290,6 +321,10 @@ export default function usePlayerControls() {
 		playNext,
 		playBatchNext,
 		playFromQueue,
+		setMusic,
+		handlePlayNext,
+		handleAddToQueue,
+		handleRemoveFromQueue,
 		pause,
 		resume,
 		resetPlay

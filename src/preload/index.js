@@ -23,7 +23,7 @@ const api = {
 		files.map((elt) => {
 			const path = webUtils.getPathForFile(elt)
 			res.push(path)
-			console.log(path)
+			// console.log(path)
 		})
 		return res
 		// Do something with the path, e.g., send it over IPC to the main process.

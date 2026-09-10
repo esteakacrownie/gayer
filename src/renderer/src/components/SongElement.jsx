@@ -16,46 +16,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 import { cn } from "@sglara/cn"
 import usePlayerControls from "../hooks/usePlayerControls"
 import { usePlayerStore } from "../stores/usePlayerStore"
-import { getSongName, isMusicFile } from "../utils"
+import { getSongName } from "../utils"
 import { FaPlay, FaStepForward } from "react-icons/fa"
-import { MdAddCircleOutline, MdPlaylistAdd } from "react-icons/md"
+import { MdAddCircleOutline, MdPlaylistAdd, MdPlaylistRemove } from "react-icons/md"
 import { IoMusicalNotes } from "react-icons/io5"
 import CoverImage from "./CoverImage"
 import { motion } from "motion/react"
-import { useCallback } from "react"
 
 export default function SongElement({
 	song,
-	queueIdx,
+	queueIdx = -1,
 	fromQueue = false,
 	isGrabbable = false,
 	showPlayNext = true,
 	showAddToQueue = true,
+	showRemoveFromQueue = false,
 	showAddToPlaylist = true,
 	highlightIfPlaying = true,
 }) {
-	const { autoplay, setAutoplay, currentTrack, queue, setQueue, setNextAction } = usePlayerStore()
+	const { currentTrack } = usePlayerStore()
 
-	const { playSong, playNext, playFromQueue } = usePlayerControls()
-
-	const setMusic = (p) => {
-		// console.log(p)
-		setAutoplay(true)
-		playSong(p)
-	}
-
-	const handlePlayNext = (p) => {
-		setAutoplay(true)
-		playNext(p)
-	}
-
-	const handleAddToQueue = useCallback((p) => {
-		if (!isMusicFile(p)) return
-		setQueue([...new Set([...queue, p])])
-		if (autoplay && !currentTrack) {
-			setNextAction("setNext")
-		}
-	}, [autoplay, queue, setQueue, setNextAction, currentTrack])
+	const { handlePlayNext, handleAddToQueue, handleRemoveFromQueue, playFromQueue, setMusic } = usePlayerControls()
 
 	const handleAddToPlaylist = () => {
 		//TODO
@@ -97,9 +78,22 @@ export default function SongElement({
 					className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 					onClick={(e) => {
 						e.stopPropagation()
-						fromQueue && queueIdx
+						fromQueue && queueIdx >= 0
 							? playFromQueue(queueIdx)
 							: setMusic(song)
+					}}
+					initial={{
+						scale: 1.0
+					}}
+					animate={{
+						scale: 1.0
+					}}
+					whileTap={{
+						scale: 0.8
+					}}
+					transition={{
+						duration: 0.025,
+						ease: "easeOut"
 					}}
 				>
 					<FaPlay size={16} />
@@ -111,6 +105,19 @@ export default function SongElement({
 						onClick={(e) => {
 							e.stopPropagation()
 							handlePlayNext(song)
+						}}
+						initial={{
+							scale: 1.0
+						}}
+						animate={{
+							scale: 1.0
+						}}
+						whileTap={{
+							scale: 0.8
+						}}
+						transition={{
+							duration: 0.025,
+							ease: "easeOut"
 						}}
 					>
 						<FaStepForward size={16} />
@@ -124,8 +131,46 @@ export default function SongElement({
 							e.stopPropagation()
 							handleAddToQueue(song)
 						}}
+						initial={{
+							scale: 1.0
+						}}
+						animate={{
+							scale: 1.0
+						}}
+						whileTap={{
+							scale: 0.8
+						}}
+						transition={{
+							duration: 0.025,
+							ease: "easeOut"
+						}}
 					>
 						<MdPlaylistAdd size={20} />
+					</motion.div>
+				)}
+				{showRemoveFromQueue && (
+					<motion.div
+						title="Remove from queue"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						onClick={(e) => {
+							e.stopPropagation()
+							handleRemoveFromQueue(song)
+						}}
+						initial={{
+							scale: 1.0
+						}}
+						animate={{
+							scale: 1.0
+						}}
+						whileTap={{
+							scale: 0.8
+						}}
+						transition={{
+							duration: 0.025,
+							ease: "easeOut"
+						}}
+					>
+						<MdPlaylistRemove size={20} />
 					</motion.div>
 				)}
 				{showAddToPlaylist && (
@@ -135,6 +180,19 @@ export default function SongElement({
 						onClick={(e) => {
 							e.stopPropagation()
 							handleAddToPlaylist(song)
+						}}
+						initial={{
+							scale: 1.0
+						}}
+						animate={{
+							scale: 1.0
+						}}
+						whileTap={{
+							scale: 0.8
+						}}
+						transition={{
+							duration: 0.025,
+							ease: "easeOut"
 						}}
 					>
 						<MdAddCircleOutline size={20} />

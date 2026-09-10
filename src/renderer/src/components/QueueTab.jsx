@@ -77,6 +77,7 @@ export default function QueueTab() {
 							fromQueue={true}
 							queueIdx={idx}
 							showAddToQueue={false}
+							showRemoveFromQueue={true}
 							highlightIfPlaying={false}
 							isGrabbable
 						/>

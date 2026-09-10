@@ -97,7 +97,7 @@ export default function Player() {
 	}, [isPlaying])
 
 	const handleLoopMode = useCallback(() => {
-		console.log(loopMode)
+		// console.log(loopMode)
 		switch (loopMode) {
 			case "queue":
 				setLoopMode("current")
@@ -262,47 +262,112 @@ export default function Player() {
 					</div> */}
 					<div className="flex flex-row justify-center gap-4 relative">
 						<div className="flex flex-row justify-center gap-2">
-							<button
+							<motion.button
 								className="hover:bg-pink-400/30 outline-none p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
 								onClick={() => setNextAction("setPrevious")}
+								initial={{
+									scale: 1.0
+								}}
+								animate={{
+									scale: 1.0
+								}}
+								whileTap={{
+									scale: 0.8
+								}}
+								transition={{
+									duration: 0.025,
+									ease: "easeOut"
+								}}
 							>
 								<FaStepBackward size={20} />
-							</button>
-							<button
+							</motion.button>
+							<motion.button
 								className="hover:bg-pink-400/30 outline-none p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
 								onClick={togglePlay}
+								initial={{
+									scale: 1.0
+								}}
+								animate={{
+									scale: 1.0
+								}}
+								whileTap={{
+									scale: 0.8
+								}}
+								transition={{
+									duration: 0.025,
+									ease: "easeOut"
+								}}
 							>
 								{!isPlaying ? <FaPlay size={20} /> : <FaPause size={20} />}
-							</button>
-							<button
+							</motion.button>
+							<motion.button
 								className="hover:bg-pink-400/30 outline-none p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
 								onClick={() => setNextAction("setNext")}
+								initial={{
+									scale: 1.0
+								}}
+								animate={{
+									scale: 1.0
+								}}
+								whileTap={{
+									scale: 0.8
+								}}
+								transition={{
+									duration: 0.025,
+									ease: "easeOut"
+								}}
 							>
 								<FaStepForward size={20} />
-							</button>
+							</motion.button>
 						</div>
 						<div className="flex flex-row gap-2 justify-start items-center absolute w-full left-0 top-0 pointer-events-none">
-							<button
+							<motion.button
 								className={cn(
 									"hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
 									shufflePlay ? "bg-pink-400/50 outline-2 outline-pink-300" : ""
 								)}
 								onClick={() => setShufflePlay(!shufflePlay)}
+								initial={{
+									scale: 1.0
+								}}
+								animate={{
+									scale: 1.0
+								}}
+								whileTap={{
+									scale: 0.8
+								}}
+								transition={{
+									duration: 0.025,
+									ease: "easeOut"
+								}}
 							>
 								<IoMdShuffle size={20} />
-							</button>
-							<button
+							</motion.button>
+							<motion.button
 								className={cn(
 									"relative hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
 									loopMode != "off" ? "bg-pink-400/50 outline-2 outline-pink-300" : ""
 								)}
 								onClick={handleLoopMode}
+								initial={{
+									scale: 1.0
+								}}
+								animate={{
+									scale: 1.0
+								}}
+								whileTap={{
+									scale: 0.8
+								}}
+								transition={{
+									duration: 0.025,
+									ease: "easeOut"
+								}}
 							>
 								<MdLoop className="-scale-x-100" size={20} />
 								{loopMode == "current" && (
 									<span className="absolute right-2 text-xs bottom-4.5 font-bold">1</span>
 								)}
-							</button>
+							</motion.button>
 						</div>
 						<div className="flex flex-row justify-end items-center absolute w-full right-0 top-1.75 pointer-events-none">
 							{volumeIcon}

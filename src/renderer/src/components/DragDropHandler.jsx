@@ -31,7 +31,7 @@ export default function DragDropHandler() {
 		async (event) => {
 			setEnabled(false)
 			event.preventDefault()
-			console.log(JSON.stringify(event.dataTransfer.files[0]))
+			// console.log(JSON.stringify(event.dataTransfer.files[0]))
 			let songs = await handleDropped(window.api.getFilePaths(Object.values(event.dataTransfer.files)))
 			if (shufflePlay) {
 				songs = shuffleArray(songs)
