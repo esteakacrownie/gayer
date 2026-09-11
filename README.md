@@ -8,10 +8,10 @@ Local audio/music player :3
 
 <div>
 
-<img src="./screenshots/library1.png" width="20%" alt="Library tab screenshot">
-<img src="./screenshots/library1.png" width="20%" alt="Library tab screenshot">
-<img src="./screenshots/queue1.png" width="20%" alt="Queue tab screenshot">
-<img src="./screenshots/queue2.png" width="20%" alt="Queue tab screenshot">
+<img src="./screenshots/library1.png" width="24%" alt="Library tab screenshot">
+<img src="./screenshots/library1.png" width="24%" alt="Library tab screenshot">
+<img src="./screenshots/queue1.png" width="24%" alt="Queue tab screenshot">
+<img src="./screenshots/queue2.png" width="24%" alt="Queue tab screenshot">
 
 </div>
 
