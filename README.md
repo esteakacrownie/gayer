@@ -1,8 +1,15 @@
 # Gleamy Audio Player
 
-Local audio/music player.
+Local audio/music player :3
 
 <img src="build/icon.png" width=256 />
+
+## Screenshots
+
+<img src="./screenshots/library1.png" width="20%" alt="Library tab screenshot">
+<img src="./screenshots/library1.png" width="20%" alt="Library tab screenshot">
+<img src="./screenshots/queue1.png" width="20%" alt="Queue tab screenshot">
+<img src="./screenshots/queue2.png" width="20%" alt="Queue tab screenshot">
 
 ## Features
 
@@ -13,6 +20,18 @@ Local audio/music player.
 - Reorder and shuffle queue
 - Queue loop and currently played audio loop modes supported
 - Power saving / appearance toggle, if your machine struggles with pretty blurs and overly long queues :p
+- Automatically fetches album cover art using filename and parent directory name
+- Looks cute and pretty :3
+
+### Planned
+
+- Create your own playlists
+- Export your playlists to .M3U format
+- Fix incorrect cover art manually when it fails to find your music, or allow disabling auto fetching
+- Search and download songs and albums directly from the internet, using yt-dlp
+
+<br/>
+Stay tuned and support the project by starring it >:3
 
 ## Hotkeys
 
@@ -27,6 +46,10 @@ Local audio/music player.
 - [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
 ## Project Setup
+
+### Requirements
+
+- [Node.js](https://nodejs.org/fr/download)
 
 ### Install
 
@@ -43,14 +66,14 @@ $ npm run dev
 ### Build
 
 ```bash
+# For Linux
+$ npm run build:linux
+
 # For Windows
 $ npm run build:win
 
 # For MacOS
 $ npm run build:mac
-
-# For Linux
-$ npm run build:linux
 ```
 
 ## Disclaimer

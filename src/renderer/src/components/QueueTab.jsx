@@ -55,7 +55,7 @@ export default function QueueTab() {
 				</div>
 				<PowerSavingButton />
 			</div>
-			{currentTrack && <SongElement song={currentTrack} />}
+			{currentTrack && <SongElement song={currentTrack} showPlayNow={false} />}
 			<Reorder.Group
 				values={queue}
 				onReorder={setQueue}

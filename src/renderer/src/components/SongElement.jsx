@@ -28,6 +28,7 @@ export default function SongElement({
 	queueIdx = -1,
 	fromQueue = false,
 	isGrabbable = false,
+	showPlayNow = true,
 	showPlayNext = true,
 	showAddToQueue = true,
 	showRemoveFromQueue = false,
@@ -73,31 +74,33 @@ export default function SongElement({
 					"flex flex-row bg-slate-600/75 overflow-clip rounded-lg",
 				)}
 			>
-				<motion.div
-					title="Play now"
-					className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
-					onClick={(e) => {
-						e.stopPropagation()
-						fromQueue && queueIdx >= 0
-							? playFromQueue(queueIdx)
-							: setMusic(song)
-					}}
-					initial={{
-						scale: 1.0
-					}}
-					animate={{
-						scale: 1.0
-					}}
-					whileTap={{
-						scale: 0.8
-					}}
-					transition={{
-						duration: 0.025,
-						ease: "easeOut"
-					}}
-				>
-					<FaPlay size={16} />
-				</motion.div>
+				{showPlayNow && (
+					<motion.div
+						title="Play now"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						onClick={(e) => {
+							e.stopPropagation()
+							fromQueue && queueIdx >= 0
+								? playFromQueue(queueIdx)
+								: setMusic(song)
+						}}
+						initial={{
+							scale: 1.0
+						}}
+						animate={{
+							scale: 1.0
+						}}
+						whileTap={{
+							scale: 0.8
+						}}
+						transition={{
+							duration: 0.025,
+							ease: "easeOut"
+						}}
+					>
+						<FaPlay size={16} />
+					</motion.div>
+				)}
 				{showPlayNext && (
 					<motion.div
 						title="Play next"
