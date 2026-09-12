@@ -25,11 +25,14 @@ import FileSystemTab from "./components/FileSystemTab"
 import QueueTab from "./components/QueueTab"
 import LibraryTab from "./components/LibraryTab"
 import { useCacheStore } from "./stores/useCacheStore"
+import PlaylistDialog from "./components/PlaylistDialog"
+import { usePlaylistsStore } from "./stores/usePlaylistsStore"
 
 function App() {
 	const { setQueue, setAutoplay, setNextAction } = usePlayerStore()
 	const { setSettings } = useSettingsStore()
 	const { setCache } = useCacheStore()
+	const { setPlaylists } = usePlaylistsStore()
 
 	useEffect(() => {
 		// load settings
@@ -48,6 +51,17 @@ function App() {
 			.invoke("readConfigFile", { path: "cache.json" })
 			.then((d) => setCache(JSON.parse(d)))
 			.catch(() => console.log("Couldn't parse cache file"))
+		// load playlists
+		window.electron.ipcRenderer
+			.invoke("readConfigFile", { path: "playlists.json" })
+			.then((d) => {
+				// console.log(d)
+				const parsed = JSON.parse(d)
+				const data = Array.isArray(parsed) ? parsed : []
+				setPlaylists(data)
+
+			})
+			.catch(() => console.log("Couldn't parse playlists file"))
 		// parse arguments
 		window.electron.ipcRenderer.invoke("get_args", {})
 			.then((elt) => {
@@ -74,6 +88,7 @@ function App() {
 			</div>
 			<Tabs />
 			<DragDropHandler />
+			<PlaylistDialog />
 			<Player />
 		</main>
 	)

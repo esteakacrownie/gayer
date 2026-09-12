@@ -22,6 +22,7 @@ import { MdAddCircleOutline, MdPlaylistAdd, MdPlaylistRemove } from "react-icons
 import { IoMusicalNotes } from "react-icons/io5"
 import CoverImage from "./CoverImage"
 import { motion } from "motion/react"
+import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 
 export default function SongElement({
 	song,
@@ -37,10 +38,12 @@ export default function SongElement({
 }) {
 	const { currentTrack } = usePlayerStore()
 
+	const { setSelectedSongPath } = usePlaylistsStore()
+
 	const { handlePlayNext, handleAddToQueue, handleRemoveFromQueue, playFromQueue, setMusic } = usePlayerControls()
 
 	const handleAddToPlaylist = () => {
-		//TODO
+		setSelectedSongPath(song)
 	}
 
 	return (

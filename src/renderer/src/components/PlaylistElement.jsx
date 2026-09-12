@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import { cn } from "@sglara/cn"
 import { GiCompactDisc } from "react-icons/gi"
+import { PiPlaylistFill } from "react-icons/pi"
 import usePlayerControls from "../hooks/usePlayerControls"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import { getFolderName, getSortedFilesAt, shuffleArray } from "../utils"
@@ -24,6 +25,7 @@ import CoverImage from "./CoverImage"
 import { motion } from "motion/react"
 import { useCallback, useEffect, useState } from "react"
 import { useSettingsStore } from "../stores/useSettingsStore"
+import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 
 export default function PlaylistElement({
 	playlist,
@@ -39,6 +41,8 @@ export default function PlaylistElement({
 
 	const { playSongs, playBatchNext } = usePlayerControls()
 
+	const { playlists } = usePlaylistsStore()
+
 	const [songs, setSongs] = useState([])
 
 	const fetchSongs = useCallback(async () => {
@@ -47,8 +51,12 @@ export default function PlaylistElement({
 	}, [playlist])
 
 	useEffect(() => {
-		fetchSongs()
-	}, [playlist])
+		if (isPlaylist) {
+			setSongs(playlists.filter((e) => e.id == playlist)[0].songs)
+		} else {
+			fetchSongs()
+		}
+	}, [playlist, playlists])
 
 	const handleBatchPlay = useCallback(() => {
 		// console.log(p)
@@ -82,7 +90,7 @@ export default function PlaylistElement({
 			onClick={() => setSelectedPlaylist(playlist)}
 		>
 			<div className="absolute top-0 right-0 brightness-125 text-pink-400/50 bg-slate-900/75 outline-2 outline-pink-400/50 rounded-bl-lg">
-				<GiCompactDisc className="m-0.5" size={20} />
+				{isPlaylist ? <PiPlaylistFill className="m-0.5" size={20} /> : <GiCompactDisc className="m-0.5" size={20} />}
 			</div>
 			<motion.div
 				layout
@@ -185,9 +193,9 @@ export default function PlaylistElement({
 				className="ml-2 pr-6 text-shadow-lg text-shadow-black/75"
 			>
 				<p className="line-clamp-1">
-					{isPlaylist ? playlist : getFolderName(playlist)}
+					{isPlaylist ? playlists.filter((e) => e.id == playlist)[0].name : getFolderName(playlist)}
 				</p>
-				<p className="line-clamp-1 text-xs brightness-90">{`${count} items`}</p>
+				<p className="line-clamp-1 text-xs brightness-90">{`${count} item(s)`}</p>
 			</motion.div>
 		</motion.div>
 	)

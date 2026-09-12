@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 import { cn } from "@sglara/cn"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import PowerSavingButton from "./PowerSavingButton"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { IoMdClose } from "react-icons/io"
 import { GiCompactDisc } from "react-icons/gi"
 import { IoMusicalNotes, IoChevronBack } from "react-icons/io5"
@@ -39,6 +39,7 @@ import {
 import SongElement from "./SongElement"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import PlaylistElement from "./PlaylistElement"
+import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 
 export default function LibraryTab() {
 	const maxLength = 25
@@ -57,19 +58,12 @@ export default function LibraryTab() {
 		shufflePlay,
 	} = useSettingsStore()
 
+	const { playlists } = usePlaylistsStore()
+
 	const [search, setSearch] = useState("")
 	const [songs, setSongs] = useState([])
 	const [songsScrollPage, setSongsScrollPage] = useState(1)
 	const [albumSongsCount, setAlbumSongsCount] = useState([])
-
-	const hasAlbumFilteredSong = (elt) => {
-		for (let s of filteredSongs) {
-			if (s.includes(elt)) {
-				return true
-			}
-		}
-		return false
-	}
 
 	const clearSearch = () => {
 		setSearch("")
@@ -91,7 +85,7 @@ export default function LibraryTab() {
 		} else {
 			setSelectedPlaylistSongs([])
 		}
-	}, [selectedPlaylist])
+	}, [selectedPlaylist, songs, playlists])
 
 	const handlePlayAll = () => {
 		if (filteredSongs.length == 0) return
@@ -137,7 +131,28 @@ export default function LibraryTab() {
 		setSongsScrollPage(page)
 	}
 
-	const fetchSongs = async () => {
+	const filteredSongs = useMemo(() => {
+		return songs.filter((n) =>
+			toSearchString(`${getFolderName(n)} - ${getSongName(n)}`).includes(
+				toSearchString(search),
+			),
+		)
+	}, [songs, search])
+
+	const idInPlaylists = useCallback((id) => {
+		return playlists.map((e) => e.id).includes(id)
+	}, [playlists])
+
+	const hasAlbumFilteredSong = useCallback((elt) => {
+		for (let s of filteredSongs) {
+			if (s.includes(elt)) {
+				return true
+			}
+		}
+		return false
+	}, [filteredSongs])
+
+	const fetchSongs = useCallback(async () => {
 		let allSongs = []
 		for (let i of libraryLocations) {
 			const { songs: sorted } = await getSortedFilesAt(i)
@@ -158,18 +173,40 @@ export default function LibraryTab() {
 				]
 			}
 		}
+		for (let i of playlists) {
+			allSongs = [
+				...new Set(
+					allSongs.concat(
+						i.songs,
+					),
+				),
+			]
+		}
 		// console.log(allSongs)
 		return allSongs
-	}
+	}, [playlists])
 
-	const fetchSelectedPlaylistSongs = async () => {
-		const { songs: album_sorted } = await getSortedFilesAt(selectedPlaylist)
-		console.log(album_sorted)
-		setSelectedPlaylistSongs(album_sorted.filter((s) => isMusicFile(s)))
-	}
+	const fetchSelectedPlaylistSongs = useCallback(async () => {
+		if (idInPlaylists(selectedPlaylist)) {
+			setSelectedPlaylistSongs(getPlaylistFromId(selectedPlaylist).songs)
+		} else {
+			const { songs: album_sorted } = await getSortedFilesAt(selectedPlaylist)
+			// console.log(album_sorted)
+			setSelectedPlaylistSongs(album_sorted.filter((s) => isMusicFile(s)))
+		}
+	}, [selectedPlaylist, playlists, idInPlaylists, setSelectedPlaylistSongs])
+
+	const fetchPlaylistsSongsCount = useCallback(async () => {
+		const counts = []
+		for (let i of playlists) {
+			counts.push({ id: i.id, name: i.name, count: i.songs.length })
+		}
+		// console.log(counts)
+		return counts
+	}, [playlists])
 
 	// [ {AlbumPath: song count} ]
-	const fetchAlbumsSongsCount = async () => {
+	const fetchAlbumsSongsCount = useCallback(async () => {
 		let allAlbums = []
 		for (let i of libraryLocations) {
 			allAlbums.push(i)
@@ -186,7 +223,7 @@ export default function LibraryTab() {
 		}
 		// console.log(counts)
 		return counts
-	}
+	}, [libraryLocations])
 
 	const refreshLocationsContent = () => {
 		setSongs([])
@@ -200,13 +237,29 @@ export default function LibraryTab() {
 			.catch(() => console.log("Couldn't fetch albums"))
 	}
 
-	const filteredSongs = useMemo(() => {
-		return songs.filter((n) =>
-			toSearchString(`${getFolderName(n)} - ${getSongName(n)}`).includes(
-				toSearchString(search),
-			),
+	const getPlaylistFromId = useCallback((id) => {
+		return playlists.filter((e) => e.id == id)[0] ?? { id: "id", name: "", songs: [] }
+	}, [playlists])
+
+	const hasPlaylistFilteredSong = useCallback((elt) => {
+		for (let s of filteredSongs) {
+			if (elt.songs.includes(s)) {
+				return true
+			}
+		}
+		return false
+	}, [filteredSongs])
+
+	const filteredPlaylists = useMemo(() => {
+		return playlists.filter(
+			(elt) => {
+				const element = getPlaylistFromId(elt.id)
+				return toSearchString(element.name).includes(
+					toSearchString(search),
+				) || hasPlaylistFilteredSong(element)
+			}
 		)
-	}, [songs, search])
+	}, [playlists, search])
 
 	const filteredAlbums = useMemo(() => {
 		return albumSongsCount.filter(
@@ -222,8 +275,11 @@ export default function LibraryTab() {
 		filteredAlbums.map((elt) => {
 			list = list.concat(songs.filter((s) => s.includes(elt.path)))
 		})
-		return list
-	}, [songs, filteredAlbums, search])
+		filteredPlaylists.map((e) => {
+			list = list.concat(getPlaylistFromId(e.id).songs)
+		})
+		return new Set(list)
+	}, [songs, playlists, filteredAlbums, filteredPlaylists, search])
 
 	const filteredSelectedPlaylistSongs = useMemo(() => {
 		return selectedPlaylistSongs.filter((n) =>
@@ -235,7 +291,7 @@ export default function LibraryTab() {
 
 	useEffect(() => {
 		refreshLocationsContent()
-	}, [libraryLocations])
+	}, [libraryLocations, selectedPlaylist])
 
 	useEffect(() => {
 		setSongsScrollPage(
@@ -247,9 +303,6 @@ export default function LibraryTab() {
 				1,
 			),
 		)
-	}, [filteredSongs])
-
-	useEffect(() => {
 		setSongsScrollPage(1)
 	}, [filteredSongs])
 
@@ -372,14 +425,14 @@ export default function LibraryTab() {
 						)}
 					/>
 				</button>
-				{libraryFilter != "locations" && (
+				{libraryFilter != "locations" && !(libraryFilter == "playlists" && selectedPlaylist) && (
 					<>
 						<div className="flex flex-row gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer">
 							<MdInfoOutline size={16} />
 							<span>
 								{libraryFilter == "songs"
 									? filteredSongs.length
-									: filteredAlbums.length}{" "}
+									: filteredAlbums.length + filteredPlaylists.length}{" "}
 								item(s) found
 							</span>
 						</div>
@@ -422,8 +475,8 @@ export default function LibraryTab() {
 										<IoChevronBack size={20} />
 									</div>
 									<div className="w-full flex flex-col pr-12 text-center justify-center">
-										<p className="font-bold text-lg line-clamp-1">{getFolderName(selectedPlaylist)}</p>
-										<p className="font-bold text-xs line-clamp-1">{selectedPlaylistSongs.length > 0 ? selectedPlaylistSongs.length : ""}&nbsp;{selectedPlaylistSongs.length > 0 ? "items" : ""}</p>
+										<p className="font-bold text-lg line-clamp-1">{idInPlaylists(selectedPlaylist) ? getPlaylistFromId(selectedPlaylist).name : getFolderName(selectedPlaylist)}</p>
+										<p className="font-bold text-xs line-clamp-1">{selectedPlaylistSongs.length > 0 ? selectedPlaylistSongs.length : ""}&nbsp;{selectedPlaylistSongs.length > 0 ? "item(s)" : ""}</p>
 									</div>
 								</div>
 								<div className="flex flex-col gap-2">
@@ -436,6 +489,9 @@ export default function LibraryTab() {
 						</>
 					) : (
 						<div className="flex flex-col gap-2">
+							{filteredPlaylists.map((elt) => (
+								<PlaylistElement key={elt.id} playlist={elt.id} count={getPlaylistFromId(elt.id).songs.length} isPlaylist={true} />
+							))}
 							{filteredAlbums.map((elt) => (
 								<PlaylistElement key={elt.path} playlist={elt.path} count={elt.count} />
 							))}
