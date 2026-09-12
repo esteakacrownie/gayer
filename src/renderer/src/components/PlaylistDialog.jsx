@@ -46,6 +46,7 @@ export default function PlaylistDialog() {
     const createNewPlaylist = useCallback(() => {
         if (!newPlaylistName.trim()) return
         setPlaylists([...playlists, { id: generateUnusedID(), name: newPlaylistName, songs: [] }])
+        setNewPlaylistName("")
     }, [generateUnusedID, playlists, setPlaylists, newPlaylistName])
 
     const handlePlaylistSelected = useCallback((pid) => {
@@ -113,7 +114,7 @@ export default function PlaylistDialog() {
                         >
                             <IoMdClose size={20} />
                         </button>
-                        <div className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200" onClick={() => setSelectedSongPath("")}>
+                        <div className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200" onClick={createNewPlaylist}>
                             <IoAdd size={20} />
                         </div>
                     </div>
