@@ -40,6 +40,7 @@ import SongElement from "./SongElement"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import PlaylistElement from "./PlaylistElement"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
+import { Reorder } from "motion/react"
 
 export default function LibraryTab() {
 	const maxLength = 25
@@ -58,7 +59,7 @@ export default function LibraryTab() {
 		shufflePlay,
 	} = useSettingsStore()
 
-	const { playlists } = usePlaylistsStore()
+	const { playlists, setPlaylists } = usePlaylistsStore()
 
 	const [search, setSearch] = useState("")
 	const [songs, setSongs] = useState([])
@@ -215,6 +216,15 @@ export default function LibraryTab() {
 		// console.log(counts)
 		return counts
 	}, [libraryLocations])
+
+	const updateSelectedPlaylistSongsOrder = useCallback((v) => {
+		const elt = { ...getPlaylistFromId(selectedPlaylist) }
+		elt.songs = v
+		let index = 0
+		const p = playlists.filter((e, idx) => { const res = e.id != selectedPlaylist; if (res) { index = idx }; return res })
+		p.splice(index, 0, elt)
+		setPlaylists(p)
+	}, [playlists, setPlaylists, selectedPlaylist])
 
 	const refreshLocationsContent = () => {
 		setSongs([])
@@ -460,23 +470,61 @@ export default function LibraryTab() {
 				<>
 					{selectedPlaylist ? (
 						<>
-							<div className="flex flex-col gap-2">
-								<div className="flex flex-row justify-start gap-2">
-									<div className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200" onClick={() => setSelectedPlaylist("")}>
-										<IoChevronBack size={20} />
+							{idInPlaylists(selectedPlaylist) ? (
+								<>
+									<div className="flex flex-col gap-2">
+										<div className="flex flex-row justify-start gap-2">
+											<div className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200" onClick={() => setSelectedPlaylist("")}>
+												<IoChevronBack size={20} />
+											</div>
+											<div className="w-full flex flex-col pr-12 text-center justify-center">
+												<p className="font-bold text-lg line-clamp-1">{getPlaylistFromId(selectedPlaylist).name}</p>
+												<p className="font-bold text-xs line-clamp-1">{selectedPlaylistSongs.length > 0 ? selectedPlaylistSongs.length : ""}&nbsp;{selectedPlaylistSongs.length > 0 ? "item(s)" : ""}</p>
+											</div>
+										</div>
+										<Reorder.Group
+											values={selectedPlaylistSongs}
+											onReorder={updateSelectedPlaylistSongsOrder}
+											className="flex flex-col gap-2 relative"
+										>
+											{filteredSelectedPlaylistSongs
+												.map((elt) => (
+
+													<Reorder.Item
+														key={elt}
+														value={elt}
+														transition={{
+															duration: 0.2,
+														}}
+													>
+														<SongElement key={elt} song={elt} isGrabbable={true} />
+													</Reorder.Item>
+
+												))}
+										</Reorder.Group>
 									</div>
-									<div className="w-full flex flex-col pr-12 text-center justify-center">
-										<p className="font-bold text-lg line-clamp-1">{idInPlaylists(selectedPlaylist) ? getPlaylistFromId(selectedPlaylist).name : getFolderName(selectedPlaylist)}</p>
-										<p className="font-bold text-xs line-clamp-1">{selectedPlaylistSongs.length > 0 ? selectedPlaylistSongs.length : ""}&nbsp;{selectedPlaylistSongs.length > 0 ? "item(s)" : ""}</p>
+								</>
+							) : (
+								<>
+									<div className="flex flex-col gap-2">
+										<div className="flex flex-row justify-start gap-2">
+											<div className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200" onClick={() => setSelectedPlaylist("")}>
+												<IoChevronBack size={20} />
+											</div>
+											<div className="w-full flex flex-col pr-12 text-center justify-center">
+												<p className="font-bold text-lg line-clamp-1">{getFolderName(selectedPlaylist)}</p>
+												<p className="font-bold text-xs line-clamp-1">{selectedPlaylistSongs.length > 0 ? selectedPlaylistSongs.length : ""}&nbsp;{selectedPlaylistSongs.length > 0 ? "item(s)" : ""}</p>
+											</div>
+										</div>
+										<div className="flex flex-col gap-2">
+											{filteredSelectedPlaylistSongs
+												.map((elt) => (
+													<SongElement key={elt} song={elt} />
+												))}
+										</div>
 									</div>
-								</div>
-								<div className="flex flex-col gap-2">
-									{filteredSelectedPlaylistSongs
-										.map((elt) => (
-											<SongElement key={elt} song={elt} />
-										))}
-								</div>
-							</div>
+								</>
+							)}
 						</>
 					) : (
 						<div className="flex flex-col gap-2">

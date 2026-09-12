@@ -22,6 +22,7 @@ Local audio/music player :3
   - Build and search your own custom audio library in app, by registering locations from your computer
   - Manually select a folder to open
 - Reorder and shuffle queue
+- Create your own playlists
 - Queue loop and currently played audio loop modes supported
 - Power saving / appearance toggle, if your machine struggles with pretty blurs and overly long queues :p
 - Automatically fetches album cover art using filename and parent directory name
@@ -29,7 +30,6 @@ Local audio/music player :3
 
 ### Planned
 
-- Create your own playlists
 - Export your playlists to .M3U format
 - Fix incorrect cover art manually when it fails to find your music, or allow disabling auto fetching
 - Search and download songs and albums directly from the internet, using yt-dlp
