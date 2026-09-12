@@ -233,7 +233,7 @@ export default function Player() {
 	useHotkeys("ctrl+s", (e) => { e.preventDefault(); setShufflePlay(!shufflePlay) })
 
 	return (
-		<div className="flex flex-col justify-center gap-4 fixed bottom-0 p-4 w-full ">
+		<div className="flex flex-col justify-center gap-4 fixed z-10 bottom-0 p-4 w-full ">
 			<div className="relative">
 				<div className="overflow-clip w-full h-full absolute top-0 left-0 rounded-2xl flex flex-row justify-start items-center">
 					<AnimatePresence mode="popLayout">

@@ -196,15 +196,6 @@ export default function LibraryTab() {
 		}
 	}, [selectedPlaylist, playlists, idInPlaylists, setSelectedPlaylistSongs])
 
-	const fetchPlaylistsSongsCount = useCallback(async () => {
-		const counts = []
-		for (let i of playlists) {
-			counts.push({ id: i.id, name: i.name, count: i.songs.length })
-		}
-		// console.log(counts)
-		return counts
-	}, [playlists])
-
 	// [ {AlbumPath: song count} ]
 	const fetchAlbumsSongsCount = useCallback(async () => {
 		let allAlbums = []
@@ -291,7 +282,7 @@ export default function LibraryTab() {
 
 	useEffect(() => {
 		refreshLocationsContent()
-	}, [libraryLocations, selectedPlaylist])
+	}, [libraryLocations])
 
 	useEffect(() => {
 		setSongsScrollPage(

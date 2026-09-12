@@ -86,7 +86,7 @@ export default function PlaylistDialog() {
 
     return (
         <div
-            className={cn("fixed z-20 top-0 w-screen h-screen mx-auto pt-18 pb-34", selectedSongPath ? "flex flex-col justify-center items-center" : "hidden pointer-events-none")}
+            className={cn("fixed z-10 top-0 w-screen h-screen mx-auto pt-18 pb-34", selectedSongPath ? "flex flex-col justify-center items-center" : "hidden pointer-events-none")}
         >
             <div className="px-8 flex flex-col w-full h-full justify-start gap-4 max-w-200 mx-auto">
                 <div className="p-4 flex flex-col gap-2 justify-start items-center w-full  h-full from-slate-950 to-pink-700 from-[-25%] to-150% bg-linear-180 rounded-2xl border-2 border-pink-300 shadow-pink-400/40 shadow-[0_0_7px_7px]">
