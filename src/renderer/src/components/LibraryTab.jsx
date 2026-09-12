@@ -185,7 +185,7 @@ export default function LibraryTab() {
 		}
 		// console.log(allSongs)
 		return allSongs
-	}, [playlists])
+	}, [playlists, libraryLocations])
 
 	const fetchSelectedPlaylistSongs = useCallback(async () => {
 		if (idInPlaylists(selectedPlaylist)) {
