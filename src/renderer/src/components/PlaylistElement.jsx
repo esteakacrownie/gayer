@@ -56,7 +56,7 @@ export default function PlaylistElement({
 		} else {
 			fetchSongs()
 		}
-	}, [playlist, playlists])
+	}, [playlist, playlists, isPlaylist])
 
 	const handleBatchPlay = useCallback(() => {
 		// console.log(p)
