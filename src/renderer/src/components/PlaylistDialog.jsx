@@ -50,6 +50,7 @@ export default function PlaylistDialog() {
     }, [generateUnusedID, playlists, setPlaylists, newPlaylistName])
 
     const handlePlaylistSelected = useCallback((pid) => {
+        if (selectedSongPath == "*") return
         if (playlists.filter((e) => e.id == pid)[0].songs.includes(selectedSongPath)) {
             const p = [...playlists]
             let idx = 0
@@ -91,10 +92,13 @@ export default function PlaylistDialog() {
             <div className="px-8 flex flex-col w-full h-full justify-start gap-4 max-w-200 mx-auto">
                 <div className="p-4 flex flex-col gap-2 justify-start items-center w-full  h-full from-slate-950 to-pink-700 from-[-25%] to-150% bg-linear-180 rounded-2xl border-2 border-pink-300 shadow-pink-400/40 shadow-[0_0_7px_7px]">
                     <div className="flex flex-row w-full items-center justify-between gap-2">
-                        <div className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200" onClick={() => setSelectedSongPath("")}>
+                        <div
+                            className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200"
+                            onClick={() => setSelectedSongPath("")}
+                        >
                             <IoChevronBack size={20} />
                         </div>
-                        <p className="w-full text-center pr-12 line-clamp-1">{getSongName(selectedSongPath)}</p>
+                        <p className="w-full text-center pr-12 line-clamp-1">{selectedSongPath == "*" ? "Playlists" : getSongName(selectedSongPath)}</p>
                     </div>
                     <div className="relative w-full flex flex-row items-center gap-2">
                         <input
@@ -123,9 +127,9 @@ export default function PlaylistDialog() {
                             <div
                                 key={e.id}
                                 className={cn(
-                                    "relative p-2 gap-2 w-full flex flex-row overflow-clip jutify-start items-center rounded-lg bg-linear-90 font-bold text-white/75 from-slate-800 to-slate-700 transition ease-out duration-200 select-none brightness-110 hover:brightness-150 border-2 border-slate-400/50 cursor-pointer",
+                                    "relative p-2 gap-2 w-full flex flex-row overflow-clip jutify-start items-center rounded-lg font-bold text-white transition ease-out duration-200 select-none brightness-110 hover:bg-pink-500/20 cursor-pointer",
                                     playlistsHavingSong.includes(e.id) ? "bg-linear-90 from-pink-950 to-pink-900 brightness-150 hover:brightness-200 border-2 border-pink-400"
-                                        : "brightness-110 border-2 border-slate-400/50",
+                                        : "brightness-110 border-2 border-transparent",
                                 )}
                                 onClick={() => { handlePlaylistSelected(e.id) }}
                             >

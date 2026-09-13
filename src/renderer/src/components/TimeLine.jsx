@@ -27,7 +27,8 @@ export default function TimeLine() {
 		queue,
 		history,
 		autoplay,
-		setNextAction
+		setNextAction,
+		currentTrackChangeTracker
 	} = usePlayerStore()
 
 	const { volume, loopMode } = useSettingsStore()
@@ -52,7 +53,7 @@ export default function TimeLine() {
 				setNextAction("setNext")
 			}
 		}
-	}, [currentTrack, autoplay, setIsPlaying, loopMode, queue, audioRef])
+	}, [currentTrack, autoplay, setIsPlaying, loopMode, queue, audioRef, currentTrackChangeTracker])
 
 	const updateMediasessionTime = useCallback(() => {
 		const currentTime = audioRef.current?.currentTime || 0.0
@@ -120,7 +121,7 @@ export default function TimeLine() {
 			audioRef.current?.pause()
 			// cancelAnimationFrame(playAnimationRef.current)
 		}
-	}, [isPlaying, audioRef, repeat])
+	}, [isPlaying, audioRef, repeat, currentTrackChangeTracker])
 
 	// update volume from UI slide and save value
 	useEffect(() => {
@@ -141,10 +142,14 @@ export default function TimeLine() {
 	}, [isPlaying, currentTrack])
 
 	useEffect(() => {
+		if (audioRef.current) {
+			audioRef.current.currentTime = 0
+		}
 		if (!currentTrack) {
 			setDuration(0)
 		}
-	}, [currentTrack])
+		// console.log(currentTrackChangeTracker)
+	}, [currentTrackChangeTracker, audioRef, currentTrack])
 
 	const songName = useMemo(() => getSongName(currentTrack), [currentTrack])
 

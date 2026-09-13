@@ -173,9 +173,9 @@ export default function usePlayerControls() {
 		(p) => {
 			if (!isMusicFile(p)) return
 			setQueue([...new Set([p, ...queue])])
-			setHistory([currentTrack, ...history])
+			// setHistory([currentTrack, ...history])
 		},
-		[queue, setQueue, history, setHistory, currentTrack]
+		[queue, setQueue, currentTrack]
 	)
 
 	const setMusic = useCallback((p) => {
@@ -234,9 +234,9 @@ export default function usePlayerControls() {
 		(ps) => {
 			if (!ps || ps.length == 0) return
 			setQueue([...new Set([...(shufflePlay ? shuffleArray(ps) : ps), ...queue])])
-			setHistory([currentTrack, ...history])
+			// setHistory([currentTrack, ...history])
 		},
-		[queue, setQueue, history, setHistory, currentTrack, shufflePlay]
+		[queue, setQueue, currentTrack, shufflePlay]
 	)
 
 	const playFromQueue = useCallback(

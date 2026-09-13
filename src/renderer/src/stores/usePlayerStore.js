@@ -23,11 +23,12 @@ export const usePlayerStore = create((set) => ({
 	currentTrack: "",
 	nextAction: "", // "setPrevious", "setNext", "playCurrent"
 	selectedPlaylist: "",
+	currentTrackChangeTracker: 0,
 	setAutoplay: (v) => set((state) => ({ autoplay: v })),
 	setIsPlaying: (v) => set((state) => ({ isPlaying: v })),
 	setQueue: (v) => set((state) => ({ queue: v })),
 	setHistory: (v) => set((state) => ({ history: v })),
-	setCurrentTrack: (v) => set((state) => ({ currentTrack: v })),
+	setCurrentTrack: (v) => set((state) => ({ currentTrack: v, currentTrackChangeTracker: state.currentTrackChangeTracker + 1 })),
 	setNextAction: (v) => set((state) => ({ nextAction: v })),
 	setSelectedPlaylist: (v) => set((state) => ({ selectedPlaylist: v })),
 }))

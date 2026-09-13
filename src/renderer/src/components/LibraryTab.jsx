@@ -28,6 +28,7 @@ import {
 	MdPlayArrow,
 	MdPlaylistAdd,
 	MdRefresh,
+	MdSettings,
 } from "react-icons/md"
 import {
 	getFolderName,
@@ -60,7 +61,7 @@ export default function LibraryTab() {
 		shufflePlay,
 	} = useSettingsStore()
 
-	const { playlists, setPlaylists } = usePlaylistsStore()
+	const { playlists, setPlaylists, setSelectedSongPath } = usePlaylistsStore()
 
 	const [search, setSearch] = useState("")
 	const [songs, setSongs] = useState([])
@@ -114,6 +115,7 @@ export default function LibraryTab() {
 		if (filteredSongs.length == 0) return
 		let list =
 			libraryFilter == "songs" ? filteredSongs : (selectedPlaylist ? filteredSelectedPlaylistSongs : filteredAlbumsSongs)
+		// console.log(list)
 		if (shufflePlay) {
 			list = shuffleArray(list)
 		}
@@ -326,7 +328,7 @@ export default function LibraryTab() {
 		filteredPlaylists.map((e) => {
 			list = list.concat(getPlaylistFromId(e.id).songs)
 		})
-		return new Set(list)
+		return [...new Set(list)]
 	}, [songs, playlists, filteredAlbums, filteredPlaylists, search])
 
 	const filteredSelectedPlaylistSongs = useMemo(() => {
@@ -474,7 +476,7 @@ export default function LibraryTab() {
 				</button>
 				{libraryFilter != "locations" && !(libraryFilter == "playlists" && selectedPlaylist) && (
 					<>
-						<div className="flex flex-row gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer">
+						<div className="flex flex-row gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700">
 							<MdInfoOutline size={16} />
 							<span>
 								{libraryFilter == "songs"
@@ -485,9 +487,24 @@ export default function LibraryTab() {
 						</div>
 					</>
 				)}
-				{selectedPlaylist && idInPlaylists(selectedPlaylist) && (
+				{libraryFilter == "playlists" && (
 					<>
-						<div
+						<button
+							className="flex flex-row relative gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+							onClick={() => {
+								setSelectedSongPath("*")
+							}}
+						>
+							<MdSettings size={16} />
+							<span>
+								Manage playlists
+							</span>
+						</button>
+					</>
+				)}
+				{libraryFilter == "playlists" && selectedPlaylist && idInPlaylists(selectedPlaylist) && (
+					<>
+						<button
 							className="flex flex-row gap-1 justify-center items-center text-red-300 bg-red-950 rounded-full border border-red-300 py-1 px-2 transition ease-out duration-200 hover:bg-red-900 cursor-pointer"
 							onClick={removeSelectedPlaylist}
 						>
@@ -495,7 +512,7 @@ export default function LibraryTab() {
 							<span>
 								{deletingSelectedPlaylist ? "Confirm deletion ?" : "Delete Playlist"}
 							</span>
-						</div>
+						</button>
 					</>
 				)}
 			</div>

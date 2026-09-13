@@ -53,10 +53,13 @@ export default function SongElement({
 				highlightIfPlaying && currentTrack == song
 					? "bg-linear-90 from-pink-950 to-pink-900 brightness-175 border-2 border-pink-400 shadow-pink-500/40 shadow-[0_0_7px_7px]"
 					: "brightness-110 hover:brightness-150 border-2 border-slate-400/50",
-				isGrabbable ? "cursor-grab" : "cursor-pointer",
+				isGrabbable ? "cursor-grab" : "",
 			)}
 		>
-			<div className="absolute top-0 right-0 brightness-125 text-pink-400/50 bg-slate-900/75 outline-2 outline-pink-400/50 rounded-bl-lg">
+			<div
+				className="absolute top-0 right-0 brightness-125 text-pink-400/50 bg-slate-900/75 outline-2 outline-pink-400/50 rounded-bl-lg"
+				title="song"
+			>
 				<IoMusicalNotes className="m-0.5 scale-95" size={20} />
 			</div>
 			<motion.div
