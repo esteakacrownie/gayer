@@ -20,6 +20,7 @@ import { getSongName, randomStr } from "../utils"
 import { IoAdd, IoChevronBack } from "react-icons/io5"
 import { PiPlaylistFill } from "react-icons/pi"
 import { IoMdClose } from "react-icons/io"
+import ManagedPlaylistItem from "./ManagedPlaylistItem"
 
 export default function PlaylistDialog() {
 
@@ -123,20 +124,21 @@ export default function PlaylistDialog() {
                         </div>
                     </div>
                     <div className="h-full w-full flex flex-col items-center justify-start gap-2 overflow-y-scroll">
-                        {playlists.map((e) => (
-                            <div
-                                key={e.id}
-                                className={cn(
-                                    "relative p-2 gap-2 w-full flex flex-row overflow-clip jutify-start items-center rounded-lg font-bold text-white transition ease-out duration-200 select-none brightness-110 hover:bg-pink-500/20 cursor-pointer",
-                                    playlistsHavingSong.includes(e.id) ? "bg-linear-90 from-pink-950 to-pink-900 brightness-150 hover:brightness-200 border-2 border-pink-400"
-                                        : "brightness-110 border-2 border-transparent",
-                                )}
-                                onClick={() => { handlePlaylistSelected(e.id) }}
-                            >
-                                <p className="line-clamp-1">{e.name}</p>
-                                <p className="line-clamp-1 text-xs brightness-90">{`${e.songs.length} item(s)`}</p>
-                            </div>
-                        ))}
+                        {playlists.map((e) => {
+                            return selectedSongPath == "*" ? <ManagedPlaylistItem key={e.id} pid={e.id} pname={e.name} plength={e.songs.length} /> :
+                                <div
+                                    key={e.id}
+                                    className={cn(
+                                        "relative p-2 gap-2 w-full flex flex-row overflow-clip jutify-start items-center rounded-lg font-bold text-white transition ease-out duration-200 select-none brightness-110 bg-pink-500/10 hover:bg-pink-500/25 cursor-pointer",
+                                        playlistsHavingSong.includes(e.id) ? "bg-linear-90 from-pink-950 to-pink-900 brightness-150 hover:brightness-200 border-2 border-pink-400"
+                                            : "brightness-110 border-2 border-transparent",
+                                    )}
+                                    onClick={() => { handlePlaylistSelected(e.id) }}
+                                >
+                                    <p className="line-clamp-1">{e.name}</p>
+                                    <p className="min-w-max line-clamp-1 opacity-75 text-xs brightness-90">{`${e.songs.length} item(s)`}</p>
+                                </div>
+                        })}
                     </div>
                 </div>
             </div>
