@@ -1,6 +1,6 @@
 {
   "name": "gayer",
-  "version": "0.9.6",
+  "version": "0.9.7",
   "description": "Gleamy Audio Player",
   "main": "./out/main/index.js",
   "author": "esteakacrownie",
@@ -16,7 +16,8 @@
     "build:unpack": "npm ci && npm run build && electron-builder --dir",
     "build:win": "npm ci && npm run build && electron-builder --win",
     "build:mac": "npm ci && npm run build && electron-builder --mac",
-    "build:linux": "npm ci && npm run build && electron-builder --linux"
+    "build:linux": "npm ci && npm run build && electron-builder --linux",
+    "build:release": "npm ci && npm run build && electron-builder --linux --win"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",

@@ -17,7 +17,7 @@ import appDirs from 'appdirsjs'
 import { app, shell, BrowserWindow, ipcMain, protocol, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { readFile, writeFile, stat, readdir } from 'fs/promises'
+import { readFile, writeFile, stat, readdir, mkdir } from 'fs/promises'
 import { windowStateKeeper } from "./stateKeeper"
 
 const appName = 'com.integraxseras.Gayer'
@@ -133,6 +133,7 @@ app.whenReady().then(() => {
 	})
 	ipcMain.handle('writeConfigFile', async (event, args) => {
 		try {
+			await mkdir(dirs.data, { recursive: true })
 			return await writeFile(join(dirs.data, args.path), args.content, { encoding: 'utf8' })
 		} catch (error) {
 			console.log(error)

@@ -30,13 +30,35 @@ dmg:
 linux:
   target:
     - AppImage
-    - snap
+    # - snap
     - deb
+    # - flatpak
   maintainer: https://github.com/esteakacrownie
   category: Audio
 appImage:
   artifactName: ${name}-${version}.${ext}
+# flatpak:
+#   runtime: org.freedesktop.Platform
+#   sdk: org.freedesktop.Sdk
+#   runtimeVersion: "25.08"
+#   branch: stable
+#   finishArgs:
+#     # Display
+#     - "--socket=x11"
+#     - "--socket=wayland"
+#     - "--share=ipc"              # shared memory with X11 compositor
+#     # Network
+#     - "--share=network"
+#     # Filesystem
+#     - "--filesystem=host"        # allow user to select music from anywhere on their machine
+#     # Desktop integration
+#     - "--talk-name=org.freedesktop.Notifications"
+#     # Electron-specific
+#     - "--device=dri"             # GPU access
+#     - "--socket=pulseaudio"      # audio
+#     # System notifications with libnotify
+#     - "--talk-name=org.freedesktop.Notifications"
 npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates
+# publish:
+#   provider: generic
+#   url: https://example.com/auto-updates
