@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 import { cn } from "@sglara/cn"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { getSongName, randomStr } from "../utils"
+import { getSongName, randomStr, toAllowedPlaylistName } from "../utils"
 import { IoAdd, IoChevronBack } from "react-icons/io5"
 import { PiPlaylistFill } from "react-icons/pi"
 import { IoMdClose } from "react-icons/io"
@@ -104,13 +104,13 @@ export default function PlaylistDialog() {
                     <div className="relative w-full flex flex-row items-center gap-2">
                         <input
                             className={cn(
-                                "outline-none w-full bg-pink-950/50 border-2 border-pink-300 shadow-[0_0_5px_5px] not-focus:shadow-transparent rounded-lg p-2 transition ease-out duration-200",
+                                "outline-none w-full bg-pink-950/50 border-2 border-pink-300 shadow-[0_0_5px_5px] not-focus:shadow-transparent rounded-lg p-2 pr-8 transition ease-out duration-200",
                                 "focus:shadow-pink-400/40",
                             )}
                             type="text"
                             placeholder=" +  Create new Playlist"
                             value={newPlaylistName}
-                            onChange={(e) => setNewPlaylistName(e.target.value)}
+                            onChange={(e) => setNewPlaylistName(toAllowedPlaylistName(e.target.value))}
                             onKeyDown={(e) => { if (e.key == "Enter") createNewPlaylist() }}
                         />
                         <button

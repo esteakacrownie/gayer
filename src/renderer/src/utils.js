@@ -28,6 +28,10 @@ export const getSongName = (p) => {
 	return res
 }
 
+export const toAllowedPlaylistName = (n) => {
+	return n.replaceAll("/", "").replaceAll("\\", "")
+}
+
 export const randomStr = (length, chars) => {
 	let res = ""
 	while (res.length < length) {

@@ -36,6 +36,7 @@ import {
 	getSortedFilesAt,
 	isMusicFile,
 	shuffleArray,
+	toAllowedPlaylistName,
 	toSearchString,
 } from "../utils"
 import SongElement from "./SongElement"
@@ -406,7 +407,7 @@ export default function LibraryTab() {
 			<div className="relative w-full flex flex-row">
 				<input
 					className={cn(
-						"outline-none w-full bg-pink-950/50 border-2 border-pink-300 shadow-[0_0_5px_5px] not-focus:shadow-transparent rounded-lg p-2 transition ease-out duration-200",
+						"outline-none w-full bg-pink-950/50 border-2 border-pink-300 shadow-[0_0_5px_5px] not-focus:shadow-transparent rounded-lg p-2 pr-8 transition ease-out duration-200",
 						"focus:shadow-pink-400/40",
 					)}
 					type="text"
@@ -564,7 +565,7 @@ export default function LibraryTab() {
 																spellCheck={false}
 																value={selectedPlaylistRename}
 																placeholder="New name for playlist"
-																onChange={(e) => setSelectedPlaylistRename(e.target.value)}
+																onChange={(e) => setSelectedPlaylistRename(toAllowedPlaylistName(e.target.value))}
 																onKeyDown={(e) => {
 																	if (e.key == "Enter") {
 																		renameSelectedPlaylist()
