@@ -133,7 +133,9 @@ export default function PlaylistDialog() {
                     </div>
                     <div className="h-full w-full flex flex-col items-center justify-start gap-2 overflow-y-scroll">
                         {playlists.map((e) => {
-                            return selectedSongPath == "*" ? <ManagedPlaylistItem key={e.id} pid={e.id} pname={e.name} plength={e.songs.length} /> :
+                            return selectedSongPath == "*" ?
+                                <ManagedPlaylistItem key={e.id} pid={e.id} pname={e.name} plength={e.songs.length} />
+                                :
                                 <div
                                     key={e.id}
                                     className={cn(
