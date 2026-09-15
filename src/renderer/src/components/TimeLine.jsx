@@ -55,11 +55,12 @@ export default function TimeLine() {
 		}
 	}, [currentTrack, autoplay, setIsPlaying, loopMode, queue, audioRef, currentTrackChangeTracker])
 
-	const updateMediasessionTime = useCallback(() => {
+	const updateMediasessionTime = useCallback((d = undefined) => {
 		const currentTime = audioRef.current?.currentTime || 0.0
+		const computedDuration = d ?? (duration || 0)
 		navigator.mediaSession.setPositionState({
-			duration: duration || 0,
-			position: Math.min(currentTime || 0, duration || 0),
+			duration: computedDuration,
+			position: Math.min(currentTime || 0, computedDuration),
 			playbackRate: 1.0
 		})
 	}, [audioRef, duration])
@@ -80,7 +81,7 @@ export default function TimeLine() {
 
 	const updateAudioData = useCallback(() => {
 		setDuration(audioRef.current.duration)
-		updateMediasessionTime()
+		updateMediasessionTime(audioRef.current.duration)
 	}, [audioRef, duration, setDuration, updateMediasessionTime])
 
 	const seekPosition = useCallback(
