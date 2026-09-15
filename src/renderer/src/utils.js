@@ -16,10 +16,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 export const getSongName = (p) => {
 	// console.log(p)
 	if (!p) return ""
-	let splits = p.split('/')
+	let splits = p.split("/")
 	const filename = splits[splits.length - 1]
-	let res = ''
-	splits = filename.split('.')
+	let res = ""
+	splits = filename.split(".")
 	splits.map((elt, idx) => {
 		if (idx + 1 < splits.length) {
 			res += elt
@@ -41,11 +41,11 @@ export const randomStr = (length, chars) => {
 }
 
 export const toSearchString = (s) => {
-	return s.toLocaleLowerCase().replaceAll(' ', '')
+	return s.toLocaleLowerCase().replaceAll(" ", "")
 }
 
 export const getSortedFiles = async (f) => {
-	const t = await window.electron.ipcRenderer.invoke('sort_created', {
+	const t = await window.electron.ipcRenderer.invoke("sort_created", {
 		files: f.filter((elt) => isMusicFile(elt))
 	})
 	// [ { Hybrid Theory/Pushing Me Away - Linkin Park.mp3: {mtimeMs: 1787336506, atimeMs: 648301400} } ]
@@ -63,7 +63,7 @@ export const getSortedFiles = async (f) => {
 }
 
 export const getSortedFilesAt = async (p, filterMusicFiles = false) => {
-	const t = await window.electron.ipcRenderer.invoke('ls_sorted', {
+	const t = await window.electron.ipcRenderer.invoke("ls_sorted", {
 		path: p
 	})
 	// [ { Hybrid Theory/Pushing Me Away - Linkin Park.mp3: {mtimeMs: 1787336506, atimeMs: 648301400} } ]
@@ -92,7 +92,7 @@ export const handleDropped = async (paths) => {
 	})
 	// console.log(`songs: ${songs}`)
 	for (let v of potentialDirs) {
-		const isdir = await window.electron.ipcRenderer.invoke('is_dir', {
+		const isdir = await window.electron.ipcRenderer.invoke("is_dir", {
 			path: v
 		})
 		if (isdir) {
@@ -101,7 +101,7 @@ export const handleDropped = async (paths) => {
 		}
 	}
 	for (let elt of dirs) {
-		const ls = await window.electron.ipcRenderer.invoke('ls', { path: elt })
+		const ls = await window.electron.ipcRenderer.invoke("ls", { path: elt })
 		// console.log(ls)
 		const { songs: files } = await getSortedFiles(ls)
 		songs = [...songs, ...files]
@@ -111,7 +111,7 @@ export const handleDropped = async (paths) => {
 
 export const getFolderName = (p) => {
 	if (!p) return
-	let splits = p.split('/')
+	let splits = p.split("/")
 	if (isMusicFile(p)) {
 		return splits[splits.length - 2]
 	} else {
@@ -120,7 +120,17 @@ export const getFolderName = (p) => {
 }
 
 export const isMusicFile = (file) => {
-	const formats = ['.mp3', '.wav', '.ogg', '.flac']
+	const formats = [".mp3", ".wav", ".ogg", ".flac"]
+	for (let i of formats) {
+		if (file.endsWith(i)) {
+			return true
+		}
+	}
+	return false
+}
+
+export const isPlaylistFile = (file) => {
+	const formats = [".m3u", ".m3u8"]
 	for (let i of formats) {
 		if (file.endsWith(i)) {
 			return true
@@ -141,11 +151,43 @@ export const toMinsSecs = (t) => {
 	let hours = parseInt(t / 3600)
 	let mins = parseInt(t / 60) - hours * 60
 	let secs = parseInt(t) - (mins * 60 + hours * 3600)
-	return `${hours > 0 ? parseInt(hours).toString().padStart(2, '0') + ':' : ''}${parseInt(mins)
+	return `${hours > 0 ? parseInt(hours).toString().padStart(2, "0") + ":" : ""}${parseInt(mins)
 		.toString()
-		.padStart(hours > 0 ? 2 : 1, '0')}:${parseInt(secs).toString().padStart(2, '0')}`
+		.padStart(hours > 0 ? 2 : 1, "0")}:${parseInt(secs).toString().padStart(2, "0")}`
 }
 
 export const uiVolume2Volume = (v) => {
 	return parseFloat(Math.pow(v, 1.5))
+}
+
+export const downloadTextFile = (file, text) => {
+
+	const element = document.createElement("a")
+	element.setAttribute("href",
+		"data:text/plain;charset=utf-8,"
+		+ encodeURIComponent(text))
+	element.setAttribute("download", file)
+	document.body.appendChild(element)
+	element.click();
+
+	document.body.removeChild(element)
+}
+
+export const generateM3U8 = (playlist) => {
+	let res = "#EXTM3U\n#PLAYLIST:"
+	res += playlist.name || "My Playlist"
+	res += "\n"
+	for (let i of playlist.songs) {
+		res += i + "\n"
+	}
+	return res
+}
+
+export const parseM3U8 = (str) => {
+	if (!str || !(typeof str == "string")) return
+	const playlist = { id: "", name: "", songs: [] }
+	const parts = str.split("\n")
+	playlist.name = (parts.filter((e) => e.startsWith("#PLAYLIST:"))[0] || "My Playlist").replace("#PLAYLIST:", "")
+	playlist.songs = parts.filter((e) => !e.startsWith("#") && isMusicFile(e))
+	return playlist
 }

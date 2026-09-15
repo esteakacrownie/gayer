@@ -17,13 +17,12 @@ import { cn } from "@sglara/cn"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import PowerSavingButton from "./PowerSavingButton"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { IoMdCheckmark, IoMdClose } from "react-icons/io"
+import { IoMdClose } from "react-icons/io"
 import { GiCompactDisc } from "react-icons/gi"
 import { IoMusicalNotes, IoChevronBack } from "react-icons/io5"
 import { FaFolder } from "react-icons/fa6"
 import {
 	MdAddCircleOutline,
-	MdDelete,
 	MdInfoOutline,
 	MdPlayArrow,
 	MdPlaylistAdd,
@@ -36,7 +35,6 @@ import {
 	getSortedFilesAt,
 	isMusicFile,
 	shuffleArray,
-	toAllowedPlaylistName,
 	toSearchString,
 } from "../utils"
 import SongElement from "./SongElement"
@@ -44,6 +42,10 @@ import { usePlayerStore } from "../stores/usePlayerStore"
 import PlaylistElement from "./PlaylistElement"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { Reorder } from "motion/react"
+import usePlaylistUtils from "../hooks/usePlaylistsUtils"
+import PlaylistExportButton from "./PlaylistExportButton"
+import PlaylistRenamer from "./PlaylistRenamer"
+import DeletePlaylistButton from "./DeletePlaylistButton"
 
 export default function LibraryTab() {
 	const maxLength = 25
@@ -63,32 +65,12 @@ export default function LibraryTab() {
 	} = useSettingsStore()
 
 	const { playlists, setPlaylists, setSelectedSongPath } = usePlaylistsStore()
+	const { getPlaylistFromId, idInPlaylists } = usePlaylistUtils()
 
 	const [search, setSearch] = useState("")
 	const [songs, setSongs] = useState([])
 	const [songsScrollPage, setSongsScrollPage] = useState(1)
 	const [albumSongsCount, setAlbumSongsCount] = useState([])
-	const [editingSelectedPlaylistName, setEditingSelectedPlaylistName] = useState(false)
-	const [selectedPlaylistRename, setSelectedPlaylistRename] = useState("")
-	const [deletingSelectedPlaylist, setDeletingSelectedPlaylist] = useState(false)
-
-	useEffect(() => {
-		setEditingSelectedPlaylistName(false)
-		if (selectedPlaylist && idInPlaylists(selectedPlaylist)) {
-			setSelectedPlaylistRename(getPlaylistFromId(selectedPlaylist).name)
-		} else {
-			setSelectedPlaylistRename("")
-		}
-	}, [selectedPlaylist])
-
-	useEffect(() => {
-		if (deletingSelectedPlaylist) {
-			const i = setTimeout(() => { setDeletingSelectedPlaylist(false) }, 2000)
-			return () => {
-				clearTimeout(i)
-			}
-		}
-	}, [deletingSelectedPlaylist])
 
 	const clearSearch = () => {
 		setSearch("")
@@ -164,39 +146,6 @@ export default function LibraryTab() {
 			),
 		)
 	}, [songs, search])
-
-	const getPlaylistFromId = useCallback((id) => {
-		return playlists.filter((e) => e.id == id)[0] ?? { id: "id", name: "", songs: [] }
-	}, [playlists])
-
-	const idInPlaylists = useCallback((id) => {
-		return playlists.map((e) => e.id).includes(id)
-	}, [playlists])
-
-	const removeSelectedPlaylist = useCallback(() => {
-		if (deletingSelectedPlaylist) {
-			setPlaylists(playlists.filter((e) => e.id != selectedPlaylist))
-			setSelectedPlaylist("")
-			setDeletingSelectedPlaylist(false)
-		} else {
-			setDeletingSelectedPlaylist(true)
-		}
-	}, [playlists, selectedPlaylist, deletingSelectedPlaylist])
-
-	const renameSelectedPlaylist = useCallback(() => {
-		if (!idInPlaylists(selectedPlaylist)) return
-		let index = 0
-		for (let i of playlists) {
-			if (i.id == selectedPlaylist) {
-				break
-			}
-			index += 1
-		}
-		const p = playlists.filter((e) => e.id != selectedPlaylist)
-		p.splice(index, 0, { ...getPlaylistFromId(selectedPlaylist), name: selectedPlaylistRename })
-		setPlaylists(p)
-		setEditingSelectedPlaylistName(false)
-	}, [selectedPlaylist, selectedPlaylistRename, playlists, setPlaylists, idInPlaylists, getPlaylistFromId])
 
 	const hasAlbumFilteredSong = useCallback((elt) => {
 		for (let s of filteredSongs) {
@@ -424,8 +373,9 @@ export default function LibraryTab() {
 			</div>
 			{/* Filter bar */}
 			<div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
+
 				<button
-					className="flex flex-row relative gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+					className="flex flex-row relative gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer shadow-purple-400/35 shadow-[0_0_3px_3px]"
 					onClick={() => {
 						setLibraryFilter("locations")
 					}}
@@ -434,7 +384,7 @@ export default function LibraryTab() {
 					<span>Locations</span>
 					<div
 						className={cn(
-							"absolute w-full h-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
+							"absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
 							libraryFilter == "locations"
 								? "bg-pink-300 outline-2 outline-pink-300"
 								: "",
@@ -442,7 +392,7 @@ export default function LibraryTab() {
 					/>
 				</button>
 				<button
-					className="flex flex-row relative gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+					className="flex flex-row relative gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]"
 					onClick={() => {
 						setLibraryFilter("playlists")
 					}}
@@ -451,7 +401,7 @@ export default function LibraryTab() {
 					<span>Playlists</span>
 					<div
 						className={cn(
-							"absolute w-full h-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
+							"absolute w-full h-full rounded-full  top-0 left-0 mix-blend-multiply transition ease-out duration-200",
 							libraryFilter == "playlists"
 								? "bg-pink-300 outline-2 outline-pink-300"
 								: "",
@@ -459,7 +409,7 @@ export default function LibraryTab() {
 					/>
 				</button>
 				<button
-					className="flex flex-row relative gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+					className="flex flex-row relative gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]"
 					onClick={() => {
 						setLibraryFilter("songs")
 					}}
@@ -468,7 +418,7 @@ export default function LibraryTab() {
 					<span>Songs</span>
 					<div
 						className={cn(
-							"absolute w-full h-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
+							"absolute w-full h-full rounded-full  top-0 left-0 mix-blend-multiply transition ease-out duration-200",
 							libraryFilter == "songs"
 								? "bg-pink-300 outline-2 outline-pink-300"
 								: "",
@@ -505,15 +455,8 @@ export default function LibraryTab() {
 				)}
 				{libraryFilter == "playlists" && selectedPlaylist && idInPlaylists(selectedPlaylist) && (
 					<>
-						<button
-							className="flex flex-row gap-1 justify-center items-center text-red-300 bg-red-950 rounded-full border border-red-300 py-1 px-2 transition ease-out duration-200 hover:bg-red-900 cursor-pointer"
-							onClick={removeSelectedPlaylist}
-						>
-							<MdDelete size={16} />
-							<span>
-								{deletingSelectedPlaylist ? "Confirm deletion ?" : "Delete Playlist"}
-							</span>
-						</button>
+						<PlaylistExportButton />
+						<DeletePlaylistButton pid={selectedPlaylist} />
 					</>
 				)}
 			</div>
@@ -555,38 +498,7 @@ export default function LibraryTab() {
 												<IoChevronBack size={20} />
 											</div>
 											<div className="w-full flex flex-col text-center justify-center">
-												{editingSelectedPlaylistName ? (
-													<>
-														<div className="flex flex-row w-full gap-2">
-															<input
-																className="w-full text-lg font-bold text-center border border-slate-400 outline-none rounded-lg bg-slate-800"
-																type="text"
-																autoFocus
-																spellCheck={false}
-																value={selectedPlaylistRename}
-																placeholder="New name for playlist"
-																onChange={(e) => setSelectedPlaylistRename(toAllowedPlaylistName(e.target.value))}
-																onKeyDown={(e) => {
-																	if (e.key == "Enter") {
-																		renameSelectedPlaylist()
-																	} else if (e.key == "Escape") {
-																		setEditingSelectedPlaylistName(false)
-																	}
-																}}
-															/>
-															<div className="bg-green-900 hover:bg-green-800 text-green-300 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-green-300 cursor-pointer transition ease-out duration-200" onClick={renameSelectedPlaylist}>
-																<IoMdCheckmark size={20} />
-															</div>
-														</div>
-													</>
-												) : (
-													<>
-														<p
-															className="mr-12 font-bold text-lg line-clamp-1 cursor-pointer translate-y-px"
-															onClick={() => setEditingSelectedPlaylistName(true)}>{getPlaylistFromId(selectedPlaylist).name}
-														</p>
-													</>
-												)}
+												<PlaylistRenamer />
 												<p className="font-bold text-xs line-clamp-1 mr-12">{selectedPlaylistSongs.length > 0 ? selectedPlaylistSongs.length : ""}&nbsp;{selectedPlaylistSongs.length > 0 ? "item(s)" : ""}</p>
 											</div>
 										</div>

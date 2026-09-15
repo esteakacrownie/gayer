@@ -121,9 +121,19 @@ app.whenReady().then(() => {
 	})
 
 	// main process calls from renderer
-	ipcMain.handle('readConfigFile', async (event, args) => {
+	ipcMain.handle('read_configfile', async (event, args) => {
 		try {
 			return await readFile(join(dirs.data, args.path), {
+				encoding: 'utf8'
+			})
+		} catch (error) {
+			console.log(error)
+			return error
+		}
+	})
+	ipcMain.handle('read_file', async (event, args) => {
+		try {
+			return await readFile(args.path, {
 				encoding: 'utf8'
 			})
 		} catch (error) {
@@ -194,6 +204,15 @@ app.whenReady().then(() => {
 		try {
 			const folder = await dialog.showOpenDialog({ title: "Select a directory", properties: ["openDirectory"] })
 			return folder.filePaths[0]
+		} catch (error) {
+			console.log(error)
+			return error
+		}
+	})
+	ipcMain.handle('open_file', async (event, args) => {
+		try {
+			const file = await dialog.showOpenDialog({ title: "Select a file", properties: ["openFile"] })
+			return file.filePaths[0]
 		} catch (error) {
 			console.log(error)
 			return error

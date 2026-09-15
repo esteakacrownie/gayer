@@ -14,7 +14,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import { useState } from "react"
-import { FaFolder } from "react-icons/fa6"
 import SongFilesList from "./SongFilesList"
 import { getFolderName, getSortedFilesAt, shuffleArray } from "../utils"
 import { useFilesStore } from "../stores/useFilesStore"
@@ -28,6 +27,7 @@ import {
 import PowerSavingButton from "./PowerSavingButton"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import { cn } from "@sglara/cn"
+import { IoIosFolderOpen } from "react-icons/io"
 
 export default function FileSystemTab() {
 	const { setFiles } = useFilesStore()
@@ -125,7 +125,7 @@ export default function FileSystemTab() {
 				className="flex flex-row items-center px-2 bg-slate-800 hover:bg-slate-700 border-2 border-slate-400 rounded-lg cursor-pointer transition ease-out duration-200"
 				onClick={openFolder}
 			>
-				<FaFolder size={16} />
+				<IoIosFolderOpen size={20} />
 				<span className="m-2 line-clamp-1">
 					{getFolderName(folder ?? "") || "Choose directory..."}
 				</span>

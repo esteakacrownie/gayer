@@ -16,33 +16,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 import { cn } from "@sglara/cn"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { getSongName, randomStr, toAllowedPlaylistName } from "../utils"
+import { getSongName, isPlaylistFile, parseM3U8, randomStr, toAllowedPlaylistName } from "../utils"
 import { IoAdd, IoChevronBack } from "react-icons/io5"
-import { PiPlaylistFill } from "react-icons/pi"
-import { IoMdClose } from "react-icons/io"
+import { IoIosFolderOpen, IoMdClose } from "react-icons/io"
 import ManagedPlaylistItem from "./ManagedPlaylistItem"
+import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 
 export default function PlaylistDialog() {
 
     const { selectedSongPath, setSelectedSongPath, playlists, setPlaylists } = usePlaylistsStore()
 
-    const generateUnusedID = useCallback(() => {
-        const IDs = playlists.map((e) => e.id)
-        const chars = "abcdefghijklmnopqrstuvwxyz".split("")
-        let res = randomStr(16, chars)
-        while (IDs.includes(res)) {
-            res = randomStr(16, chars)
-        }
-        return res
-    }, [playlists])
+    const { generateUnusedID } = usePlaylistUtils()
 
+    const [newPlaylistName, setNewPlaylistName] = useState("")
 
     const playlistsHavingSong = useMemo(() => {
         // console.log(playlists)
         return playlists.filter((e) => e.songs.includes(selectedSongPath)).map((e) => e.id)
     }, [selectedSongPath, playlists])
 
-    const [newPlaylistName, setNewPlaylistName] = useState("")
+    const importNewPlaylist = useCallback(async () => {
+        const path = await window.electron.ipcRenderer.invoke("open_file", {})
+        console.log(path)
+        if (!isPlaylistFile(path)) return
+        const file = await window.electron.ipcRenderer
+            .invoke("read_file", { path })
+        const parsed = parseM3U8(file)
+        console.log(parsed)
+        setPlaylists([...playlists, { ...parsed, id: generateUnusedID() }])
+    }, [generateUnusedID, playlists, setPlaylists])
 
     const createNewPlaylist = useCallback(() => {
         if (!newPlaylistName.trim()) return
@@ -99,7 +101,13 @@ export default function PlaylistDialog() {
                         >
                             <IoChevronBack size={20} />
                         </div>
-                        <p className="w-full text-center pr-12 line-clamp-1">{selectedSongPath == "*" ? "Playlists" : getSongName(selectedSongPath)}</p>
+                        <p className="w-full text-center line-clamp-1">{selectedSongPath == "*" ? "Playlists" : getSongName(selectedSongPath)}</p>
+                        <div
+                            className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200"
+                            onClick={importNewPlaylist}
+                        >
+                            <IoIosFolderOpen size={20} />
+                        </div>
                     </div>
                     <div className="relative w-full flex flex-row items-center gap-2">
                         <input

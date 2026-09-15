@@ -38,7 +38,7 @@ function App() {
 		// load settings
 		let shufflePlayOnStart = false
 		window.electron.ipcRenderer
-			.invoke("readConfigFile", { path: "settings.json" })
+			.invoke("read_configfile", { path: "settings.json" })
 			.then((d) => {
 				const settings = JSON.parse(d)
 				// console.log(settings)
@@ -48,12 +48,12 @@ function App() {
 			.catch(() => console.log("Couldn't parse settings file"))
 		// load cache
 		window.electron.ipcRenderer
-			.invoke("readConfigFile", { path: "cache.json" })
+			.invoke("read_configfile", { path: "cache.json" })
 			.then((d) => setCache(JSON.parse(d)))
 			.catch(() => console.log("Couldn't parse cache file"))
 		// load playlists
 		window.electron.ipcRenderer
-			.invoke("readConfigFile", { path: "playlists.json" })
+			.invoke("read_configfile", { path: "playlists.json" })
 			.then((d) => {
 				// console.log(d)
 				const parsed = JSON.parse(d)

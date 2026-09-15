@@ -117,9 +117,13 @@ export default function TimeLine() {
 				audioRef.current.play()
 			}
 			playAnimationRef.current = requestAnimationFrame(repeat)
+
 		} else {
 			audioRef.current?.pause()
 			// cancelAnimationFrame(playAnimationRef.current)
+		}
+		return () => {
+			cancelAnimationFrame(playAnimationRef.current)
 		}
 	}, [isPlaying, audioRef, repeat, currentTrackChangeTracker])
 
