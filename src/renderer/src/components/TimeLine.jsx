@@ -116,12 +116,12 @@ export default function TimeLine() {
 			if (audioRef.current) {
 				audioRef.current.play()
 			}
-			playAnimationRef.current = requestAnimationFrame(repeat)
 
 		} else {
 			audioRef.current?.pause()
 			// cancelAnimationFrame(playAnimationRef.current)
 		}
+		playAnimationRef.current = requestAnimationFrame(repeat)
 		return () => {
 			cancelAnimationFrame(playAnimationRef.current)
 		}
