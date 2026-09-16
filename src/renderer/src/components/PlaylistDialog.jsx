@@ -37,12 +37,12 @@ export default function PlaylistDialog() {
 
     const importNewPlaylist = useCallback(async () => {
         const path = await window.electron.ipcRenderer.invoke("open_file", {})
-        console.log(path)
+        // console.log(path)
         if (!isPlaylistFile(path)) return
         const file = await window.electron.ipcRenderer
             .invoke("read_file", { path })
         const parsed = parseM3U8(file)
-        console.log(parsed)
+        // console.log(parsed)
         setPlaylists([...playlists, { ...parsed, id: generateUnusedID() }])
     }, [generateUnusedID, playlists, setPlaylists])
 

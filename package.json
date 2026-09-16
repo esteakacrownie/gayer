@@ -1,10 +1,12 @@
 {
   "name": "gayer",
   "version": "1.0.0",
-  "description": "Gleamy Audio Player",
+  "description": "Pretty audio and music player with support for custom playlists, cover art fetching, playlist import/export, and more",
   "main": "./out/main/index.js",
   "author": "esteakacrownie",
-  "homepage": "https://electron-vite.org",
+  "license": "GPL-3.0-only",
+  "url": "https://github.com/esteakacrownie/gayer",
+  "homepage": "https://github.com/esteakacrownie/gayer",
   "desktopName": "com.integraxseras.Gayer",
   "scripts": {
     "format": "prettier --write .",
@@ -32,6 +34,8 @@
     "react-dom": "^19.1.0",
     "react-hotkeys-hook": "^5.3.3",
     "react-icons": "^5.7.0",
+    "ytdlp-nodejs": "^3.4.5",
+    "ytmusic-api": "^5.3.1",
     "zustic": "^1.2.4"
   },
   "devDependencies": {
@@ -50,5 +54,14 @@
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "vite": "^7.2.6"
-  }
+  },
+  "keywords": [
+    "gleamy",
+    "audio",
+    "music",
+    "player",
+    "playlist",
+    "album",
+    "song"
+  ]
 }

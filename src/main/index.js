@@ -19,57 +19,66 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { readFile, writeFile, stat, readdir, mkdir } from 'fs/promises'
 import { windowStateKeeper } from "./stateKeeper"
+import YTMusic from "ytmusic-api"
+import { YtDlp, helpers } from 'ytdlp-nodejs'
 
+// global references
 const appName = 'com.integraxseras.Gayer'
 
 const dirs = appDirs({ appName })
 
+let YTM_INITIALIZED = false
+let YTDLP_READY = false
+let ytdlp
+const ytmusic = new YTMusic()
 
-async function createWindow() {
+const initYTModules = async () => {
 
-	const mainWindowStateKeeper = await windowStateKeeper('gayer');
+	ytdlp = new YtDlp()
 
-	// Create the browser window.
-	const mainWindow = new BrowserWindow({
-		name: "gayer",
-		x: mainWindowStateKeeper.x,
-		y: mainWindowStateKeeper.y,
-		width: mainWindowStateKeeper.width,
-		height: mainWindowStateKeeper.height,
-		minWidth: 432,
-		minHeight: 432,
-		show: false,
-		autoHideMenuBar: true,
-		webPreferences: {
-			preload: join(__dirname, '../preload/index.js'),
-			sandbox: false,
-			webSecurity: false,
-			allowRunningInsecureContent: true,
+	// update binary
+	const result = await ytdlp.updateYtDlpAsync({ outDir: join(dirs.data, "modules", "ytdlp") })
+	let missing_ffmpeg = false
+
+	try {
+		const ffmpeg_modules_contents = await readdir(join(dirs.data, "modules", "ffmpeg"))
+		// console.log(ffmpeg_modules_contents)
+		let has_ffmpeg = false
+		let has_ffprobe = false
+		for (let f of ffmpeg_modules_contents) {
+			if (f.toLocaleLowerCase().includes("ffmpeg")) {
+				has_ffmpeg = true
+			}
+			if (f.toLocaleLowerCase().includes("ffprobe")) {
+				has_ffprobe = true
+			}
 		}
-	})
-
-	// Track window state
-	mainWindowStateKeeper.track(mainWindow);
-
-
-	mainWindow.on('ready-to-show', () => {
-		mainWindow.show()
-	})
-
-	mainWindow.webContents.setWindowOpenHandler((details) => {
-		shell.openExternal(details.url)
-		return { action: 'deny' }
-	})
-
-	// HMR for renderer base on electron-vite cli.
-	// Load the remote URL for development or the local html file for production.
-	if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-		mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
-	} else {
-		mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+		if (!has_ffmpeg || !has_ffprobe) {
+			missing_ffmpeg = true
+		}
+	} catch (error) {
+		missing_ffmpeg = true
 	}
+
+	if (missing_ffmpeg) {
+		const test = await helpers.downloadFFmpeg(join(dirs.data, "modules", "ffmpeg"))
+	}
+
+	let ffmpeg_binary_name = "ffmpeg"
+	for (let f of (await readdir(join(dirs.data, "modules", "ffmpeg")))) {
+		if (f.toLocaleLowerCase().includes("ffmpeg")) {
+			ffmpeg_binary_name = f
+		}
+	}
+
+	ytdlp = new YtDlp({
+		binaryPath: result.binaryPath,
+		ffmpegPath: join(dirs.data, "modules", "ffmpeg", ffmpeg_binary_name)
+	})
 }
 
+
+// utils
 const sortedFileList = async (files, base) => {
 	const res = []
 	for (let file of files) {
@@ -81,6 +90,8 @@ const sortedFileList = async (files, base) => {
 	return res
 }
 
+
+// protocol for handling playing local files
 protocol.registerSchemesAsPrivileged([
 	{
 		scheme: 'file',
@@ -105,6 +116,60 @@ protocol.registerSchemesAsPrivileged([
 		}
 	}
 ])
+
+
+// requirements for youtube features
+initYTModules().then(() => YTDLP_READY = true)
+ytmusic.initialize().then(() => YTM_INITIALIZED = true)
+
+
+// setup and build app window
+async function createWindow() {
+
+	const mainWindowStateKeeper = await windowStateKeeper('gayer');
+
+	// Create the browser window.
+	const mainWindow = new BrowserWindow({
+		name: "gayer",
+		x: mainWindowStateKeeper.x,
+		y: mainWindowStateKeeper.y,
+		width: mainWindowStateKeeper.width,
+		height: mainWindowStateKeeper.height,
+		minWidth: 432,
+		minHeight: 432,
+		show: false,
+		autoHideMenuBar: true,
+		webPreferences: {
+			preload: join(__dirname, '../preload/index.js'),
+			sandbox: false,
+			webSecurity: false,
+			// allowRunningInsecureContent: true,
+		}
+	})
+
+	// Track window state
+	mainWindowStateKeeper.track(mainWindow)
+
+	// mainWindow.removeMenu()
+
+	mainWindow.on('ready-to-show', () => {
+		mainWindow.show()
+	})
+
+	mainWindow.webContents.setWindowOpenHandler((details) => {
+		shell.openExternal(details.url)
+		return { action: 'deny' }
+	})
+
+	// HMR for renderer base on electron-vite cli.
+	// Load the remote URL for development or the local html file for production.
+	if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+		mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+	} else {
+		mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+	}
+}
+
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -226,6 +291,54 @@ app.whenReady().then(() => {
 			return error
 		}
 	})
+	ipcMain.handle('ytm_search', async (event, args) => {
+		try {
+			if (!YTM_INITIALIZED) {
+				return []
+			}
+			const results = await ytmusic.search(args.query)
+			return results
+		} catch (error) {
+			console.log(error)
+			return error
+		}
+	})
+	ipcMain.handle('ytm_songs', async (event, args) => {
+		try {
+			if (!YTM_INITIALIZED) {
+				return []
+			}
+			const results = await ytmusic.searchSongs(args.query)
+			return results
+		} catch (error) {
+			console.log(error)
+			return error
+		}
+	})
+	ipcMain.handle('ytm_albums', async (event, args) => {
+		try {
+			if (!YTM_INITIALIZED) {
+				return []
+			}
+			const results = await ytmusic.searchAlbums(args.query)
+			return results
+		} catch (error) {
+			console.log(error)
+			return error
+		}
+	})
+	ipcMain.handle('ytm_artists', async (event, args) => {
+		try {
+			if (!YTM_INITIALIZED) {
+				return []
+			}
+			const results = await ytmusic.searchArtists(args.query)
+			return results
+		} catch (error) {
+			console.log(error)
+			return error
+		}
+	})
 
 	createWindow()
 
@@ -235,6 +348,7 @@ app.whenReady().then(() => {
 		if (BrowserWindow.getAllWindows().length === 0) createWindow()
 	})
 })
+
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

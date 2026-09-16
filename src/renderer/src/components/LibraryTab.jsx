@@ -41,11 +41,11 @@ import SongElement from "./SongElement"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import PlaylistElement from "./PlaylistElement"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
-import { Reorder } from "motion/react"
 import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 import PlaylistExportButton from "./PlaylistExportButton"
-import PlaylistRenamer from "./PlaylistRenamer"
 import DeletePlaylistButton from "./DeletePlaylistButton"
+import EditablePlaylistSongList from "./EditablePlaylistSongList"
+import { useLibraryStore } from "../stores/useLibraryStore"
 
 export default function LibraryTab() {
 	const maxLength = 25
@@ -64,13 +64,14 @@ export default function LibraryTab() {
 		shufflePlay,
 	} = useSettingsStore()
 
-	const { playlists, setPlaylists, setSelectedSongPath } = usePlaylistsStore()
+	const { playlists, setSelectedSongPath } = usePlaylistsStore()
 	const { getPlaylistFromId, idInPlaylists } = usePlaylistUtils()
+	const { search, setSearch } = useLibraryStore()
 
-	const [search, setSearch] = useState("")
 	const [songs, setSongs] = useState([])
 	const [songsScrollPage, setSongsScrollPage] = useState(1)
 	const [albumSongsCount, setAlbumSongsCount] = useState([])
+	const [selectedAlbumSongs, setSelectedAlbumSongs] = useState([]) // unfiltered
 
 	const clearSearch = () => {
 		setSearch("")
@@ -84,20 +85,18 @@ export default function LibraryTab() {
 		}
 	}
 
-	const [selectedPlaylistSongs, setSelectedPlaylistSongs] = useState([])
-
 	useEffect(() => {
 		if (selectedPlaylist) {
-			fetchSelectedPlaylistSongs()
+			fetchSelectedAlbumSongs()
 		} else {
-			setSelectedPlaylistSongs([])
+			setSelectedAlbumSongs([])
 		}
 	}, [selectedPlaylist, songs, playlists])
 
 	const handlePlayAll = () => {
 		if (filteredSongs.length == 0) return
 		let list =
-			libraryFilter == "songs" ? filteredSongs : (selectedPlaylist ? filteredSelectedPlaylistSongs : filteredAlbumsSongs)
+			libraryFilter == "songs" ? filteredSongs : (selectedPlaylist ? filteredSelectedAlbumSongs : filteredAlbumsSongs)
 		// console.log(list)
 		if (shufflePlay) {
 			list = shuffleArray(list)
@@ -111,7 +110,7 @@ export default function LibraryTab() {
 	const handleAddAllToQueue = () => {
 		if (filteredSongs.length == 0) return
 		let list =
-			libraryFilter == "songs" ? filteredSongs : (selectedPlaylist ? filteredSelectedPlaylistSongs : filteredAlbumsSongs)
+			libraryFilter == "songs" ? filteredSongs : (selectedPlaylist ? filteredSelectedAlbumSongs : filteredAlbumsSongs)
 		if (shufflePlay) {
 			list = shuffleArray(list)
 		}
@@ -190,15 +189,15 @@ export default function LibraryTab() {
 		return allSongs
 	}, [playlists, libraryLocations])
 
-	const fetchSelectedPlaylistSongs = useCallback(async () => {
-		if (idInPlaylists(selectedPlaylist)) {
-			setSelectedPlaylistSongs(getPlaylistFromId(selectedPlaylist).songs)
-		} else {
+	const fetchSelectedAlbumSongs = useCallback(async () => {
+		if (!idInPlaylists(selectedPlaylist)) {
 			const { songs: album_sorted } = await getSortedFilesAt(selectedPlaylist)
 			// console.log(album_sorted)
-			setSelectedPlaylistSongs(album_sorted.filter((s) => isMusicFile(s)))
+			setSelectedAlbumSongs(album_sorted.filter((s) => isMusicFile(s)))
+		} else {
+			setSelectedAlbumSongs([])
 		}
-	}, [selectedPlaylist, playlists, idInPlaylists, setSelectedPlaylistSongs])
+	}, [selectedPlaylist, playlists, idInPlaylists, setSelectedAlbumSongs])
 
 	// [ {AlbumPath: song count} ]
 	const fetchAlbumsSongsCount = useCallback(async () => {
@@ -220,19 +219,10 @@ export default function LibraryTab() {
 		return counts
 	}, [libraryLocations])
 
-	const updateSelectedPlaylistSongsOrder = useCallback((v) => {
-		const elt = { ...getPlaylistFromId(selectedPlaylist) }
-		elt.songs = v
-		let index = 0
-		const p = playlists.filter((e, idx) => { const res = e.id != selectedPlaylist; if (res) { index = idx }; return res })
-		p.splice(index, 0, elt)
-		setPlaylists(p)
-	}, [playlists, setPlaylists, selectedPlaylist])
-
 	const refreshLocationsContent = () => {
 		setSongs([])
 		setAlbumSongsCount([])
-		setSelectedPlaylistSongs([])
+		setSelectedAlbumSongs([])
 		fetchSongs()
 			.then((s) => setSongs(s))
 			.catch(() => console.log("Couldn't fetch songs"))
@@ -281,13 +271,13 @@ export default function LibraryTab() {
 		return [...new Set(list)]
 	}, [songs, playlists, filteredAlbums, filteredPlaylists, search])
 
-	const filteredSelectedPlaylistSongs = useMemo(() => {
-		return selectedPlaylistSongs.filter((n) =>
+	const filteredSelectedAlbumSongs = useMemo(() => {
+		return selectedAlbumSongs.filter((n) =>
 			toSearchString(`${getFolderName(n)} - ${getSongName(n)}`).includes(
 				toSearchString(search),
 			),
 		)
-	}, [selectedPlaylistSongs, search])
+	}, [selectedAlbumSongs, search])
 
 	useEffect(() => {
 		refreshLocationsContent()
@@ -491,39 +481,7 @@ export default function LibraryTab() {
 					{selectedPlaylist ? (
 						<>	{/* Is a custom playlist ? */}
 							{idInPlaylists(selectedPlaylist) ? (
-								<>
-									<div className="flex flex-col gap-2">
-										<div className="flex flex-row justify-start gap-2">
-											<div className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200" onClick={() => setSelectedPlaylist("")}>
-												<IoChevronBack size={20} />
-											</div>
-											<div className="w-full flex flex-col text-center justify-center">
-												<PlaylistRenamer />
-												<p className="font-bold text-xs line-clamp-1 mr-12">{selectedPlaylistSongs.length > 0 ? selectedPlaylistSongs.length : ""}&nbsp;{selectedPlaylistSongs.length > 0 ? "item(s)" : ""}</p>
-											</div>
-										</div>
-										<Reorder.Group
-											values={selectedPlaylistSongs}
-											onReorder={updateSelectedPlaylistSongsOrder}
-											className="flex flex-col gap-2 relative"
-										>
-											{filteredSelectedPlaylistSongs
-												.map((elt) => (
-
-													<Reorder.Item
-														key={elt}
-														value={elt}
-														transition={{
-															duration: 0.2,
-														}}
-													>
-														<SongElement key={elt} song={elt} isGrabbable={true} />
-													</Reorder.Item>
-
-												))}
-										</Reorder.Group>
-									</div>
-								</>
+								<EditablePlaylistSongList songs={selectedAlbumSongs} filteredSongs={filteredSelectedAlbumSongs} />
 							) : (
 								<>
 									<div className="flex flex-col gap-2">
@@ -533,11 +491,11 @@ export default function LibraryTab() {
 											</div>
 											<div className="w-full flex flex-col pr-12 text-center justify-center">
 												<p className="font-bold text-lg line-clamp-1 translate-y-px">{getFolderName(selectedPlaylist)}</p>
-												<p className="font-bold text-xs line-clamp-1">{selectedPlaylistSongs.length > 0 ? selectedPlaylistSongs.length : ""}&nbsp;{selectedPlaylistSongs.length > 0 ? "item(s)" : ""}</p>
+												<p className="font-bold text-xs line-clamp-1">{selectedAlbumSongs.length > 0 ? selectedAlbumSongs.length : ""}&nbsp;{selectedAlbumSongs.length > 0 ? "item(s)" : ""}</p>
 											</div>
 										</div>
 										<div className="flex flex-col gap-2">
-											{filteredSelectedPlaylistSongs
+											{filteredSelectedAlbumSongs
 												.map((elt) => (
 													<SongElement key={elt} song={elt} />
 												))}
