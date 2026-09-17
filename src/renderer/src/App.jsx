@@ -27,6 +27,7 @@ import LibraryTab from "./components/LibraryTab"
 import { useCacheStore } from "./stores/useCacheStore"
 import PlaylistDialog from "./components/PlaylistDialog"
 import { usePlaylistsStore } from "./stores/usePlaylistsStore"
+import DownloadTab from "./components/DownloadTab"
 
 function App() {
 	const { setQueue, setAutoplay, setNextAction } = usePlayerStore()
@@ -81,6 +82,7 @@ function App() {
 	return (
 		<main className="text-white from-slate-950 to-pink-950 to-150% via-slate-950 via-30% bg-linear-180 flex flex-col justify-start overflow-y-scroll h-screen gap-4 pt-20 select-none">
 			<div className="px-8 flex flex-col w-full h-full justify-start gap-4 max-w-200 mx-auto">
+				<DownloadTab />
 				<LibraryTab />
 				<QueueTab />
 				<FileSystemTab />

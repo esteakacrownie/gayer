@@ -57,10 +57,10 @@ export default function TimeLine() {
 
 	const updateMediasessionTime = useCallback((d = undefined) => {
 		const currentTime = audioRef.current?.currentTime || 0.0
-		const computedDuration = d ?? (duration || 0)
+		const computedDuration = d || (duration || 0.0)
 		navigator.mediaSession.setPositionState({
-			duration: computedDuration,
-			position: Math.min(currentTime || 0, computedDuration),
+			duration: isNaN(computedDuration) ? 0.0 : computedDuration,
+			position: Math.min(currentTime, computedDuration) || 0.0,
 			playbackRate: 1.0
 		})
 	}, [audioRef, duration])
@@ -73,11 +73,11 @@ export default function TimeLine() {
 
 		const maxWidth = progressRef.current?.getBoundingClientRect().width || 0
 		if (progressContentRef.current) {
-			progressContentRef.current.style.width = `${parseInt(maxWidth * (p / duration))}px`
+			progressContentRef.current.style.width = `${currentTrack ? (parseInt(maxWidth * (p / duration))) : 0}px`
 		}
 
 		updateMediasessionTime()
-	}, [audioRef, progressRef, progressContentRef, positionLabel, duration, updateMediasessionTime])
+	}, [audioRef, progressRef, progressContentRef, positionLabel, duration, updateMediasessionTime, currentTrack])
 
 	const updateAudioData = useCallback(() => {
 		setDuration(audioRef.current.duration)
@@ -100,7 +100,7 @@ export default function TimeLine() {
 
 		navigator.mediaSession.setPositionState({
 			duration: duration || 0,
-			position: Math.min(currentTime || 0, duration || 0),
+			position: Math.min(currentTime || 0.0, duration || 0.0) || 0.0,
 			playbackRate: 1.0
 		})
 		navigator.mediaSession.setActionHandler('seekto', (d) => {

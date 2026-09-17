@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { getSongName, isPlaylistFile, parseM3U8, randomStr, toAllowedPlaylistName } from "../utils"
 import { IoAdd, IoChevronBack } from "react-icons/io5"
 import { IoIosFolderOpen, IoMdClose } from "react-icons/io"
+import { PiPlaylist } from "react-icons/pi"
 import ManagedPlaylistItem from "./ManagedPlaylistItem"
 import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 
@@ -90,7 +91,7 @@ export default function PlaylistDialog() {
 
     return (
         <div
-            className={cn("fixed z-10 top-0 w-screen h-screen mx-auto pt-18 pb-34", selectedSongPath ? "flex flex-col justify-center items-center" : "hidden pointer-events-none")}
+            className={cn("fixed z-10 top-0 w-screen h-screen mx-auto pt-18 pb-34 backdrop-blur-sm backdrop-brightness-75", selectedSongPath ? "flex flex-col justify-center items-center" : "hidden pointer-events-none")}
         >
             <div className="px-8 flex flex-col w-full h-full justify-start gap-4 max-w-200 mx-auto">
                 <div className="p-4 flex flex-col gap-2 justify-start items-center w-full  h-full from-slate-950 to-pink-700 from-[-25%] to-150% bg-linear-180 rounded-2xl border-2 border-pink-300 shadow-pink-400/40 shadow-[0_0_7px_7px]">
@@ -101,7 +102,16 @@ export default function PlaylistDialog() {
                         >
                             <IoChevronBack size={20} />
                         </div>
-                        <p className="w-full text-center line-clamp-1">{selectedSongPath == "*" ? "Playlists" : getSongName(selectedSongPath)}</p>
+                        {selectedSongPath == "*" ?
+                            <>
+                                <div className="font-bold flex flex-row justify-center items-center gap-2">
+                                    <PiPlaylist size={24} />
+                                    <p className="w-full text-center line-clamp-1">Playlists</p>
+                                </div>
+                            </>
+                            :
+                            <p className="w-full text-center line-clamp-1">{getSongName(selectedSongPath)}</p>
+                        }
                         <div
                             className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200"
                             onClick={importNewPlaylist}

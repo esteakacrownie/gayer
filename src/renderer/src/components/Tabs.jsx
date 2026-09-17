@@ -16,57 +16,60 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 import { cn } from "@sglara/cn"
 import { FaListUl } from "react-icons/fa"
 import { MdLibraryMusic, MdLibraryAdd } from "react-icons/md"
+import { IoMdCloudDownload } from "react-icons/io";
 import { useSettingsStore } from "../stores/useSettingsStore"
 
 export default function Tabs() {
 	const { tab, setTab } = useSettingsStore()
 
+	const getTabIcon = (t) => {
+		let res = <></>
+		switch (t) {
+			case "download":
+				res = <IoMdCloudDownload size={24} />
+				break;
+			case "library":
+				res = <MdLibraryMusic size={24} />
+				break;
+			case "queue":
+				res = <FaListUl size={20} />
+				break;
+			case "filesystem":
+				res = <MdLibraryAdd size={24} />
+				break;
+			default:
+				break;
+		}
+		return res
+	}
+
 	return (
-		<div className="fixed w-full top-0 flex flex-col justify-center p-4">
-			<ul className="w-full flex flex-row gap-2">
-				<li
-					onClick={() => setTab("library")}
-					className={cn(
-						"w-full flex flex-row items-center font-bold text-center select-none cursor-pointer -hue-rotate-15 rounded-lg p-2 transition ease-out duration-200 border-2 border-pink-300/80 shadow-[0_0_5px_5px] shadow-pink-400/40",
-						tab == "library"
-							? "bg-pink-700/90 hover:bg-pink-600/90"
-							: "bg-pink-950/90 contrast-125 hover:bg-pink-900 shadow-pink-300/10",
-					)}
-				>
-					<div>
-						<MdLibraryMusic size={24} />
-					</div>
-					<span className="w-full">Library</span>
-				</li>
-				<li
-					onClick={() => setTab("queue")}
-					className={cn(
-						"w-full flex flex-row items-center font-bold text-center select-none cursor-pointer -hue-rotate-15 rounded-lg p-2 transition ease-out duration-200 border-2 border-pink-300/80 shadow-[0_0_5px_5px] shadow-pink-400/40",
-						tab == "queue"
-							? "bg-pink-700/90 hover:bg-pink-600/90"
-							: "bg-pink-950/90 contrast-125 hover:bg-pink-900 shadow-pink-300/10",
-					)}
-				>
-					<div>
-						<FaListUl size={20} />
-					</div>
-					<span className="w-full">Queue</span>
-				</li>
-				<li
-					onClick={() => setTab("filesystem")}
-					className={cn(
-						"w-full flex flex-row items-center font-bold text-center select-none cursor-pointer -hue-rotate-15 rounded-lg p-2 transition ease-out duration-200 border-2 border-pink-300/80 shadow-[0_0_5px_5px] shadow-pink-400/40",
-						tab == "filesystem"
-							? "bg-pink-700/90 hover:bg-pink-600/90"
-							: "bg-pink-950/90 contrast-125 hover:bg-pink-900 shadow-pink-300/10",
-					)}
-				>
-					<div>
-						<MdLibraryAdd size={24} />
-					</div>
-					<span className="w-full">FileSystem</span>
-				</li>
+		<div className="fixed w-full top-0 flex flex-col justify-center bg-black/70 backdrop-blur-2xl border-b-2 border-pink-300/50">
+			<ul className="w-full flex flex-row bg-purple-950/35 -my-px">
+				{["download", "library", "queue", "filesystem"].map((e, i) => (
+					<li className="w-full bg-pink-700/20" key={i} onClick={() => setTab(e)}>
+						<Tab tabName={e} tab={tab} icon={getTabIcon(e)} />
+					</li>
+				))}
 			</ul>
+		</div>
+	)
+}
+
+function Tab({ tab, tabName, icon }) {
+	return (
+		<div
+			className={cn(
+				"w-full flex flex-col gap-1 border-b-2 border-transparent items-center font-bold text-center select-none cursor-pointer -hue-rotate-15 p-2 transition ease-out duration-350 via-10% bg-linear-0 to-transparent to-110%",
+				tab == tabName
+					? "border-pink-200 from-pink-500/70 via-pink-500/40"
+					: "hover:from-pink-400/15 hover:border-pink-300/15",
+			)}
+		>
+			<div className="h-6 flex flex-row justify-center items-center">
+				{icon}
+			</div>
+			<span className="w-full text-xs">{tabName[0].toUpperCase() + tabName.slice(1)}</span>
 		</div>
 	)
 }
