@@ -71,7 +71,7 @@ export default function DownloadTab() {
         if (result) {
             setForceRefreshLocationsTracker(forceRefreshLocationsTracker + 1)
         }
-    }, [downloadLocation, forceRefreshLocationsTracker, setForceRefreshLocationsTracker, searchSongsResults])
+    }, [downloadLocation, forceRefreshLocationsTracker, setForceRefreshLocationsTracker])
 
     const deleteSong = useCallback(async (songElt) => {
         if (!downloadLocation || !songElt.name) return
@@ -86,7 +86,7 @@ export default function DownloadTab() {
         if (result) {
             setForceRefreshLocationsTracker(forceRefreshLocationsTracker + 1)
         }
-    }, [queuedSongsDelete])
+    }, [queuedSongsDelete, downloadLocation])
 
     const fetchSongsResults = async (q) => {
         const res = await window.electron.ipcRenderer.invoke("ytm_songs", { query: q })
