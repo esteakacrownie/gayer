@@ -189,6 +189,7 @@ export default function DownloadTab() {
                         "focus:shadow-pink-400/40",
                     )}
                     type="text"
+                    spellCheck={false}
                     placeholder="Search for artists, songs, albums..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}

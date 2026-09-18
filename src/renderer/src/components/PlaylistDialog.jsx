@@ -153,6 +153,7 @@ export default function PlaylistDialog() {
                                 "focus:shadow-pink-400/40",
                             )}
                             type="text"
+                            spellCheck={false}
                             placeholder=" +  Create new Playlist"
                             value={newPlaylistName}
                             onChange={(e) => setNewPlaylistName(toAllowedPlaylistName(e.target.value))}

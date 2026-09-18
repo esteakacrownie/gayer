@@ -387,11 +387,11 @@ app.whenReady().then(() => {
 			if (!YTDLP_READY) {
 				return false
 			}
-			// args : url, destination, title, artist
+			// args : url, destination, artist
 			await createYTDownloader()
 				.downloadAsync("https://www.youtube.com/playlist?list=" + args.url, {
 					format: { filter: 'audioonly', quality: "0", type: "mp3" },
-					output: join(args.destination, `${args.title} - ${args.artist}.mp3`),
+					output: join(args.destination, `%(title)s - ${args.artist}.mp3`),
 					// onProgress: (p) => console.log(`${p.percentage_str}`),
 				})
 			return true

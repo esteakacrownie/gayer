@@ -357,6 +357,7 @@ export default function LibraryTab() {
 						"focus:shadow-pink-400/40",
 					)}
 					type="text"
+					spellCheck={false}
 					placeholder="Search your Library"
 					value={search}
 					onChange={(e) => setSearch(e.target.value)}
