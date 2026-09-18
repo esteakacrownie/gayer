@@ -35,7 +35,7 @@ export default function PlaylistExportButton() {
 
     return (
         <button
-            className="flex flex-row gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer overflow-clip relative"
+            className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer overflow-clip"
             onClick={exportPlaylist}
         >
             <IoMdDownload size={16} />

@@ -18,6 +18,7 @@ import { app, shell, BrowserWindow, ipcMain, protocol, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { readFile, writeFile, stat, readdir, mkdir } from 'fs/promises'
+import { existsSync } from 'fs'
 import { windowStateKeeper } from "./stateKeeper"
 import YTMusic from "ytmusic-api"
 import { YtDlp, helpers } from 'ytdlp-nodejs'
@@ -29,15 +30,17 @@ const dirs = appDirs({ appName })
 
 let YTM_INITIALIZED = false
 let YTDLP_READY = false
-let ytdlp
+let ytdlpBinaryPath = ""
+let ffmpegBinaryName = "ffmpeg"
 const ytmusic = new YTMusic()
 
 const initYTModules = async () => {
 
-	ytdlp = new YtDlp()
+	let ytdlp = new YtDlp()
 
 	// update binary
 	const result = await ytdlp.updateYtDlpAsync({ outDir: join(dirs.data, "modules", "ytdlp") })
+	ytdlpBinaryPath = result.binaryPath
 	let missing_ffmpeg = false
 
 	try {
@@ -64,26 +67,29 @@ const initYTModules = async () => {
 		const test = await helpers.downloadFFmpeg(join(dirs.data, "modules", "ffmpeg"))
 	}
 
-	let ffmpeg_binary_name = "ffmpeg"
 	for (let f of (await readdir(join(dirs.data, "modules", "ffmpeg")))) {
 		if (f.toLocaleLowerCase().includes("ffmpeg")) {
-			ffmpeg_binary_name = f
+			ffmpegBinaryName = f
 		}
 	}
-
-	ytdlp = new YtDlp({
-		binaryPath: result.binaryPath,
-		ffmpegPath: join(dirs.data, "modules", "ffmpeg", ffmpeg_binary_name)
-	})
 }
 
+const createYTDownloader = () => {
+	return new YtDlp({
+		binaryPath: ytdlpBinaryPath,
+		ffmpegPath: join(dirs.data, "modules", "ffmpeg", ffmpegBinaryName)
+	})
+}
 
 // utils
 const sortedFileList = async (files, base) => {
 	const res = []
 	for (let file of files) {
-		const elt = {}
 		const path = join(base, file)
+		if (!existsSync(path)) {
+			continue
+		}
+		const elt = {}
 		elt[path] = { mtimeMs: (await stat(path)).mtimeMs, atimeMs: (await stat(path)).atimeMs }
 		res.push(elt)
 	}
@@ -217,6 +223,9 @@ app.whenReady().then(() => {
 	})
 	ipcMain.handle('ls_sorted', async (event, args) => {
 		try {
+			if (!existsSync(args.path)) {
+				return []
+			}
 			const files = await readdir(args.path)
 			return await sortedFileList(files, args.path)
 		} catch (error) {
@@ -283,6 +292,27 @@ app.whenReady().then(() => {
 			return error
 		}
 	})
+	ipcMain.handle('file_exists', async (event, args) => {
+		try {
+			const exists = existsSync(args.path)
+			return exists
+		} catch (error) {
+			console.log(error)
+			return false
+		}
+	})
+	ipcMain.handle('get_songs_exist', async (event, args) => {
+		try {
+			const result = {}
+			for (let song of Object.keys(args.songs)) {
+				result[song] = existsSync(args.songs[song])
+			}
+			return result
+		} catch (error) {
+			console.log(error)
+			return false
+		}
+	})
 	ipcMain.handle('get_args', async (event, args) => {
 		try {
 			return process.argv
@@ -337,6 +367,43 @@ app.whenReady().then(() => {
 		} catch (error) {
 			console.log(error)
 			return error
+		}
+	})
+	ipcMain.handle('download_album', async (event, args) => {
+		try {
+			if (!YTDLP_READY) {
+				return false
+			}
+			// args : url, destination, title, artist
+			await createYTDownloader()
+				.downloadAsync("https://www.youtube.com/playlist?list=" + args.url, {
+					format: { filter: 'audioonly', quality: "0", type: "mp3" },
+					output: join(args.destination, `${args.title} - ${args.artist}.mp3`),
+					onProgress: (p) => console.log(`${p.percentage_str}`),
+				})
+			return true
+		} catch (error) {
+			console.log(error)
+			return false
+		}
+	})
+	ipcMain.handle('download_song', async (event, args) => {
+		try {
+			if (!YTDLP_READY) {
+				return false
+			}
+			// args : url, path
+			await createYTDownloader()
+				.downloadAsync("https://youtube.com/watch?v=" + args.url, {
+					format: { filter: 'audioonly', quality: "0", type: "mp3" },
+					output: args.path,
+					onProgress: (p) => console.log(`${p.percentage_str}`),
+				})
+			return true
+		} catch (error) {
+			console.log(error)
+			console.log("https://youtube.com/watch?v=" + args.url)
+			return false
 		}
 	})
 

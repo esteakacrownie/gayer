@@ -22,6 +22,7 @@ import { IoIosFolderOpen, IoMdClose } from "react-icons/io"
 import { PiPlaylist } from "react-icons/pi"
 import ManagedPlaylistItem from "./ManagedPlaylistItem"
 import usePlaylistUtils from "../hooks/usePlaylistsUtils"
+import { motion } from "motion/react"
 
 export default function PlaylistDialog() {
 
@@ -39,7 +40,7 @@ export default function PlaylistDialog() {
     const importNewPlaylist = useCallback(async () => {
         const path = await window.electron.ipcRenderer.invoke("open_file", {})
         // console.log(path)
-        if (!isPlaylistFile(path)) return
+        if (!path || !isPlaylistFile(path)) return
         const file = await window.electron.ipcRenderer
             .invoke("read_file", { path })
         const parsed = parseM3U8(file)
@@ -91,33 +92,59 @@ export default function PlaylistDialog() {
 
     return (
         <div
-            className={cn("fixed z-10 top-0 w-screen h-screen mx-auto pt-18 pb-34 backdrop-blur-sm backdrop-brightness-75", selectedSongPath ? "flex flex-col justify-center items-center" : "hidden pointer-events-none")}
+            className={cn("fixed z-10 top-0 w-screen h-screen mx-auto pt-4 pb-34 backdrop-blur-sm backdrop-brightness-75", selectedSongPath ? "flex flex-col justify-center items-center" : "hidden pointer-events-none")}
         >
-            <div className="px-8 flex flex-col w-full h-full justify-start gap-4 max-w-200 mx-auto">
+            <div className="px-4 flex flex-col w-full h-full justify-start gap-4 max-w-200 mx-auto">
                 <div className="p-4 flex flex-col gap-2 justify-start items-center w-full  h-full from-slate-950 to-pink-700 from-[-25%] to-150% bg-linear-180 rounded-2xl border-2 border-pink-300 shadow-pink-400/40 shadow-[0_0_7px_7px]">
                     <div className="flex flex-row w-full items-center justify-between gap-2">
-                        <div
+                        <motion.div
                             className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200"
                             onClick={() => setSelectedSongPath("")}
+                            initial={{
+                                scale: 1.0
+                            }}
+                            animate={{
+                                scale: 1.0
+                            }}
+                            whileTap={{
+                                scale: 0.8
+                            }}
+                            transition={{
+                                duration: 0.025,
+                                ease: "easeOut"
+                            }}
                         >
                             <IoChevronBack size={20} />
-                        </div>
+                        </motion.div>
                         {selectedSongPath == "*" ?
                             <>
-                                <div className="font-bold flex flex-row justify-center items-center gap-2">
-                                    <PiPlaylist size={24} />
+                                <div className="font-bold flex flex-row justify-center items-center gap-1">
+                                    <PiPlaylist size={30} />
                                     <p className="w-full text-center line-clamp-1">Playlists</p>
                                 </div>
                             </>
                             :
                             <p className="w-full text-center line-clamp-1">{getSongName(selectedSongPath)}</p>
                         }
-                        <div
+                        <motion.div
                             className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200"
                             onClick={importNewPlaylist}
+                            initial={{
+                                scale: 1.0
+                            }}
+                            animate={{
+                                scale: 1.0
+                            }}
+                            whileTap={{
+                                scale: 0.8
+                            }}
+                            transition={{
+                                duration: 0.025,
+                                ease: "easeOut"
+                            }}
                         >
                             <IoIosFolderOpen size={20} />
-                        </div>
+                        </motion.div>
                     </div>
                     <div className="relative w-full flex flex-row items-center gap-2">
                         <input
@@ -137,9 +164,25 @@ export default function PlaylistDialog() {
                         >
                             <IoMdClose size={20} />
                         </button>
-                        <div className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200" onClick={createNewPlaylist}>
+                        <motion.div
+                            className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200"
+                            onClick={createNewPlaylist}
+                            initial={{
+                                scale: 1.0
+                            }}
+                            animate={{
+                                scale: 1.0
+                            }}
+                            whileTap={{
+                                scale: 0.8
+                            }}
+                            transition={{
+                                duration: 0.025,
+                                ease: "easeOut"
+                            }}
+                        >
                             <IoAdd size={20} />
-                        </div>
+                        </motion.div>
                     </div>
                     <div className="h-full w-full flex flex-col items-center justify-start gap-2 overflow-y-scroll">
                         {playlists.map((e) => {

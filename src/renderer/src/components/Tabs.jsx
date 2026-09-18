@@ -45,7 +45,7 @@ export default function Tabs() {
 
 	return (
 		<div className="fixed w-full top-0 flex flex-col justify-center bg-black/70 backdrop-blur-2xl border-b-2 border-pink-300/50">
-			<ul className="w-full flex flex-row bg-purple-950/35 -my-px">
+			<ul className="w-full flex flex-row bg-purple-950/20 -my-px">
 				{["download", "library", "queue", "filesystem"].map((e, i) => (
 					<li className="w-full bg-pink-700/20" key={i} onClick={() => setTab(e)}>
 						<Tab tabName={e} tab={tab} icon={getTabIcon(e)} />

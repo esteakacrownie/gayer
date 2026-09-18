@@ -33,6 +33,8 @@ export const useSettingsStore = create(
     tab: 'queue',
     libraryLocations: [],
     libraryFilter: 'locations',
+    downloadLocation: "",
+    forceRefreshLocationsTracker: 0,
     setVolume: (v) => set((state) => ({ volume: v })),
     setDefaultAutoplay: (v) => set((state) => ({ defaultAutoplay: v })),
     setShufflePlay: (v) => set((state) => ({ shufflePlay: v })),
@@ -41,6 +43,8 @@ export const useSettingsStore = create(
     setPowerSavingMode: (v) => set((state) => ({ powerSavingMode: v })),
     setLibraryLocations: (v) => set((state) => ({ libraryLocations: v })),
     setLibraryFilter: (v) => set((state) => ({ libraryFilter: v })),
+    setDownloadLocation: (v) => set((state) => ({ downloadLocation: v })),
+    setForceRefreshLocationsTracker: (v) => set((state) => ({ forceRefreshLocationsTracker: v })),
     setSettings: (s) =>
       set((state) => ({
         volume: s.volume ?? 0.45,
@@ -50,7 +54,9 @@ export const useSettingsStore = create(
         loopMode: s.loopMode ?? 'off',
         tab: s.tab ?? 'queue',
         libraryLocations: s.libraryLocations ?? [],
-        libraryFilter: s.libraryFilter ?? 'playlists'
+        libraryFilter: s.libraryFilter ?? 'playlists',
+        downloadLocation: s.downloadLocation ?? "",
+        forceRefreshLocationsTracker: 0
       }))
   }),
   [persist()]

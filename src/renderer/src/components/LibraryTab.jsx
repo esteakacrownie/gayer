@@ -46,6 +46,7 @@ import PlaylistExportButton from "./PlaylistExportButton"
 import DeletePlaylistButton from "./DeletePlaylistButton"
 import EditablePlaylistSongList from "./EditablePlaylistSongList"
 import { useLibraryStore } from "../stores/useLibraryStore"
+import { motion } from "motion/react"
 
 export default function LibraryTab() {
 	const maxLength = 25
@@ -58,6 +59,7 @@ export default function LibraryTab() {
 		setLibraryFilter,
 		libraryLocations,
 		setLibraryLocations,
+		forceRefreshLocationsTracker,
 		powerSavingMode,
 		tab,
 		setTab,
@@ -281,7 +283,7 @@ export default function LibraryTab() {
 
 	useEffect(() => {
 		refreshLocationsContent()
-	}, [libraryLocations])
+	}, [libraryLocations, forceRefreshLocationsTracker])
 
 	useEffect(() => {
 		setSongsScrollPage(
@@ -303,7 +305,7 @@ export default function LibraryTab() {
 			{/* Main toolbar */}
 			<div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
 				<button
-					className="flex flex-row relative gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+					className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
 					onClick={refreshLocationsContent}
 				>
 					<MdRefresh size={16} />
@@ -313,7 +315,7 @@ export default function LibraryTab() {
 				{libraryFilter == "locations" && (
 					<>
 						<button
-							className="flex flex-row relative gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+							className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
 							onClick={addLocation}
 						>
 							<MdAddCircleOutline size={16} />
@@ -325,14 +327,14 @@ export default function LibraryTab() {
 				{libraryFilter != "locations" && (
 					<>
 						<button
-							className="flex flex-row gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+							className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
 							onClick={handleAddAllToQueue}
 						>
 							<MdPlaylistAdd size={16} />
 							<span>Add all to queue</span>
 						</button>
 						<button
-							className="flex flex-row gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+							className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
 							onClick={handlePlayAll}
 						>
 							<MdPlayArrow size={16} />
@@ -365,7 +367,7 @@ export default function LibraryTab() {
 			<div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
 
 				<button
-					className="flex flex-row relative gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer shadow-purple-400/35 shadow-[0_0_3px_3px]"
+					className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer shadow-purple-400/35 shadow-[0_0_3px_3px]"
 					onClick={() => {
 						setLibraryFilter("locations")
 					}}
@@ -382,7 +384,7 @@ export default function LibraryTab() {
 					/>
 				</button>
 				<button
-					className="flex flex-row relative gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]"
+					className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]"
 					onClick={() => {
 						setLibraryFilter("playlists")
 					}}
@@ -399,7 +401,7 @@ export default function LibraryTab() {
 					/>
 				</button>
 				<button
-					className="flex flex-row relative gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]"
+					className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]"
 					onClick={() => {
 						setLibraryFilter("songs")
 					}}
@@ -417,7 +419,7 @@ export default function LibraryTab() {
 				</button>
 				{libraryFilter != "locations" && !(libraryFilter == "playlists" && selectedPlaylist) && (
 					<>
-						<div className="flex flex-row gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700">
+						<div className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700">
 							<MdInfoOutline size={16} />
 							<span>
 								{libraryFilter == "songs"
@@ -431,7 +433,7 @@ export default function LibraryTab() {
 				{libraryFilter == "playlists" && (
 					<>
 						<button
-							className="flex flex-row relative gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+							className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
 							onClick={() => {
 								setSelectedSongPath("*")
 							}}
@@ -486,9 +488,25 @@ export default function LibraryTab() {
 								<>
 									<div className="flex flex-col gap-2">
 										<div className="flex flex-row justify-start gap-2">
-											<div className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200" onClick={() => setSelectedPlaylist("")}>
+											<motion.div
+												className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200"
+												onClick={() => setSelectedPlaylist("")}
+												initial={{
+													scale: 1.0
+												}}
+												animate={{
+													scale: 1.0
+												}}
+												whileTap={{
+													scale: 0.8
+												}}
+												transition={{
+													duration: 0.025,
+													ease: "easeOut"
+												}}
+											>
 												<IoChevronBack size={20} />
-											</div>
+											</motion.div>
 											<div className="w-full flex flex-col pr-12 text-center justify-center">
 												<p className="font-bold text-lg line-clamp-1 translate-y-px">{getFolderName(selectedPlaylist)}</p>
 												<p className="font-bold text-xs line-clamp-1">{selectedAlbumSongs.length > 0 ? selectedAlbumSongs.length : ""}&nbsp;{selectedAlbumSongs.length > 0 ? "item(s)" : ""}</p>
