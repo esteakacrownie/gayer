@@ -162,7 +162,13 @@ export default function TimeLine() {
 		<>
 			<div className="relative w-full select-none">
 				{currentTrack && (
-					<audio ref={audioRef} onLoadedMetadata={updateAudioData} onSeeked={updateMediasessionTime} onEnded={handleTrackEnded} src={currentTrack ? `file://${currentTrack}` : null} />
+					<audio
+						ref={audioRef}
+						onLoadedMetadata={updateAudioData}
+						onSeeked={updateMediasessionTime}
+						onEnded={handleTrackEnded}
+						src={currentTrack ? `file://${currentTrack}` : null}
+					/>
 				)}
 				<div
 					ref={progressRef}

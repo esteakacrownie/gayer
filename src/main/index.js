@@ -392,7 +392,7 @@ app.whenReady().then(() => {
 				.downloadAsync("https://www.youtube.com/playlist?list=" + args.url, {
 					format: { filter: 'audioonly', quality: "0", type: "mp3" },
 					output: join(args.destination, `${args.title} - ${args.artist}.mp3`),
-					onProgress: (p) => console.log(`${p.percentage_str}`),
+					// onProgress: (p) => console.log(`${p.percentage_str}`),
 				})
 			return true
 		} catch (error) {
@@ -410,7 +410,7 @@ app.whenReady().then(() => {
 				.downloadAsync("https://youtube.com/watch?v=" + args.url, {
 					format: { filter: 'audioonly', quality: "0", type: "mp3" },
 					output: args.path,
-					onProgress: (p) => console.log(`${p.percentage_str}`),
+					// onProgress: (p) => console.log(`${p.percentage_str}`),
 				})
 			return true
 		} catch (error) {

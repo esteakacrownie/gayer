@@ -23,10 +23,12 @@ import { getFolderName } from "../utils"
 import { motion } from "motion/react"
 import { IoMusicalNotes, IoPeopleSharp } from "react-icons/io5";
 import { GiCompactDisc } from "react-icons/gi";
+import { usePlayerStore } from "../stores/usePlayerStore";
 
 export default function DownloadTab() {
 
     const { tab, libraryLocations, downloadLocation, setDownloadLocation, forceRefreshLocationsTracker, setForceRefreshLocationsTracker } = useSettingsStore()
+    const { currentTrack, queue, setQueue, history, setHistory, setNextAction, setCurrentTrack } = usePlayerStore()
     const [search, setSearch] = useState("")
     const [searchSongsResults, setSearchSongsResults] = useState([])
     const [searchAlbumsResults, setSearchAlbumsResults] = useState([])
@@ -87,8 +89,16 @@ export default function DownloadTab() {
         setQueuedSongsDelete((p) => p.filter((e) => e != songElt.videoId))
         if (result) {
             setForceRefreshLocationsTracker(forceRefreshLocationsTracker + 1)
+            // console.log(path)
+            // console.log(queue)
+            setHistory([...history.filter((e) => e != path)])
+            setQueue([...queue.filter((e) => e != path)])
+            if (currentTrack == path) {
+                setNextAction("setNext")
+                setCurrentTrack("")
+            }
         }
-    }, [queuedSongsDelete, downloadLocation, forceRefreshLocationsTracker])
+    }, [queuedSongsDelete, downloadLocation, forceRefreshLocationsTracker, currentTrack, queue, history])
 
     const fetchSongsResults = async (q) => {
         const res = await window.electron.ipcRenderer.invoke("ytm_songs", { query: q })
