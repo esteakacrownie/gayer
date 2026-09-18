@@ -34,6 +34,8 @@ export const useSettingsStore = create(
     libraryLocations: [],
     libraryFilter: 'locations',
     downloadLocation: "",
+    playlistsFolded: false,
+    albumsFolded: false,
     forceRefreshLocationsTracker: 0,
     setVolume: (v) => set((state) => ({ volume: v })),
     setDefaultAutoplay: (v) => set((state) => ({ defaultAutoplay: v })),
@@ -44,6 +46,8 @@ export const useSettingsStore = create(
     setLibraryLocations: (v) => set((state) => ({ libraryLocations: v })),
     setLibraryFilter: (v) => set((state) => ({ libraryFilter: v })),
     setDownloadLocation: (v) => set((state) => ({ downloadLocation: v })),
+    setPlaylistsFolded: (v) => set((state) => ({ playlistsFolded: v })),
+    setAlbumsFolded: (v) => set((state) => ({ albumsFolded: v })),
     setForceRefreshLocationsTracker: (v) => set((state) => ({ forceRefreshLocationsTracker: v })),
     setSettings: (s) =>
       set((state) => ({
@@ -56,6 +60,8 @@ export const useSettingsStore = create(
         libraryLocations: s.libraryLocations ?? [],
         libraryFilter: s.libraryFilter ?? 'playlists',
         downloadLocation: s.downloadLocation ?? "",
+        playlistsFolded: s.playlistsFolded ?? false,
+        albumsFolded: s.albumsFolded ?? false,
         forceRefreshLocationsTracker: 0
       }))
   }),

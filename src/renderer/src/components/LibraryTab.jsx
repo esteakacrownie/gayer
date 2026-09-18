@@ -17,7 +17,7 @@ import { cn } from "@sglara/cn"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import PowerSavingButton from "./PowerSavingButton"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { IoMdClose } from "react-icons/io"
+import { IoMdArrowDropdown, IoMdClose } from "react-icons/io"
 import { GiCompactDisc } from "react-icons/gi"
 import { IoMusicalNotes, IoChevronBack } from "react-icons/io5"
 import { FaFolder } from "react-icons/fa6"
@@ -47,6 +47,7 @@ import DeletePlaylistButton from "./DeletePlaylistButton"
 import EditablePlaylistSongList from "./EditablePlaylistSongList"
 import { useLibraryStore } from "../stores/useLibraryStore"
 import { motion } from "motion/react"
+import { PiPlaylist } from "react-icons/pi"
 
 export default function LibraryTab() {
 	const maxLength = 25
@@ -64,6 +65,10 @@ export default function LibraryTab() {
 		tab,
 		setTab,
 		shufflePlay,
+		playlistsFolded,
+		setPlaylistsFolded,
+		albumsFolded,
+		setAlbumsFolded
 	} = useSettingsStore()
 
 	const { playlists, setSelectedSongPath } = usePlaylistsStore()
@@ -524,10 +529,44 @@ export default function LibraryTab() {
 						</>
 					) : (
 						<div className="flex flex-col gap-2">
-							{filteredPlaylists.map((elt) => (
+							<div
+								className="flex flex-row items-center gap-2 cursor-pointer bg-pink-400/35 hover:bg-pink-400/50 px-2 py-1 rounded-lg transition ease-out duration-200"
+								onClick={() => setPlaylistsFolded(!playlistsFolded)}
+							>
+								<motion.div
+									initial={{
+										rotate: playlistsFolded ? "-90deg" : 0
+									}}
+									animate={{
+										rotate: playlistsFolded ? "-90deg" : 0
+									}}
+								>
+									<IoMdArrowDropdown size={24} />
+								</motion.div>
+								<PiPlaylist size={20} />
+								<span className="line-clamp-1 font-bold">Playlists</span>
+							</div>
+							{!playlistsFolded && filteredPlaylists.map((elt) => (
 								<PlaylistElement key={elt.id} playlist={elt.id} count={getPlaylistFromId(elt.id).songs.length} isPlaylist={true} />
 							))}
-							{filteredAlbums.map((elt) => (
+							<div
+								className="flex flex-row items-center gap-2 cursor-pointer bg-pink-400/35 hover:bg-pink-400/50 px-2 py-1 rounded-lg transition ease-out duration-200"
+								onClick={() => setAlbumsFolded(!albumsFolded)}
+							>
+								<motion.div
+									initial={{
+										rotate: albumsFolded ? "-90deg" : 0
+									}}
+									animate={{
+										rotate: albumsFolded ? "-90deg" : 0
+									}}
+								>
+									<IoMdArrowDropdown size={24} />
+								</motion.div>
+								<GiCompactDisc size={20} />
+								<span className="line-clamp-1 font-bold">Albums</span>
+							</div>
+							{!albumsFolded && filteredAlbums.map((elt) => (
 								<PlaylistElement key={elt.path} playlist={elt.path} count={elt.count} />
 							))}
 						</div>

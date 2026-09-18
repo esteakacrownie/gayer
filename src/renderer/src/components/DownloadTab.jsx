@@ -21,6 +21,8 @@ import { TbLoader2 } from "react-icons/tb";
 import PowerSavingButton from "./PowerSavingButton"
 import { getFolderName } from "../utils"
 import { motion } from "motion/react"
+import { IoMusicalNotes, IoPeopleSharp } from "react-icons/io5";
+import { GiCompactDisc } from "react-icons/gi";
 
 export default function DownloadTab() {
 
@@ -82,11 +84,11 @@ export default function DownloadTab() {
         const updated = {}
         updated[songElt.videoId] = exists
         setSongExistsDb((p) => ({ ...p, ...updated }))
-        setQueuedSongsDownload((p) => p.filter((e) => e != songElt.videoId))
+        setQueuedSongsDelete((p) => p.filter((e) => e != songElt.videoId))
         if (result) {
             setForceRefreshLocationsTracker(forceRefreshLocationsTracker + 1)
         }
-    }, [queuedSongsDelete, downloadLocation])
+    }, [queuedSongsDelete, downloadLocation, forceRefreshLocationsTracker])
 
     const fetchSongsResults = async (q) => {
         const res = await window.electron.ipcRenderer.invoke("ytm_songs", { query: q })
@@ -146,7 +148,8 @@ export default function DownloadTab() {
     if (tab != "download") return
 
     return (
-        <>{/* Main toolbar */}
+        <>
+            {/* Main toolbar */}
             <div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
                 <select
                     title="Select download location from registered Library locations"
@@ -187,6 +190,60 @@ export default function DownloadTab() {
                     <IoMdClose size={20} />
                 </button>
             </div>
+            {/* Filter bar */}
+            <div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
+                <button
+                    className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]"
+                    onClick={() => {
+                        setFilter("songs")
+                    }}
+                >
+                    <IoMusicalNotes size={14} />
+                    <span>Songs</span>
+                    <div
+                        className={cn(
+                            "absolute w-full h-full rounded-full  top-0 left-0 mix-blend-multiply transition ease-out duration-200",
+                            filter == "songs"
+                                ? "bg-pink-300 outline-2 outline-pink-300"
+                                : "",
+                        )}
+                    />
+                </button>
+                <button
+                    className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer shadow-purple-400/35 shadow-[0_0_3px_3px]"
+                    onClick={() => {
+                        setFilter("albums")
+                    }}
+                >
+                    <GiCompactDisc size={14} />
+                    <span>Albums</span>
+                    <div
+                        className={cn(
+                            "absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
+                            filter == "albums"
+                                ? "bg-pink-300 outline-2 outline-pink-300"
+                                : "",
+                        )}
+                    />
+                </button>
+                <button
+                    className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]"
+                    onClick={() => {
+                        setFilter("artists")
+                    }}
+                >
+                    <IoPeopleSharp size={14} />
+                    <span>Artists</span>
+                    <div
+                        className={cn(
+                            "absolute w-full h-full rounded-full  top-0 left-0 mix-blend-multiply transition ease-out duration-200",
+                            filter == "artists"
+                                ? "bg-pink-300 outline-2 outline-pink-300"
+                                : "",
+                        )}
+                    />
+                </button>
+            </div>
             {/* Content */}
             {filter == "songs" && (
                 <div className="flex flex-col gap-2">
@@ -204,6 +261,7 @@ export default function DownloadTab() {
                             {queuedSongsDownload.includes(e.videoId) ? (
                                 <>
                                     <div
+                                        title="Downloading..."
                                         className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 transition ease-out duration-200"
                                     >
                                         <TbLoader2 className="animate-spin" size={20} />
@@ -213,6 +271,7 @@ export default function DownloadTab() {
                                 <>
                                     {songExistsDb[e.videoId] ? (
                                         <motion.div
+                                            title="Downloaded. Click to remove song"
                                             className={cn("bg-green-900 hover:bg-green-800 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-green-300 text-green-300 transition ease-out duration-200",
                                                 queuedSongsDelete.includes(e.videoId) ? "" : "cursor-pointer"
                                             )}
@@ -235,6 +294,7 @@ export default function DownloadTab() {
                                         </motion.div>
                                     ) : (
                                         <motion.div
+                                            title="Download"
                                             className={
                                                 cn(
                                                     "bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 transition ease-out duration-200",
