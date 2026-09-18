@@ -17,7 +17,7 @@ import appDirs from 'appdirsjs'
 import { app, shell, BrowserWindow, ipcMain, protocol, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { readFile, writeFile, stat, readdir, mkdir } from 'fs/promises'
+import { readFile, writeFile, stat, readdir, mkdir, unlink } from 'fs/promises'
 import { existsSync } from 'fs'
 import { windowStateKeeper } from "./stateKeeper"
 import YTMusic from "ytmusic-api"
@@ -296,6 +296,19 @@ app.whenReady().then(() => {
 		try {
 			const exists = existsSync(args.path)
 			return exists
+		} catch (error) {
+			console.log(error)
+			return false
+		}
+	})
+	ipcMain.handle('delete_song', async (event, args) => {
+		try {
+			const exists = existsSync(args.path)
+			if (exists) {
+				await unlink(args.path)
+				return true
+			}
+			return false
 		} catch (error) {
 			console.log(error)
 			return false
