@@ -324,7 +324,7 @@ export default function DownloadTab() {
             <div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
                 <select
                     title="Select download location from registered Library locations"
-                    className={cn("flex flex-row relative outline-none h-8 gap-1 justify-center text-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer",
+                    className={cn("flex flex-row relative outline-none h-7.5 gap-1 justify-center text-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer",
                         downloadLocation ? "" : "bg-red-950 border-red-200 text-red-200 hover:bg-red-900"
                     )}
                     value={downloadLocation || ""}
@@ -359,7 +359,8 @@ export default function DownloadTab() {
                     <>
                         <div
                             title={completeLabel}
-                            className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700"
+                            className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+                            onClick={() => setFilter("downloaded")}
                         >
                             <MdCheckCircleOutline size={18} />
                             <span>
@@ -375,7 +376,8 @@ export default function DownloadTab() {
                     <>
                         <div
                             title={failedLabel}
-                            className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700"
+                            className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+                            onClick={() => setFilter("failed")}
                         >
                             <MdErrorOutline size={18} />
                             <span>
