@@ -51,38 +51,36 @@ export default function DownloadTab() {
     }
 
     const computedSongPath = useCallback((songElt) => {
-        let path = downloadLocation
+        let path = ""
         try {
-            path += "/"
             if (songElt.album?.name && songElt.artist?.name) {
-                path += `${songElt.album.name} - ${songElt.artist.name}/`
+                path += `${songElt.album.name} - ${songElt.artist.name}`.replaceAll("/", " - ").replaceAll("\\", " - ") + "/"
             }
             if (songElt.artist.name) {
-                path += `${songElt.name} - ${songElt.artist?.name}`
+                path += `${songElt.name} - ${songElt.artist?.name}`.replaceAll("/", " - ").replaceAll("\\", " - ")
             } else {
-                path += songElt.name
+                path += songElt.name.replaceAll("/", " - ").replaceAll("\\", " - ")
             }
         } catch (error) {
             console.error(error)
             console.log(songElt)
             return
         }
-        return path + ".mp3"
+        return downloadLocation + "/" + path + ".mp3"
     }, [downloadLocation])
 
     const computedAlbumFolder = useCallback((albElt) => {
-        let path = downloadLocation
+        let path = ""
         try {
-            path += "/"
             if (albElt.name && albElt.artist?.name) {
-                path += `${albElt.name} - ${albElt.artist.name}/`
+                path += `${albElt.name} - ${albElt.artist.name}`.replaceAll("/", " - ").replaceAll("\\", " - ") + "/"
             }
         } catch (error) {
             console.error(error)
             console.log(albElt)
             return
         }
-        return path
+        return downloadLocation + "/" + path
     }, [downloadLocation])
 
     const downloadSong = useCallback(async (songElt) => {
