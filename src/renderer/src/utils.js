@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 export const getSongName = (p) => {
 	// console.log(p)
 	if (!p) return ""
-	let splits = p.split("/")
+	let splits = p.split((p.includes("/") ? "/" : "\\"))
 	const filename = splits[splits.length - 1]
 	let res = ""
 	splits = filename.split(".")
@@ -28,8 +28,18 @@ export const getSongName = (p) => {
 	return res
 }
 
-export const toAllowedPlaylistName = (n) => {
-	return n.replaceAll("/", "").replaceAll("\\", "")
+export const getFolderName = (p) => {
+	if (!p) return
+	let splits = p.split((p.includes("/") ? "/" : "\\"))
+	if (isMusicFile(p)) {
+		return splits[splits.length - 2]
+	} else {
+		return splits[splits.length - ((p.endsWith("/") || p.endsWith("\\")) ? 2 : 1)]
+	}
+}
+
+export const toAllowedPlaylistName = (n, r = "") => {
+	return n.replaceAll("/", r).replaceAll("\\", r)
 }
 
 export const randomStr = (length, chars) => {
@@ -107,16 +117,6 @@ export const handleDropped = async (paths) => {
 		songs = [...songs, ...files]
 	}
 	return songs
-}
-
-export const getFolderName = (p) => {
-	if (!p) return
-	let splits = p.split("/")
-	if (isMusicFile(p)) {
-		return splits[splits.length - 2]
-	} else {
-		return splits[splits.length - 1]
-	}
 }
 
 export const isMusicFile = (file) => {

@@ -34,6 +34,7 @@ Local audio/music player :3
 - Allow linking your Youtube account to download content that fails otherwise
 - Fix incorrect cover art manually when it fails to find your music, or allow disabling auto fetching
 - Allow downloading songs and playlists using direct url
+- Ausio visualizer
 
 <br/>
 Stay tuned and support the project by starring it >:3

@@ -30,9 +30,9 @@ export const useSettingsStore = create(
     defaultAutoplay: true,
     shufflePlay: false,
     loopMode: 'off', // queue, current, off
-    tab: 'queue',
+    tab: 'library',
     libraryLocations: [],
-    libraryFilter: 'locations',
+    libraryFilter: 'songs',
     downloadLocation: "",
     playlistsFolded: false,
     albumsFolded: false,

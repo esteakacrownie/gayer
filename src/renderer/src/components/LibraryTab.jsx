@@ -320,7 +320,9 @@ export default function LibraryTab() {
 				{libraryFilter == "locations" && (
 					<>
 						<button
-							className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+							className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer",
+								libraryLocations.length == 0 ? "bg-slate-700 hover:bg-slate-600 brightness-120 contrast-125 shadow-purple-500/25 shadow-[0_0_7px_7px]" : ""
+							)}
 							onClick={addLocation}
 						>
 							<MdAddCircleOutline size={16} />
@@ -371,26 +373,29 @@ export default function LibraryTab() {
 			</div>
 			{/* Filter bar */}
 			<div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
-
 				<button
-					className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer shadow-purple-400/35 shadow-[0_0_3px_3px]"
+					className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
+						libraryFilter == "songs" ? "brightness-105" : ""
+					)}
 					onClick={() => {
-						setLibraryFilter("locations")
+						setLibraryFilter("songs")
 					}}
 				>
-					<FaFolder size={12} />
-					<span>Locations</span>
+					<IoMusicalNotes size={14} />
+					<span>Songs</span>
 					<div
 						className={cn(
-							"absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-							libraryFilter == "locations"
+							"absolute w-full h-full rounded-full  top-0 left-0 mix-blend-multiply transition ease-out duration-200",
+							libraryFilter == "songs"
 								? "bg-pink-300 outline-2 outline-pink-300"
 								: "",
 						)}
 					/>
 				</button>
 				<button
-					className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]"
+					className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
+						libraryFilter == "playlists" ? "brightness-105" : ""
+					)}
 					onClick={() => {
 						setLibraryFilter("playlists")
 					}}
@@ -407,17 +412,20 @@ export default function LibraryTab() {
 					/>
 				</button>
 				<button
-					className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]"
+					className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer shadow-purple-400/35 shadow-[0_0_3px_3px]",
+						libraryFilter == "locations" ? "brightness-105" : "",
+						libraryLocations.length == 0 && libraryFilter != "locations" ? "bg-slate-700 hover:bg-slate-600 brightness-120 contrast-125 shadow-purple-500/25 shadow-[0_0_7px_7px]" : ""
+					)}
 					onClick={() => {
-						setLibraryFilter("songs")
+						setLibraryFilter("locations")
 					}}
 				>
-					<IoMusicalNotes size={14} />
-					<span>Songs</span>
+					<FaFolder size={12} />
+					<span>Locations</span>
 					<div
 						className={cn(
-							"absolute w-full h-full rounded-full  top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-							libraryFilter == "songs"
+							"absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
+							libraryFilter == "locations"
 								? "bg-pink-300 outline-2 outline-pink-300"
 								: "",
 						)}
