@@ -15,7 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import { cn } from "@sglara/cn"
 import { useSettingsStore } from "../stores/useSettingsStore"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { IoMdCheckmark, IoMdClose, IoMdDownload } from "react-icons/io"
 import { TbLoader2 } from "react-icons/tb";
 import PowerSavingButton from "./PowerSavingButton"
@@ -24,6 +24,7 @@ import { motion } from "motion/react"
 import { IoMusicalNotes, IoPeopleSharp } from "react-icons/io5";
 import { GiCompactDisc } from "react-icons/gi";
 import { usePlayerStore } from "../stores/usePlayerStore";
+import { MdCheckCircleOutline, MdErrorOutline } from "react-icons/md";
 
 export default function DownloadTab() {
 
@@ -32,17 +33,24 @@ export default function DownloadTab() {
     const [search, setSearch] = useState("")
     const [searchSongsResults, setSearchSongsResults] = useState([])
     const [searchAlbumsResults, setSearchAlbumsResults] = useState([])
-    const [searchArtistsResults, setSearchArtistsResults] = useState([])
+    // const [searchArtistsResults, setSearchArtistsResults] = useState([])
     const [queuedSongsDownload, setQueuedSongsDownload] = useState([])
+    const [queuedSongsFailed, setQueuedSongsFailed] = useState([])
+    const [queuedSongsComplete, setQueuedSongsComplete] = useState([])
+    const [queuedAlbumsDownload, setQueuedAlbumsDownload] = useState([])
+    const [queuedAlbumsFailed, setQueuedAlbumsFailed] = useState([])
+    const [queuedAlbumsComplete, setQueuedAlbumsComplete] = useState([])
     const [queuedSongsDelete, setQueuedSongsDelete] = useState([])
+    const [queuedAlbumsDelete, setQueuedAlbumsDelete] = useState([])
     const [songExistsDb, setSongExistsDb] = useState({})
+    const [albumExistsDb, setAlbumExistsDb] = useState({})
     const [filter, setFilter] = useState("songs")
 
     const clearSearch = () => {
         setSearch("")
     }
 
-    const computedSongPath = useCallback(async (songElt) => {
+    const computedSongPath = useCallback((songElt) => {
         let path = downloadLocation
         try {
             path += "/"
@@ -62,35 +70,119 @@ export default function DownloadTab() {
         return path + ".mp3"
     }, [downloadLocation])
 
+    const computedAlbumFolder = useCallback((albElt) => {
+        let path = downloadLocation
+        try {
+            path += "/"
+            if (albElt.name && albElt.artist?.name) {
+                path += `${albElt.name} - ${albElt.artist.name}/`
+            }
+        } catch (error) {
+            console.error(error)
+            console.log(albElt)
+            return
+        }
+        return path
+    }, [downloadLocation])
+
     const downloadSong = useCallback(async (songElt) => {
         if (!downloadLocation || !songElt.name) return
         setQueuedSongsDownload((p) => ([...new Set([...p, songElt.videoId])]))
-        const path = await computedSongPath(songElt)
+        const path = computedSongPath(songElt)
         const result = await window.electron.ipcRenderer.invoke("download_song", { url: songElt.videoId, path: path })
+        const exists = await updateOneSongExists(songElt)
+        setQueuedSongsDownload((p) => p.filter((e) => e != songElt.videoId))
+        if (result && exists) {
+            setQueuedSongsComplete((p) => ([...p, songElt]))
+            setQueuedSongsFailed((p) => (p.filter((e) => e.videoId != songElt.videoId)))
+            setForceRefreshLocationsTracker(forceRefreshLocationsTracker + 1)
+        } else {
+            setQueuedSongsFailed((p) => {
+                let hasSelf = false
+                p.map((e) => {
+                    if (e.videoId == songElt.videoId) {
+                        hasSelf = true
+                    }
+                })
+                if (!hasSelf) {
+                    return [...p, songElt]
+                }
+                return [...p]
+            })
+            setQueuedSongsComplete((p) => (p.filter((e) => e.videoId != songElt.videoId)))
+        }
+    }, [downloadLocation, forceRefreshLocationsTracker, setForceRefreshLocationsTracker])
+
+    const updateOneSongExists = async (songElt) => {
+        const path = computedSongPath(songElt)
         const exists = await window.electron.ipcRenderer.invoke("file_exists", { path: path })
         const updated = {}
         updated[songElt.videoId] = exists
         setSongExistsDb((p) => ({ ...p, ...updated }))
-        setQueuedSongsDownload((p) => p.filter((e) => e != songElt.videoId))
-        if (result) {
+        return exists
+    }
+
+    const updateOneAlbumExists = async (albElt) => {
+        const exists = await getAlbumExists(albElt)
+        const updated = {}
+        updated[albElt.videoId] = exists
+        setAlbumExistsDb((p) => ({ ...p, ...updated }))
+        return exists
+    }
+
+    const downloadAlbum = useCallback(async (albElt) => {
+        if (!downloadLocation || !albElt.name) return
+        setQueuedAlbumsDownload((p) => ([...new Set([...p, albElt.playlistId])]))
+        const dest = computedAlbumFolder(albElt)
+        const result = await window.electron.ipcRenderer.invoke(
+            "download_album",
+            {
+                url: albElt.playlistId, destination: dest, artist: albElt.artist?.name || "Unknown Artist"
+
+            }
+        )
+        const exists = await updateOneAlbumExists(albElt)
+        setQueuedAlbumsDownload((p) => p.filter((e) => e != albElt.playlistId))
+        if (result && exists) {
+            setQueuedAlbumsComplete((p) => ([...p, albElt]))
+            setQueuedAlbumsFailed((p) => (p.filter((e) => e.playlistId != albElt.playlistId)))
             setForceRefreshLocationsTracker(forceRefreshLocationsTracker + 1)
+        } else {
+            setQueuedAlbumsFailed((p) => {
+                let hasSelf = false
+                p.map((e) => {
+                    if (e.playlistId == albElt.playlistId) {
+                        hasSelf = true
+                    }
+                })
+                if (!hasSelf) {
+                    return [...p, albElt]
+                }
+                return [...p]
+            })
+            setQueuedAlbumsComplete((p) => (p.filter((e) => e.playlistId != albElt.playlistId)))
         }
     }, [downloadLocation, forceRefreshLocationsTracker, setForceRefreshLocationsTracker])
+
+    const getAlbumExists = async (albElt) => {
+        const albSongs = await window.electron.ipcRenderer.invoke("get_album_songs", { id: albElt.albumId })
+        const exists = await window.electron.ipcRenderer.invoke("get_album_exists", { songs: (albSongs || []).map((e) => computedSongPath(e)) })
+        return exists
+    }
 
     const deleteSong = useCallback(async (songElt) => {
         if (!downloadLocation || !songElt.name) return
         setQueuedSongsDelete((p) => ([...new Set([...p, songElt.videoId])]))
-        const path = await computedSongPath(songElt)
-        const result = await window.electron.ipcRenderer.invoke("delete_song", { path: path })
-        const exists = await window.electron.ipcRenderer.invoke("file_exists", { path: path })
-        const updated = {}
-        updated[songElt.videoId] = exists
-        setSongExistsDb((p) => ({ ...p, ...updated }))
+        const path = computedSongPath(songElt)
+        const result = await window.electron.ipcRenderer.invoke("delete_file", { path: path })
+        await updateOneSongExists(songElt)
         setQueuedSongsDelete((p) => p.filter((e) => e != songElt.videoId))
         if (result) {
             setForceRefreshLocationsTracker(forceRefreshLocationsTracker + 1)
             // console.log(path)
             // console.log(queue)
+            setQueuedSongsFailed((p) => (p.filter((e) => e.videoId != songElt.videoId)))
+            setQueuedSongsComplete((p) => (p.filter((e) => e.videoId != songElt.videoId)))
             setHistory([...history.filter((e) => e != path)])
             setQueue([...queue.filter((e) => e != path)])
             if (currentTrack == path) {
@@ -100,38 +192,74 @@ export default function DownloadTab() {
         }
     }, [queuedSongsDelete, downloadLocation, forceRefreshLocationsTracker, currentTrack, queue, history])
 
+    const deleteAlbum = useCallback(async (albElt) => {
+        if (!downloadLocation || !albElt.name) return
+        setQueuedSongsDelete((p) => ([...new Set([...p, albElt.playlistId])]))
+        const path = computedAlbumFolder(albElt)
+        const result = await window.electron.ipcRenderer.invoke("delete_dir", { path: path })
+        const exists = await updateOneAlbumExists(albElt)
+        setQueuedSongsDelete((p) => p.filter((e) => e != albElt.playlistId))
+        if (result) {
+            setForceRefreshLocationsTracker(forceRefreshLocationsTracker + 1)
+            // console.log(path)
+            // console.log(queue)
+            setQueuedAlbumsFailed((p) => (p.filter((e) => e.playlistId != albElt.playlistId)))
+            setQueuedAlbumsComplete((p) => (p.filter((e) => e.playlistId != albElt.playlistId)))
+            setHistory([...history.filter((e) => !e.includes(path))])
+            setQueue([...queue.filter((e) => !e.includes(path))])
+            if (currentTrack.includes(path)) {
+                setNextAction("setNext")
+                setCurrentTrack("")
+            }
+        }
+    }, [queuedSongsDelete, downloadLocation, forceRefreshLocationsTracker, currentTrack, queue, history])
+
     const fetchSongsResults = async (q) => {
         const res = await window.electron.ipcRenderer.invoke("ytm_songs", { query: q })
-        await refreshExistsDb(res)
+        await refreshSongExistsDb(res)
         setSearchSongsResults(res)
     }
 
     const fetchAlbumsResults = async (q) => {
-
+        const res = await window.electron.ipcRenderer.invoke("ytm_albums", { query: q })
+        refreshAlbumExistsDb(res)
+        // console.log(res)
+        setSearchAlbumsResults(res)
     }
 
     const fetchArtistsResults = async (q) => {
 
     }
 
-    const refreshExistsDb = async (res) => {
+    const refreshSongExistsDb = async (songElts) => {
         const songs = {}
-        for (let e of res) {
-            songs[e.videoId] = await computedSongPath(e)
+        for (let e of songElts) {
+            songs[e.videoId] = computedSongPath(e)
         }
-        const exst = await window.electron.ipcRenderer.invoke("get_songs_exist", { songs: songs })
-        setSongExistsDb((p) => ({ ...p, ...exst }))
+        const songExists = await window.electron.ipcRenderer.invoke("get_songs_exist", { songs: songs })
+        setSongExistsDb((p) => ({ ...p, ...songExists }))
     }
 
+    const refreshAlbumExistsDb = async (albElts) => {
+        for (let e of albElts) {
+            const albums = {}
+            albums[e.playlistId] = await getAlbumExists(e)
+            setAlbumExistsDb((p) => ({ ...p, ...albums }))
+        }
+    }
+
+    // refresh locations when new items get downloaded or removed
     useEffect(() => {
-        refreshExistsDb(searchSongsResults)
+        refreshSongExistsDb(searchSongsResults)
+        refreshAlbumExistsDb(searchAlbumsResults)
     }, [libraryLocations, forceRefreshLocationsTracker])
 
+    // requests
     useEffect(() => {
         if (!search || search.length < 3) {
             setSearchSongsResults([])
             setSearchAlbumsResults([])
-            setSearchArtistsResults([])
+            // setSearchArtistsResults([])
         } else {
             const update = (search) => {
                 switch (filter) {
@@ -153,7 +281,40 @@ export default function DownloadTab() {
                 clearTimeout(t)
             }
         }
-    }, [search])
+    }, [search, filter])
+
+    const downloadingLabel = useMemo(() => {
+        if ((queuedSongsDownload.length > 0) && !(queuedAlbumsDownload.length > 0)) {
+            return `Downloading ${queuedSongsDownload.length} song(s)`
+        } else if (!(queuedSongsDownload.length > 0) && (queuedAlbumsDownload.length > 0)) {
+            return `Downloading ${queuedAlbumsDownload.length} album(s)`
+        } else if (queuedSongsDownload.length > 0 && queuedAlbumsDownload.length > 0) {
+            return `Downloading ${queuedSongsDownload.length} song(s), ${queuedAlbumsDownload.length} album(s)`
+        }
+        return ""
+    }, [queuedSongsDownload, queuedSongsDownload])
+
+    const failedLabel = useMemo(() => {
+        if ((queuedSongsFailed.length > 0) && !(queuedAlbumsFailed.length > 0)) {
+            return `${queuedSongsFailed.length} song(s) failed`
+        } else if (!(queuedSongsFailed.length > 0) && (queuedAlbumsFailed.length > 0)) {
+            return `${queuedAlbumsFailed.length} album(s) failed`
+        } else if (queuedSongsFailed.length > 0 && queuedAlbumsFailed.length > 0) {
+            return `${queuedSongsFailed.length} song(s), ${queuedAlbumsFailed.length} album(s) failed`
+        }
+        return ""
+    }, [queuedSongsFailed, queuedAlbumsFailed])
+
+    const completeLabel = useMemo(() => {
+        if ((queuedSongsComplete.length > 0) && !(queuedAlbumsComplete.length > 0)) {
+            return `${queuedSongsComplete.length} song(s) downloaded`
+        } else if (!(queuedSongsComplete.length > 0) && (queuedAlbumsComplete.length > 0)) {
+            return `${queuedAlbumsComplete.length} album(s) downloaded`
+        } else if (queuedSongsComplete.length > 0 && queuedAlbumsComplete.length > 0) {
+            return `${queuedSongsComplete.length} song(s), ${queuedAlbumsComplete.length} album(s) downloaded`
+        }
+        return ""
+    }, [queuedSongsComplete, queuedAlbumsComplete])
 
     if (tab != "download") return
 
@@ -163,7 +324,7 @@ export default function DownloadTab() {
             <div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
                 <select
                     title="Select download location from registered Library locations"
-                    className={cn("flex flex-row relative outline-none h-full gap-1 justify-center text-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer",
+                    className={cn("flex flex-row relative outline-none h-8 gap-1 justify-center text-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer",
                         downloadLocation ? "" : "bg-red-950 border-red-200 text-red-200 hover:bg-red-900"
                     )}
                     value={downloadLocation || ""}
@@ -179,6 +340,53 @@ export default function DownloadTab() {
                         <option key={i} title={e} value={e}>{getFolderName(e)}</option>
                     ))}
                 </select>
+                {(queuedAlbumsDownload.length > 0 || queuedSongsDownload.length > 0) && (
+                    <>
+                        <div
+                            title={downloadingLabel}
+                            className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700"
+                        >
+                            <div className="animate-spin">
+                                <TbLoader2 size={16} />
+                            </div>
+                            <span>
+                                Downloading...
+                            </span>
+                        </div>
+                    </>
+                )}
+                {(queuedSongsComplete.length > 0 || queuedAlbumsComplete.length > 0) && (
+                    <>
+                        <div
+                            title={completeLabel}
+                            className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700"
+                        >
+                            <MdCheckCircleOutline size={18} />
+                            <span>
+                                {`${queuedSongsComplete.length + queuedAlbumsComplete.length} item(s) downloaded`}
+                            </span>
+                            <div
+                                className="absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply bg-green-300 outline-2 outline-green-300 transition ease-out duration-200"
+                            />
+                        </div>
+                    </>
+                )}
+                {(queuedSongsFailed.length > 0 || queuedAlbumsFailed.length > 0) && (
+                    <>
+                        <div
+                            title={failedLabel}
+                            className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700"
+                        >
+                            <MdErrorOutline size={18} />
+                            <span>
+                                {`${queuedSongsFailed.length + queuedAlbumsFailed.length} item(s) failed`}
+                            </span>
+                            <div
+                                className="absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply bg-red-300 outline-2 outline-red-300 transition ease-out duration-200"
+                            />
+                        </div>
+                    </>
+                )}
                 <PowerSavingButton />
             </div>
             {/* Search bar */}
@@ -238,6 +446,40 @@ export default function DownloadTab() {
                     />
                 </button>
                 <button
+                    className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer shadow-purple-400/35 shadow-[0_0_3px_3px]"
+                    onClick={() => {
+                        setFilter("downloaded")
+                    }}
+                >
+                    <MdCheckCircleOutline size={18} />
+                    <span>Downloaded</span>
+                    <div
+                        className={cn(
+                            "absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
+                            filter == "downloaded"
+                                ? "bg-green-300 outline-2 outline-green-300"
+                                : "",
+                        )}
+                    />
+                </button>
+                <button
+                    className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer shadow-purple-400/35 shadow-[0_0_3px_3px]"
+                    onClick={() => {
+                        setFilter("failed")
+                    }}
+                >
+                    <MdErrorOutline size={18} />
+                    <span>Failed</span>
+                    <div
+                        className={cn(
+                            "absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
+                            filter == "failed"
+                                ? "bg-red-300 outline-2 outline-red-300"
+                                : "",
+                        )}
+                    />
+                </button>
+                {/* <button
                     className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]"
                     onClick={() => {
                         setFilter("artists")
@@ -253,7 +495,7 @@ export default function DownloadTab() {
                                 : "",
                         )}
                     />
-                </button>
+                </button> */}
             </div>
             {/* Content */}
             {filter == "songs" && (
@@ -266,7 +508,7 @@ export default function DownloadTab() {
                             className="flex flex-row items-center justify-between w-full h-10 rounded-lg overflow-clip bg-pink-500/15 hover:bg-pink-500/25 relative gap-2 transition ease-out duration-200"
                         >
                             <div className="flex flex-row items-center gap-2">
-                                <img className="h-10 min-w-10 rounded-lg" src={e.thumbnails[0].url} />
+                                <img className="h-10 min-w-10 rounded-lg pointer-events-none" src={e.thumbnails[0].url} />
                                 <span className="line-clamp-1">{`${e.name} - ${e.artist.name}`}</span>
                             </div>
                             {queuedSongsDownload.includes(e.videoId) ? (
@@ -334,6 +576,325 @@ export default function DownloadTab() {
                         </div>
                     ))}
                 </div>
+            )}
+            {filter == "albums" && (
+                <div className="flex flex-col gap-2">
+                    {searchAlbumsResults.map((e, i) => (
+                        <div
+                            key={i}
+                            title={`${e.name} - ${e.artist.name}`}
+                            // onClick={() => console.log(e)}
+                            className="flex flex-row items-center justify-between w-full h-10 rounded-lg overflow-clip bg-pink-500/15 hover:bg-pink-500/25 relative gap-2 transition ease-out duration-200"
+                        >
+                            <div className="flex flex-row items-center gap-2">
+                                <img className="h-10 min-w-10 rounded-lg pointer-events-none" src={e.thumbnails[0].url} />
+                                <span className="line-clamp-1">{`${e.name} - ${e.artist.name}`}</span>
+                            </div>
+                            {albumExistsDb[e.playlistId] !== undefined && (
+                                <>
+                                    {queuedAlbumsDownload.includes(e.playlistId) ? (
+                                        <>
+                                            <div
+                                                title="Downloading..."
+                                                className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 transition ease-out duration-200"
+                                            >
+                                                <TbLoader2 className="animate-spin" size={20} />
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            {albumExistsDb[e.playlistId] ? (
+                                                <motion.div
+                                                    title="Downloaded. Click to remove album"
+                                                    className={cn("bg-green-900 hover:bg-green-800 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-green-300 text-green-300 transition ease-out duration-200",
+                                                        queuedAlbumsDelete.includes(e.videoId) ? "" : "cursor-pointer"
+                                                    )}
+                                                    onClick={(event) => { event.preventDefault(); deleteAlbum(e) }}
+                                                    initial={{
+                                                        scale: 1.0
+                                                    }}
+                                                    animate={{
+                                                        scale: 1.0
+                                                    }}
+                                                    whileTap={{
+                                                        scale: queuedAlbumsDelete.includes(e.videoId) ? 1.0 : 0.8
+                                                    }}
+                                                    transition={{
+                                                        duration: 0.025,
+                                                        ease: "easeOut"
+                                                    }}
+                                                >
+                                                    <IoMdCheckmark size={20} />
+                                                </motion.div>
+                                            ) : (
+                                                <motion.div
+                                                    title="Download"
+                                                    className={
+                                                        cn(
+                                                            "bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 transition ease-out duration-200",
+                                                            !downloadLocation ? "contrast-80" : "cursor-pointer"
+                                                        )}
+                                                    onClick={(event) => { event.stopPropagation(); downloadAlbum(e) }}
+                                                    initial={{
+                                                        scale: 1.0
+                                                    }}
+                                                    animate={{
+                                                        scale: 1.0
+                                                    }}
+                                                    whileTap={{
+                                                        scale: downloadLocation ? 0.8 : 1.0
+                                                    }}
+                                                    transition={{
+                                                        duration: 0.025,
+                                                        ease: "easeOut"
+                                                    }}
+                                                >
+                                                    <IoMdDownload size={20} />
+                                                </motion.div>
+                                            )}
+                                        </>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+            {filter == "downloaded" && (
+                <>
+                    <div className="flex flex-col gap-2">
+                        {queuedSongsComplete.map((e, i) => (
+                            <div
+                                key={i}
+                                title={`${e.name} - ${e.artist.name}`}
+                                // onClick={() => console.log(e)}
+                                className="flex flex-row items-center justify-between w-full h-10 rounded-lg overflow-clip bg-pink-500/15 hover:bg-pink-500/25 relative gap-2 transition ease-out duration-200"
+                            >
+                                <div className="flex flex-row items-center gap-2">
+                                    <img className="h-10 min-w-10 rounded-lg pointer-events-none" src={e.thumbnails[0].url} />
+                                    <span className="line-clamp-1">{`${e.name} - ${e.artist.name}`}</span>
+                                </div>
+                                <motion.div
+                                    title="Downloaded. Click to remove song"
+                                    className={cn("bg-green-900 hover:bg-green-800 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-green-300 text-green-300 transition ease-out duration-200",
+                                        queuedSongsDelete.includes(e.videoId) ? "" : "cursor-pointer"
+                                    )}
+                                    onClick={(event) => { event.preventDefault(); deleteSong(e) }}
+                                    initial={{
+                                        scale: 1.0
+                                    }}
+                                    animate={{
+                                        scale: 1.0
+                                    }}
+                                    whileTap={{
+                                        scale: queuedSongsDelete.includes(e.videoId) ? 1.0 : 0.8
+                                    }}
+                                    transition={{
+                                        duration: 0.025,
+                                        ease: "easeOut"
+                                    }}
+                                >
+                                    <IoMdCheckmark size={20} />
+                                </motion.div>
+                            </div>
+                        ))}
+                        {queuedAlbumsComplete.map((e, i) => (
+                            <div
+                                key={i}
+                                title={`${e.name} - ${e.artist.name}`}
+                                // onClick={() => console.log(e)}
+                                className="flex flex-row items-center justify-between w-full h-10 rounded-lg overflow-clip bg-pink-500/15 hover:bg-pink-500/25 relative gap-2 transition ease-out duration-200"
+                            >
+                                <div className="flex flex-row items-center gap-2">
+                                    <img className="h-10 min-w-10 rounded-lg pointer-events-none" src={e.thumbnails[0].url} />
+                                    <span className="line-clamp-1">{`${e.name} - ${e.artist.name}`}</span>
+                                </div>
+                                <motion.div
+                                    title="Downloaded. Click to remove album"
+                                    className={cn("bg-green-900 hover:bg-green-800 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-green-300 text-green-300 transition ease-out duration-200",
+                                        queuedAlbumsDelete.includes(e.videoId) ? "" : "cursor-pointer"
+                                    )}
+                                    onClick={(event) => { event.preventDefault(); deleteAlbum(e) }}
+                                    initial={{
+                                        scale: 1.0
+                                    }}
+                                    animate={{
+                                        scale: 1.0
+                                    }}
+                                    whileTap={{
+                                        scale: queuedAlbumsDelete.includes(e.videoId) ? 1.0 : 0.8
+                                    }}
+                                    transition={{
+                                        duration: 0.025,
+                                        ease: "easeOut"
+                                    }}
+                                >
+                                    <IoMdCheckmark size={20} />
+                                </motion.div>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
+            {filter == "failed" && (
+                <>
+                    <div className="flex flex-col gap-2">
+                        {queuedSongsFailed.map((e, i) => (
+                            <div
+                                key={i}
+                                title={`${e.name} - ${e.artist.name}`}
+                                // onClick={() => console.log(e)}
+                                className="flex flex-row items-center justify-between w-full h-10 rounded-lg overflow-clip bg-pink-500/15 hover:bg-pink-500/25 relative gap-2 transition ease-out duration-200"
+                            >
+                                <div className="flex flex-row items-center gap-2">
+                                    <img className="h-10 min-w-10 rounded-lg pointer-events-none" src={e.thumbnails[0].url} />
+                                    <span className="line-clamp-1">{`${e.name} - ${e.artist.name}`}</span>
+                                </div>
+                                {queuedSongsDownload.includes(e.videoId) ? (
+                                    <>
+                                        <div
+                                            title="Downloading..."
+                                            className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 transition ease-out duration-200"
+                                        >
+                                            <TbLoader2 className="animate-spin" size={20} />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        {songExistsDb[e.videoId] ? (
+                                            <motion.div
+                                                title="Downloaded. Click to remove song"
+                                                className={cn("bg-green-900 hover:bg-green-800 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-green-300 text-green-300 transition ease-out duration-200",
+                                                    queuedSongsDelete.includes(e.videoId) ? "" : "cursor-pointer"
+                                                )}
+                                                onClick={(event) => { event.preventDefault(); deleteSong(e) }}
+                                                initial={{
+                                                    scale: 1.0
+                                                }}
+                                                animate={{
+                                                    scale: 1.0
+                                                }}
+                                                whileTap={{
+                                                    scale: queuedSongsDelete.includes(e.videoId) ? 1.0 : 0.8
+                                                }}
+                                                transition={{
+                                                    duration: 0.025,
+                                                    ease: "easeOut"
+                                                }}
+                                            >
+                                                <IoMdCheckmark size={20} />
+                                            </motion.div>
+                                        ) : (
+                                            <motion.div
+                                                title="Download"
+                                                className={
+                                                    cn(
+                                                        "bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 transition ease-out duration-200",
+                                                        !downloadLocation ? "contrast-80" : "cursor-pointer"
+                                                    )}
+                                                onClick={(event) => { event.stopPropagation(); downloadSong(e) }}
+                                                initial={{
+                                                    scale: 1.0
+                                                }}
+                                                animate={{
+                                                    scale: 1.0
+                                                }}
+                                                whileTap={{
+                                                    scale: downloadLocation ? 0.8 : 1.0
+                                                }}
+                                                transition={{
+                                                    duration: 0.025,
+                                                    ease: "easeOut"
+                                                }}
+                                            >
+                                                <IoMdDownload size={20} />
+                                            </motion.div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        ))}
+                        {queuedAlbumsFailed.map((e, i) => (
+                            <div
+                                key={i}
+                                title={`${e.name} - ${e.artist.name}`}
+                                // onClick={() => console.log(e)}
+                                className="flex flex-row items-center justify-between w-full h-10 rounded-lg overflow-clip bg-pink-500/15 hover:bg-pink-500/25 relative gap-2 transition ease-out duration-200"
+                            >
+                                <div className="flex flex-row items-center gap-2">
+                                    <img className="h-10 min-w-10 rounded-lg pointer-events-none" src={e.thumbnails[0].url} />
+                                    <span className="line-clamp-1">{`${e.name} - ${e.artist.name}`}</span>
+                                </div>
+                                {albumExistsDb[e.playlistId] !== undefined && (
+                                    <>
+                                        {queuedAlbumsDownload.includes(e.playlistId) ? (
+                                            <>
+                                                <div
+                                                    title="Downloading..."
+                                                    className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 transition ease-out duration-200"
+                                                >
+                                                    <TbLoader2 className="animate-spin" size={20} />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                {albumExistsDb[e.playlistId] ? (
+                                                    <motion.div
+                                                        title="Downloaded. Click to remove album"
+                                                        className={cn("bg-green-900 hover:bg-green-800 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-green-300 text-green-300 transition ease-out duration-200",
+                                                            queuedAlbumsDelete.includes(e.videoId) ? "" : "cursor-pointer"
+                                                        )}
+                                                        onClick={(event) => { event.preventDefault(); deleteAlbum(e) }}
+                                                        initial={{
+                                                            scale: 1.0
+                                                        }}
+                                                        animate={{
+                                                            scale: 1.0
+                                                        }}
+                                                        whileTap={{
+                                                            scale: queuedAlbumsDelete.includes(e.videoId) ? 1.0 : 0.8
+                                                        }}
+                                                        transition={{
+                                                            duration: 0.025,
+                                                            ease: "easeOut"
+                                                        }}
+                                                    >
+                                                        <IoMdCheckmark size={20} />
+                                                    </motion.div>
+                                                ) : (
+                                                    <motion.div
+                                                        title="Download"
+                                                        className={
+                                                            cn(
+                                                                "bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 transition ease-out duration-200",
+                                                                !downloadLocation ? "contrast-80" : "cursor-pointer"
+                                                            )}
+                                                        onClick={(event) => { event.stopPropagation(); downloadAlbum(e) }}
+                                                        initial={{
+                                                            scale: 1.0
+                                                        }}
+                                                        animate={{
+                                                            scale: 1.0
+                                                        }}
+                                                        whileTap={{
+                                                            scale: downloadLocation ? 0.8 : 1.0
+                                                        }}
+                                                        transition={{
+                                                            duration: 0.025,
+                                                            ease: "easeOut"
+                                                        }}
+                                                    >
+                                                        <IoMdDownload size={20} />
+                                                    </motion.div>
+                                                )}
+                                            </>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </>
             )}
         </>
     )

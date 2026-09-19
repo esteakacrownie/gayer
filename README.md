@@ -25,14 +25,16 @@ Local audio/music player :3
 - Loop current or whole queue
 - Create your own playlists
 - Import and export your playlists to .M3U format
+- Search and download songs and albums directly from the internet, using yt-dlp
 - Power saving / appearance toggle, if your machine struggles with pretty blurs and overly long queues :p
 - Automatically fetches album cover art using filename and parent directory name
 - Looks cute and pretty :3
 
 ### Planned
 
+- Allow linking your Youtube account to download content that fails otherwise
 - Fix incorrect cover art manually when it fails to find your music, or allow disabling auto fetching
-- Search and download songs and albums directly from the internet, using yt-dlp
+- Allow downloading songs and playlists using direct url
 
 <br/>
 Stay tuned and support the project by starring it >:3
@@ -81,6 +83,10 @@ $ npm run build:mac
 ```
 
 ## Disclaimer
+
+This project is not affiliated with, funded, authorized, endorsed by, or in any way associated with YouTube, Google LLC, or any of their affiliates and subsidiaries.
+
+All trademarks, service marks, and intellectual property rights referenced in this project belong to their respective owners.
 
 Fuck AI
 

@@ -17,7 +17,7 @@ import appDirs from 'appdirsjs'
 import { app, shell, BrowserWindow, ipcMain, protocol, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { readFile, writeFile, stat, readdir, mkdir, unlink } from 'fs/promises'
+import { readFile, writeFile, stat, readdir, mkdir, unlink, rm } from 'fs/promises'
 import { existsSync } from 'fs'
 import { windowStateKeeper } from "./stateKeeper"
 import YTMusic from "ytmusic-api"
@@ -301,11 +301,24 @@ app.whenReady().then(() => {
 			return false
 		}
 	})
-	ipcMain.handle('delete_song', async (event, args) => {
+	ipcMain.handle('delete_file', async (event, args) => {
 		try {
 			const exists = existsSync(args.path)
 			if (exists) {
 				await unlink(args.path)
+				return true
+			}
+			return false
+		} catch (error) {
+			console.log(error)
+			return false
+		}
+	})
+	ipcMain.handle('delete_dir', async (event, args) => {
+		try {
+			const exists = existsSync(args.path)
+			if (exists) {
+				await rm(args.path, { recursive: true, force: true })
 				return true
 			}
 			return false
@@ -321,6 +334,19 @@ app.whenReady().then(() => {
 				result[song] = existsSync(args.songs[song])
 			}
 			return result
+		} catch (error) {
+			console.log(error)
+			return false
+		}
+	})
+	ipcMain.handle('get_album_exists', async (event, args) => {
+		try {
+			for (let s of args.songs) {
+				if (!existsSync(s)) {
+					return false
+				}
+			}
+			return true
 		} catch (error) {
 			console.log(error)
 			return false
@@ -365,6 +391,18 @@ app.whenReady().then(() => {
 			}
 			const results = await ytmusic.searchAlbums(args.query)
 			return results
+		} catch (error) {
+			console.log(error)
+			return error
+		}
+	})
+	ipcMain.handle('get_album_songs', async (event, args) => {
+		try {
+			if (!YTM_INITIALIZED) {
+				return []
+			}
+			const result = await ytmusic.getAlbum(args.id)
+			return result.songs || []
 		} catch (error) {
 			console.log(error)
 			return error
