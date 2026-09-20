@@ -27,11 +27,11 @@ Local audio/music player :3
 - Search and download songs and albums directly from the internet, using yt-dlp
 - Power saving / appearance toggle, if your machine struggles with pretty blurs and overly long queues :p
 - Automatically fetches album cover art using filename and parent directory name
+- Allow linking your Youtube account to download content that fails otherwise
 - Looks cute and pretty :3
 
 ### Planned
 
-- Allow linking your Youtube account to download content that fails otherwise
 - Fix incorrect cover art manually when it fails to find your music, or allow disabling auto fetching
 - Allow downloading songs and playlists using direct url
 - Ausio visualizer
