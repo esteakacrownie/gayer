@@ -1,6 +1,6 @@
 {
   "name": "gayer",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Pretty audio and music player with support for custom playlists, cover art fetching, playlist import/export, and more",
   "main": "./out/main/index.js",
   "author": "esteakacrownie",
@@ -34,6 +34,7 @@
     "react-dom": "^19.1.0",
     "react-hotkeys-hook": "^5.3.3",
     "react-icons": "^5.7.0",
+    "truncate-utf8-bytes": "^1.0.2",
     "ytdlp-nodejs": "^3.4.5",
     "ytmusic-api": "^5.3.1",
     "zustic": "^1.2.4"

@@ -26,6 +26,7 @@ import { GiCompactDisc } from "react-icons/gi";
 import { usePlayerStore } from "../stores/usePlayerStore";
 import { MdCheckCircleOutline, MdErrorOutline } from "react-icons/md";
 import { useLibraryStore } from "../stores/useLibraryStore";
+import { toSanitized } from "../sanitize-filename";
 
 export default function DownloadTab() {
 
@@ -86,12 +87,12 @@ export default function DownloadTab() {
         let path = ""
         try {
             if (songElt.album?.name && songElt.artist?.name) {
-                path += `${songElt.album.name} - ${songElt.artist.name}`.replaceAll("/", " - ").replaceAll("\\", " - ") + "/"
+                path += toSanitized(`${songElt.album.name} - ${songElt.artist.name}`.replaceAll("/", " - ").replaceAll("\\", " - ")) + "/"
             }
             if (songElt.artist.name) {
-                path += `${songElt.name} - ${songElt.artist?.name}`.replaceAll("/", " - ").replaceAll("\\", " - ")
+                path += toSanitized(`${songElt.name} - ${songElt.artist?.name}`.replaceAll("/", " - ").replaceAll("\\", " - "))
             } else {
-                path += songElt.name.replaceAll("/", " - ").replaceAll("\\", " - ")
+                path += toSanitized(songElt.name.replaceAll("/", " - ").replaceAll("\\", " - "))
             }
         } catch (error) {
             console.error(error)
@@ -105,7 +106,7 @@ export default function DownloadTab() {
         let path = ""
         try {
             if (albElt.name && albElt.artist?.name) {
-                path += `${albElt.name} - ${albElt.artist.name}`.replaceAll("/", " - ").replaceAll("\\", " - ") + "/"
+                path += toSanitized(`${albElt.name} - ${albElt.artist.name}`.replaceAll("/", " - ").replaceAll("\\", " - ")) + "/"
             }
         } catch (error) {
             console.error(error)
