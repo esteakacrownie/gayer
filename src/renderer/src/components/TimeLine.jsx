@@ -57,12 +57,13 @@ export default function TimeLine() {
 
 	const updateMediasessionTime = useCallback((d = undefined) => {
 		const currentTime = audioRef.current?.currentTime || 0.0
-		const computedDuration = d || (duration || 0.0)
-		navigator.mediaSession.setPositionState({
+		const computedDuration = d === undefined ? (duration || 0.0) : d
+		const posObject = {
 			duration: isNaN(computedDuration) ? 0.0 : computedDuration,
 			position: Math.min(currentTime, computedDuration) || 0.0,
 			playbackRate: 1.0
-		})
+		}
+		navigator.mediaSession.setPositionState(posObject)
 	}, [audioRef, duration])
 
 	const updateProgressVisuals = useCallback((t) => {
@@ -76,13 +77,13 @@ export default function TimeLine() {
 			progressContentRef.current.style.width = `${currentTrack ? (parseInt(maxWidth * (p / duration))) : 0}px`
 		}
 
-		updateMediasessionTime()
+		// updateMediasessionTime(audioRef.current?.duration)
 	}, [audioRef, progressRef, progressContentRef, positionLabel, duration, updateMediasessionTime, currentTrack])
 
 	const updateAudioData = useCallback(() => {
 		setDuration(audioRef.current.duration)
 		updateMediasessionTime(audioRef.current.duration)
-	}, [audioRef, duration, setDuration, updateMediasessionTime])
+	}, [audioRef, setDuration, updateMediasessionTime])
 
 	const seekPosition = useCallback(
 		(t) => {
@@ -90,7 +91,7 @@ export default function TimeLine() {
 			audioRef.current.currentTime = t
 			updateProgressVisuals(t)
 		},
-		[audioRef, duration]
+		[audioRef, duration, updateProgressVisuals]
 	)
 
 	// animation function
@@ -98,18 +99,21 @@ export default function TimeLine() {
 		const currentTime = audioRef.current?.currentTime || 0.0
 		updateProgressVisuals(currentTime)
 
-		navigator.mediaSession.setPositionState({
-			duration: duration || 0,
-			position: Math.min(currentTime || 0.0, duration || 0.0) || 0.0,
-			playbackRate: 1.0
-		})
 		navigator.mediaSession.setActionHandler('seekto', (d) => {
 			seekPosition(Math.min(Math.max(0, d.seekTime), duration))
 			// console.log(d)
 		})
 
 		playAnimationRef.current = requestAnimationFrame(repeat)
-	}, [audioRef, progressRef, duration, currentTrack, updateProgressVisuals])
+	}, [audioRef, progressRef, duration, currentTrack, seekPosition, updateProgressVisuals])
+
+	const handleSeeked = useCallback(() => {
+		navigator.mediaSession.setActionHandler('seekto', (d) => {
+			seekPosition(Math.min(Math.max(0, d.seekTime), duration))
+			// console.log(d)
+		})
+		updateMediasessionTime(audioRef.current.duration)
+	}, [seekPosition, updateMediasessionTime])
 
 	// control animation and audio on play / pause
 	useEffect(() => {
@@ -120,31 +124,30 @@ export default function TimeLine() {
 
 		} else {
 			audioRef.current?.pause()
-			// cancelAnimationFrame(playAnimationRef.current)
 		}
 		playAnimationRef.current = requestAnimationFrame(repeat)
 		return () => {
 			cancelAnimationFrame(playAnimationRef.current)
 		}
-	}, [isPlaying, audioRef, repeat, currentTrackChangeTracker])
+	}, [isPlaying, audioRef, playAnimationRef, repeat, currentTrackChangeTracker])
 
 	// update volume from UI slide and save value
 	useEffect(() => {
 		if (!audioRef.current) return
 		audioRef.current.volume = uiVolume2Volume(volume ?? 0.0)
-	}, [volume, audioRef, isPlaying, currentTrack])
+	}, [volume, audioRef, isPlaying, currentTrackChangeTracker])
 
 	// progressbar, autoplay and file play management
 	useEffect(() => {
 		if (sliderRef.current) {
 			sliderRef.current.value = 0
 		}
-	}, [queue, history, isPlaying, currentTrack])
+	}, [queue, history, isPlaying, currentTrackChangeTracker])
 
 	// media session notification basic controls
 	useEffect(() => {
 		navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'
-	}, [isPlaying, currentTrack])
+	}, [isPlaying, currentTrackChangeTracker])
 
 	useEffect(() => {
 		if (audioRef.current) {
@@ -152,6 +155,8 @@ export default function TimeLine() {
 		}
 		if (!currentTrack) {
 			setDuration(0)
+			updateMediasessionTime(0)
+
 		}
 		// console.log(currentTrackChangeTracker)
 	}, [currentTrackChangeTracker, audioRef, currentTrack])
@@ -165,7 +170,7 @@ export default function TimeLine() {
 					<audio
 						ref={audioRef}
 						onLoadedMetadata={updateAudioData}
-						onSeeked={updateMediasessionTime}
+						onSeeked={handleSeeked}
 						onEnded={handleTrackEnded}
 						src={currentTrack ? `file://${currentTrack}` : null}
 					/>
