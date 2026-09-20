@@ -1,6 +1,6 @@
 {
   "name": "gayer",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Pretty audio and music player with support for custom playlists, cover art fetching, playlist import/export, and more",
   "main": "./out/main/index.js",
   "author": "esteakacrownie",
