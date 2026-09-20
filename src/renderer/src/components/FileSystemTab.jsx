@@ -86,14 +86,14 @@ export default function FileSystemTab() {
 		<>
 			<div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
 				<button
-					className="flex flex-row gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+					className="flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
 					onClick={handleAddToQueue}
 				>
 					<MdPlaylistAdd size={16} />
 					<span>Add all to queue</span>
 				</button>
 				<button
-					className="flex flex-row gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+					className="flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
 					onClick={handlePlayAll}
 				>
 					<MdPlayArrow size={16} />
@@ -101,7 +101,7 @@ export default function FileSystemTab() {
 				</button>
 				<button
 					className={cn(
-						"flex flex-row gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer",
+						"flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer",
 						libraryLocations.includes(folder)
 							? "bg-violet-950 hover:bg-violet-900"
 							: "",

@@ -36,6 +36,9 @@ export const useSettingsStore = create(
     downloadLocation: "",
     playlistsFolded: false,
     albumsFolded: false,
+    ytCookiesEnabled: false,
+    ytCookiesBrowser: "",
+    showYtCookiesHint: true,
     forceRefreshLocationsTracker: 0,
     setVolume: (v) => set((state) => ({ volume: v })),
     setDefaultAutoplay: (v) => set((state) => ({ defaultAutoplay: v })),
@@ -48,6 +51,9 @@ export const useSettingsStore = create(
     setDownloadLocation: (v) => set((state) => ({ downloadLocation: v })),
     setPlaylistsFolded: (v) => set((state) => ({ playlistsFolded: v })),
     setAlbumsFolded: (v) => set((state) => ({ albumsFolded: v })),
+    setYtCookiesEnabled: (v) => set((state) => ({ ytCookiesEnabled: v })),
+    setYtCookiesBrowser: (v) => set((state) => ({ ytCookiesBrowser: v })),
+    setShowYtCookiesHint: (v) => set((state) => ({ showYtCookiesHint: v })),
     setForceRefreshLocationsTracker: (v) => set((state) => ({ forceRefreshLocationsTracker: v })),
     setSettings: (s) =>
       set((state) => ({
@@ -62,6 +68,9 @@ export const useSettingsStore = create(
         downloadLocation: s.downloadLocation ?? "",
         playlistsFolded: s.playlistsFolded ?? false,
         albumsFolded: s.albumsFolded ?? false,
+        ytCookiesEnabled: s.ytCookiesEnabled ?? false,
+        ytCookiesBrowser: s.ytCookiesBrowser ?? "",
+        showYtCookiesHint: s.showYtCookiesHint ?? true,
         forceRefreshLocationsTracker: 0
       }))
   }),

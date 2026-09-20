@@ -173,20 +173,8 @@ export const downloadTextFile = (file, text) => {
 	document.body.removeChild(element)
 }
 
-export const ytmSearch = async (query) => {
-	return await window.electron.ipcRenderer.invoke("ytm_search", { query: query })
-}
-
-export const ytmSongs = async (query) => {
-	return await window.electron.ipcRenderer.invoke("ytm_songs", { query: query })
-}
-
-export const ytmAlbums = async (query) => {
-	return await window.electron.ipcRenderer.invoke("ytm_albums", { query: query })
-}
-
-export const ytmArtists = async (query) => {
-	return await window.electron.ipcRenderer.invoke("ytm_artists", { query: query })
+export const ytLogin = () => {
+	return window.electron.ipcRenderer.invoke("open_yt_login", {})
 }
 
 export const generateM3U8 = (playlist) => {

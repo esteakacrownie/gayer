@@ -430,6 +430,7 @@ app.whenReady().then(() => {
 				.downloadAsync("https://www.youtube.com/playlist?list=" + args.url, {
 					format: { filter: 'audioonly', quality: "0", type: "mp3" },
 					output: join(args.destination, `%(title)s - ${args.artist}.mp3`),
+					rawArgs: args.browserCookies ? ["--cookies-from-browser", args.browserCookies] : [],
 					// onProgress: (p) => console.log(`${p.percentage_str}`),
 				})
 			return true
@@ -448,6 +449,7 @@ app.whenReady().then(() => {
 				.downloadAsync("https://youtube.com/watch?v=" + args.url, {
 					format: { filter: 'audioonly', quality: "0", type: "mp3" },
 					output: args.path,
+					rawArgs: args.browserCookies ? ["--cookies-from-browser", args.browserCookies] : [],
 					// onProgress: (p) => console.log(`${p.percentage_str}`),
 				})
 			return true
@@ -455,6 +457,14 @@ app.whenReady().then(() => {
 			console.log(error)
 			console.log("https://youtube.com/watch?v=" + args.url)
 			return false
+		}
+	})
+	ipcMain.handle('open_yt_login', async (event, args) => {
+		try {
+			return shell.openExternal("https://accounts.google.com/ServiceLogin?service=youtube&uilel=3&passive=true&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue")
+		} catch (error) {
+			console.log(error)
+			return error
 		}
 	})
 

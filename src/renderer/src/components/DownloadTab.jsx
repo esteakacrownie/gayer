@@ -17,16 +17,18 @@ import { cn } from "@sglara/cn"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { IoMdCheckmark, IoMdClose, IoMdDownload } from "react-icons/io"
-import { TbLoader2 } from "react-icons/tb";
+import { TbLoader2, TbNetwork, TbNetworkOff } from "react-icons/tb";
 import PowerSavingButton from "./PowerSavingButton"
-import { getFolderName, toAllowedPlaylistName } from "../utils"
+import { getFolderName, toAllowedPlaylistName, ytLogin } from "../utils"
 import { motion } from "motion/react"
-import { IoMusicalNotes, IoPeopleSharp } from "react-icons/io5";
+import { IoLogoChrome, IoLogoFirefox, IoMusicalNotes, IoPeopleSharp, IoWarningOutline } from "react-icons/io5";
 import { GiCompactDisc } from "react-icons/gi";
 import { usePlayerStore } from "../stores/usePlayerStore";
 import { MdCheckCircleOutline, MdErrorOutline } from "react-icons/md";
 import { useLibraryStore } from "../stores/useLibraryStore";
 import { toSanitized } from "../sanitize-filename";
+import { FaBrave } from "react-icons/fa6";
+import { RiEdgeNewFill } from "react-icons/ri";
 
 export default function DownloadTab() {
 
@@ -40,7 +42,13 @@ export default function DownloadTab() {
         setForceRefreshLocationsTracker,
         setLibraryFilter,
         setPlaylistsFolded,
-        setAlbumsFolded
+        setAlbumsFolded,
+        ytCookiesEnabled,
+        setYtCookiesEnabled,
+        ytCookiesBrowser,
+        setYtCookiesBrowser,
+        showYtCookiesHint,
+        setShowYtCookiesHint
     } = useSettingsStore()
     const { setSearch: setLibrarySearch } = useLibraryStore()
     const { currentTrack, queue, setQueue, history, setHistory, setNextAction, setCurrentTrack } = usePlayerStore()
@@ -120,7 +128,11 @@ export default function DownloadTab() {
         if (!downloadLocation || !songElt.name) return
         setQueuedSongsDownload((p) => ([...new Set([...p, songElt.videoId])]))
         const path = computedSongPath(songElt)
-        const result = await window.electron.ipcRenderer.invoke("download_song", { url: songElt.videoId, path: path })
+        const result = await window.electron.ipcRenderer.invoke("download_song", {
+            url: songElt.videoId,
+            path: path,
+            browserCookies: ytCookiesEnabled ? ytCookiesBrowser : ""
+        })
         const exists = await updateOneSongExists(songElt)
         setQueuedSongsDownload((p) => p.filter((e) => e != songElt.videoId))
         if (result && exists) {
@@ -142,36 +154,18 @@ export default function DownloadTab() {
             })
             setQueuedSongsComplete((p) => (p.filter((e) => e.videoId != songElt.videoId)))
         }
-    }, [downloadLocation, forceRefreshLocationsTracker, setForceRefreshLocationsTracker])
-
-    const updateOneSongExists = async (songElt) => {
-        const path = computedSongPath(songElt)
-        const exists = await window.electron.ipcRenderer.invoke("file_exists", { path: path })
-        const updated = {}
-        updated[songElt.videoId] = exists
-        setSongExistsDb((p) => ({ ...p, ...updated }))
-        return exists
-    }
-
-    const updateOneAlbumExists = async (albElt) => {
-        const exists = await getAlbumExists(albElt)
-        const updated = {}
-        updated[albElt.videoId] = exists
-        setAlbumExistsDb((p) => ({ ...p, ...updated }))
-        return exists
-    }
+    }, [downloadLocation, forceRefreshLocationsTracker, setForceRefreshLocationsTracker, ytCookiesEnabled, ytCookiesBrowser])
 
     const downloadAlbum = useCallback(async (albElt) => {
         if (!downloadLocation || !albElt.name) return
         setQueuedAlbumsDownload((p) => ([...new Set([...p, albElt.playlistId])]))
         const dest = computedAlbumFolder(albElt)
-        const result = await window.electron.ipcRenderer.invoke(
-            "download_album",
-            {
-                url: albElt.playlistId, destination: dest, artist: albElt.artist?.name || "Unknown Artist"
-
-            }
-        )
+        const result = await window.electron.ipcRenderer.invoke("download_album", {
+            url: albElt.playlistId,
+            destination: dest,
+            artist: albElt.artist?.name || "Unknown Artist",
+            browserCookies: ytCookiesEnabled ? ytCookiesBrowser : ""
+        })
         const exists = await updateOneAlbumExists(albElt)
         setQueuedAlbumsDownload((p) => p.filter((e) => e != albElt.playlistId))
         if (result && exists) {
@@ -193,11 +187,28 @@ export default function DownloadTab() {
             })
             setQueuedAlbumsComplete((p) => (p.filter((e) => e.playlistId != albElt.playlistId)))
         }
-    }, [downloadLocation, forceRefreshLocationsTracker, setForceRefreshLocationsTracker])
+    }, [downloadLocation, forceRefreshLocationsTracker, setForceRefreshLocationsTracker, ytCookiesEnabled, ytCookiesBrowser])
 
     const getAlbumExists = async (albElt) => {
         const albSongs = await window.electron.ipcRenderer.invoke("get_album_songs", { id: albElt.albumId })
         const exists = await window.electron.ipcRenderer.invoke("get_album_exists", { songs: (albSongs || []).map((e) => computedSongPath(e)) })
+        return exists
+    }
+
+    const updateOneSongExists = async (songElt) => {
+        const path = computedSongPath(songElt)
+        const exists = await window.electron.ipcRenderer.invoke("file_exists", { path: path })
+        const updated = {}
+        updated[songElt.videoId] = exists
+        setSongExistsDb((p) => ({ ...p, ...updated }))
+        return exists
+    }
+
+    const updateOneAlbumExists = async (albElt) => {
+        const exists = await getAlbumExists(albElt)
+        const updated = {}
+        updated[albElt.videoId] = exists
+        setAlbumExistsDb((p) => ({ ...p, ...updated }))
         return exists
     }
 
@@ -511,6 +522,47 @@ export default function DownloadTab() {
         )
     }
 
+    const browserCookiesIcon = useMemo(() => {
+        switch (ytCookiesBrowser) {
+            case "chrome":
+            case "chromium":
+                return <IoLogoChrome size={15} />
+            case "firefox":
+                return <IoLogoFirefox size={15} />
+            case "edge":
+                return <RiEdgeNewFill size={15} />
+            case "brave":
+                return <FaBrave size={15} />
+            default:
+                return <TbNetwork size={16} />
+        }
+    }, [ytCookiesBrowser])
+
+    const browserSelector = useMemo(() => {
+        return (
+            <button
+                className="flex flex-row -hue-rotate-30 saturate-150 group relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700"
+            >
+                <div className="relative z-10 pointer-events-none">
+                    {browserCookiesIcon}
+                </div>
+                <select
+                    className="bg-slate-800 rounded-full h-7 outline-none group-hover:bg-slate-700 transition ease-out duration-200 cursor-pointer pl-5 -ml-5 py-1 -my-1"
+                    title="Select browser to use YouTube cookies from"
+                    value={ytCookiesBrowser}
+                    onChange={(e) => setYtCookiesBrowser(e.target.value)}
+                >
+                    <option value="" hidden>Select Browser</option>
+                    <option value="chrome">Chrome</option>
+                    <option value="chromium">Chromium</option>
+                    <option value="firefox">Firefox</option>
+                    <option value="edge">Edge</option>
+                    <option value="brave">Brave</option>
+                </select>
+            </button>
+        )
+    }, [browserCookiesIcon, ytCookiesBrowser, setYtCookiesBrowser])
+
     if (tab != "download") return
 
     return (
@@ -537,9 +589,24 @@ export default function DownloadTab() {
                         <option key={i} title={e} value={e}>{getFolderName(e)}</option>
                     ))}
                 </select>
+                <button
+                    className="flex flex-row relative -hue-rotate-30 saturate-150 outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+                    title={ytCookiesEnabled ? "Login to YouTube in you chosen browser, then tell Gayer which one you are using." : "Enabling cookies might help if your downloads fail."}
+                    onClick={() => setYtCookiesEnabled(!ytCookiesEnabled)}
+                >
+                    {ytCookiesEnabled ? <TbNetwork size={16} /> : <TbNetworkOff size={16} />}
+                    <span>
+                        Cookies {ytCookiesEnabled ? "On" : "Off"}
+                    </span>
+                </button>
+                {ytCookiesEnabled && (
+                    <>
+                        {browserSelector}
+                    </>
+                )}
                 {(queuedAlbumsDownload.length > 0 || queuedSongsDownload.length > 0) && (
                     <>
-                        <div
+                        <button
                             title={downloadingLabel}
                             className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700"
                         >
@@ -549,12 +616,12 @@ export default function DownloadTab() {
                             <span>
                                 Downloading...
                             </span>
-                        </div>
+                        </button>
                     </>
                 )}
                 {(queuedSongsComplete.length > 0 || queuedAlbumsComplete.length > 0) && (
                     <>
-                        <div
+                        <button
                             title={completeLabel}
                             className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
                             onClick={() => setFilter("downloaded")}
@@ -566,12 +633,12 @@ export default function DownloadTab() {
                             <div
                                 className="absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply bg-green-300 outline-2 outline-green-300 transition ease-out duration-200"
                             />
-                        </div>
+                        </button>
                     </>
                 )}
                 {(queuedSongsFailed.length > 0 || queuedAlbumsFailed.length > 0) && (
                     <>
-                        <div
+                        <button
                             title={failedLabel}
                             className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
                             onClick={() => setFilter("failed")}
@@ -583,7 +650,7 @@ export default function DownloadTab() {
                             <div
                                 className="absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply bg-red-300 outline-2 outline-red-300 transition ease-out duration-200"
                             />
-                        </div>
+                        </button>
                     </>
                 )}
                 <PowerSavingButton />
@@ -741,6 +808,78 @@ export default function DownloadTab() {
             )}
             {filter == "failed" && (
                 <>
+                    {(queuedSongsFailed.length > 0 || queuedAlbumsFailed > 0) && (
+                        <>
+                            {ytCookiesEnabled ? (
+                                <>
+                                    {showYtCookiesHint ? (
+                                        <div className="rounded-xl p-2 bg-amber-950 border-2 border-amber-300">
+                                            <p className="font-bold mb-2 flex flex-row items-center gap-2">Cookies Setup
+                                                <span
+                                                    className="text-amber-300 flex flex-row items-center gap-0.5 max-w-fit text-xs font-normal cursor-pointer"
+                                                    onClick={() => { setShowYtCookiesHint(false) }}
+                                                >
+                                                    <MdErrorOutline className="text-amber-300 inline" size={16} />
+                                                    Hide hint
+                                                </span>
+                                            </p>
+                                            <div className="flex flex-col gap-1">
+                                                <p className="font-bold">
+                                                    1.&nbsp;
+                                                    <span
+                                                        className="text-amber-300 font-bold cursor-pointer"
+                                                        onClick={() => { ytLogin() }}
+                                                    >
+                                                        Login to YouTube
+                                                    </span>
+                                                    &nbsp;in your web browser
+                                                </p>
+                                                <p className="font-bold">2. Select the browser you used to login
+                                                    <span className="font-normal -translate-y-0.5">
+                                                        {browserSelector}
+                                                    </span>
+                                                    <span className="font-normal text-sm items-center inline-block my-1">
+                                                        <MdErrorOutline className="text-amber-300 inline" size={16} />
+                                                        &nbsp;If the browser you used is not listed, login to Youtube using one of the supported browsers
+                                                    </span>
+                                                </p>
+                                            </div>
+                                            <p className="py-4">You're all set !</p>
+                                            <div className="font-bold flex flex-row items-center pb-2 gap-2">
+                                                <div className="rounded-lg p-1 bg-amber-900 border-2 border-amber-300">
+                                                    <IoWarningOutline size={20} />
+                                                </div>
+                                                Important !
+                                            </div>
+                                            <p>Disable cookies when possible (i.e. when your downloads succeed without it), as downloading at a very high rate using cookies might flag your YouTube account as a bot, and lead to temporary or permanent ban.</p>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <span
+                                                className="text-amber-300 flex flex-row items-center gap-0.5 max-w-fit text-xs font-normal cursor-pointer -my-1"
+                                                onClick={() => { setShowYtCookiesHint(true) }}
+                                            >
+                                                <MdErrorOutline className="text-amber-300 inline" size={16} />
+                                                Show hint
+                                            </span>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="rounded-xl p-2 bg-amber-950 border-2 border-amber-300">
+                                    <span>If your downloads keep failing, you might want to&nbsp;
+                                        <span
+                                            className="text-amber-300 font-bold cursor-pointer"
+                                            onClick={() => setYtCookiesEnabled(true)}
+                                        >
+                                            enable cookies
+                                        </span>
+                                    </span>
+                                </div>
+                            )}
+                        </>
+
+                    )}
                     <div className="flex flex-col gap-2">
                         {queuedSongsFailed.map((e, i) => (
                             <div key={i}>
