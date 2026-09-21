@@ -31,7 +31,8 @@ export default function TimeLine() {
 		setHistory,
 		autoplay,
 		setNextAction,
-		currentTrackChangeTracker
+		currentTrackChangeTracker,
+		setForceRefreshLocationsTracker,
 	} = usePlayerStore()
 
 	const { volume, loopMode } = useSettingsStore()
@@ -159,6 +160,7 @@ export default function TimeLine() {
 			setHistory([...history.filter((e) => e != currentTrack)])
 			setQueue([...queue.filter((e) => e != currentTrack)])
 			setCurrentTrack("")
+			setForceRefreshLocationsTracker((p) => p + 1)
 		}
 	}, [queue, history, currentTrack])
 

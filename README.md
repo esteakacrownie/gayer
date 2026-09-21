@@ -1,6 +1,6 @@
 # Gleamy Audio Player
 
-Local audio/music player :3
+Local music player and downloader :3
 
 <img src="build/icon.png" width=256 />
 
@@ -8,9 +8,9 @@ Local audio/music player :3
 
 <div>
 
-<img src="./screenshots/download.png" width="33%" alt="Download tab screenshot">
-<img src="./screenshots/library.png" width="33%" alt="Library tab screenshot">
-<img src="./screenshots/queue.png" width="33%" alt="Queue tab screenshot">
+<img src="./screenshots/download.png" width="32%" alt="Download tab screenshot">
+<img src="./screenshots/library.png" width="32%" alt="Library tab screenshot">
+<img src="./screenshots/queue.png" width="32%" alt="Queue tab screenshot">
 
 </div>
 
