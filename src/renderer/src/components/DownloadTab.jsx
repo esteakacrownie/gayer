@@ -22,13 +22,14 @@ import PowerSavingButton from "./PowerSavingButton"
 import { getFolderName, getSongName, toAllowedPlaylistName, ytLogin } from "../utils"
 import { motion } from "motion/react"
 import { IoLogoChrome, IoLogoFirefox, IoMusicalNotes, IoPeopleSharp, IoWarningOutline } from "react-icons/io5";
-import { GiCompactDisc } from "react-icons/gi";
+import { GiCompactDisc, GiSpermWhale } from "react-icons/gi";
 import { usePlayerStore } from "../stores/usePlayerStore";
 import { MdCheckCircleOutline, MdErrorOutline } from "react-icons/md";
 import { useLibraryStore } from "../stores/useLibraryStore";
 import { toSanitized } from "../sanitize-filename";
-import { FaBrave } from "react-icons/fa6";
+import { FaBrave, FaOpera, FaSafari } from "react-icons/fa6";
 import { RiEdgeNewFill } from "react-icons/ri";
+import { SiVivaldi } from "react-icons/si";
 
 export default function DownloadTab() {
 
@@ -589,6 +590,14 @@ export default function DownloadTab() {
                 return <RiEdgeNewFill size={15} />
             case "brave":
                 return <FaBrave size={15} />
+            case "opera":
+                return <FaOpera size={15} />
+            case "safari":
+                return <FaSafari size={15} />
+            case "vivaldi":
+                return <SiVivaldi size={15} />
+            case "whale":
+                return <GiSpermWhale size={15} />
             default:
                 return <TbNetwork size={16} />
         }
@@ -614,6 +623,10 @@ export default function DownloadTab() {
                     <option value="firefox">Firefox</option>
                     <option value="edge">Edge</option>
                     <option value="brave">Brave</option>
+                    <option value="opera">Opera</option>
+                    <option value="safari">Safari</option>
+                    <option value="vivaldi">Vivaldi</option>
+                    <option value="whale">Whale</option>
                 </select>
             </button>
         )
