@@ -24,8 +24,11 @@ export default function TimeLine() {
 		isPlaying,
 		setIsPlaying,
 		currentTrack,
+		setCurrentTrack,
 		queue,
+		setQueue,
 		history,
+		setHistory,
 		autoplay,
 		setNextAction,
 		currentTrackChangeTracker
@@ -149,11 +152,23 @@ export default function TimeLine() {
 		navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'
 	}, [isPlaying, currentTrackChangeTracker])
 
+	const skipNonExistent = useCallback(async () => {
+		const exists = await window.electron.ipcRenderer.invoke("file_exists", { path: currentTrack })
+		if (!exists) {
+			setNextAction("setNext")
+			setHistory([...history.filter((e) => e != currentTrack)])
+			setQueue([...queue.filter((e) => e != currentTrack)])
+			setCurrentTrack("")
+		}
+	}, [queue, history, currentTrack])
+
 	useEffect(() => {
 		if (audioRef.current) {
 			audioRef.current.currentTime = 0
 		}
-		if (!currentTrack) {
+		if (currentTrack) {
+			skipNonExistent()
+		} else {
 			setDuration(0)
 			updateMediasessionTime(0)
 

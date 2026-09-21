@@ -15,11 +15,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import { cn } from "@sglara/cn"
 import { useSettingsStore } from "../stores/useSettingsStore"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { IoMdCheckmark, IoMdClose, IoMdDownload } from "react-icons/io"
 import { TbLoader2, TbNetwork, TbNetworkOff } from "react-icons/tb";
 import PowerSavingButton from "./PowerSavingButton"
-import { getFolderName, toAllowedPlaylistName, ytLogin } from "../utils"
+import { getFolderName, getSongName, toAllowedPlaylistName, ytLogin } from "../utils"
 import { motion } from "motion/react"
 import { IoLogoChrome, IoLogoFirefox, IoMusicalNotes, IoPeopleSharp, IoWarningOutline } from "react-icons/io5";
 import { GiCompactDisc } from "react-icons/gi";
@@ -52,9 +52,12 @@ export default function DownloadTab() {
     } = useSettingsStore()
     const { setSearch: setLibrarySearch } = useLibraryStore()
     const { currentTrack, queue, setQueue, history, setHistory, setNextAction, setCurrentTrack } = usePlayerStore()
+    const searchRequestCount = useRef(0)
     const [search, setSearch] = useState("")
     const [searchSongsResults, setSearchSongsResults] = useState([])
     const [searchAlbumsResults, setSearchAlbumsResults] = useState([])
+    const [hiddenAlbumsResults, setHiddenAlbumsResults] = useState([])
+    const [mergedAlbumsResults, setMergedAlbumsResults] = useState([])
     // const [searchArtistsResults, setSearchArtistsResults] = useState([])
     const [queuedSongsDownload, setQueuedSongsDownload] = useState([])
     const [queuedSongsFailed, setQueuedSongsFailed] = useState([])
@@ -75,7 +78,7 @@ export default function DownloadTab() {
     const showSongInLibrary = (name) => {
         setLibraryFilter("songs")
         setTab("library")
-        setLibrarySearch(toAllowedPlaylistName(name))
+        setLibrarySearch(name)
     }
 
     const showAlbumInLibrary = (name) => {
@@ -83,7 +86,7 @@ export default function DownloadTab() {
         setPlaylistsFolded(true)
         setAlbumsFolded(false)
         setTab("library")
-        setLibrarySearch(toAllowedPlaylistName(name, " - "))
+        setLibrarySearch(name)
     }
 
     const guideToLibraryLocations = () => {
@@ -104,7 +107,7 @@ export default function DownloadTab() {
             }
         } catch (error) {
             console.error(error)
-            console.log(songElt)
+            // console.log(songElt)
             return
         }
         return downloadLocation + "/" + path + ".mp3"
@@ -118,7 +121,7 @@ export default function DownloadTab() {
             }
         } catch (error) {
             console.error(error)
-            console.log(albElt)
+            // console.log(albElt)
             return
         }
         return downloadLocation + "/" + path
@@ -136,9 +139,14 @@ export default function DownloadTab() {
         const exists = await updateOneSongExists(songElt)
         setQueuedSongsDownload((p) => p.filter((e) => e != songElt.videoId))
         if (result && exists) {
-            setQueuedSongsComplete((p) => ([...p, songElt]))
+            setQueuedSongsComplete((p) => {
+                if (p.map((e) => e.videoId).includes(songElt.videoId)) {
+                    return p
+                }
+                return ([...p, songElt])
+            })
             setQueuedSongsFailed((p) => (p.filter((e) => e.videoId != songElt.videoId)))
-            setForceRefreshLocationsTracker(forceRefreshLocationsTracker + 1)
+            setForceRefreshLocationsTracker((p) => p + 1)
         } else {
             setQueuedSongsFailed((p) => {
                 let hasSelf = false
@@ -158,25 +166,31 @@ export default function DownloadTab() {
 
     const downloadAlbum = useCallback(async (albElt) => {
         if (!downloadLocation || !albElt.name) return
-        setQueuedAlbumsDownload((p) => ([...new Set([...p, albElt.playlistId])]))
-        const dest = computedAlbumFolder(albElt)
-        const result = await window.electron.ipcRenderer.invoke("download_album", {
-            url: albElt.playlistId,
-            destination: dest,
-            artist: albElt.artist?.name || "Unknown Artist",
-            browserCookies: ytCookiesEnabled ? ytCookiesBrowser : ""
-        })
-        const exists = await updateOneAlbumExists(albElt)
-        setQueuedAlbumsDownload((p) => p.filter((e) => e != albElt.playlistId))
-        if (result && exists) {
-            setQueuedAlbumsComplete((p) => ([...p, albElt]))
-            setQueuedAlbumsFailed((p) => (p.filter((e) => e.playlistId != albElt.playlistId)))
-            setForceRefreshLocationsTracker(forceRefreshLocationsTracker + 1)
+        setQueuedAlbumsDownload((p) => ([...new Set([...p, albElt.albumId])]))
+
+        const { songs } = await window.electron.ipcRenderer.invoke("get_album", { id: albElt.albumId })
+        setQueuedSongsDownload((p) => ([...new Set([...p, ...songs.map((e) => e.videoId)])]))
+        for (let songElt of (songs || [])) {
+            // console.log(songElt.name)
+            await downloadSong(songElt)
+        }
+
+        const exists = await updateOneAlbumExists({ ...albElt, songs })
+        setQueuedAlbumsDownload((p) => p.filter((e) => e != albElt.albumId))
+        if (exists) {
+            setQueuedAlbumsComplete((p) => {
+                if (p.map((e) => e.albumId).includes(albElt.albumId)) {
+                    return p
+                }
+                return ([...p, albElt])
+            })
+            setQueuedAlbumsFailed((p) => (p.filter((e) => e.albumId != albElt.albumId)))
+            setForceRefreshLocationsTracker((p) => p + 1)
         } else {
             setQueuedAlbumsFailed((p) => {
                 let hasSelf = false
                 p.map((e) => {
-                    if (e.playlistId == albElt.playlistId) {
+                    if (e.albumId == albElt.albumId) {
                         hasSelf = true
                     }
                 })
@@ -185,12 +199,18 @@ export default function DownloadTab() {
                 }
                 return [...p]
             })
-            setQueuedAlbumsComplete((p) => (p.filter((e) => e.playlistId != albElt.playlistId)))
+            setQueuedAlbumsComplete((p) => (p.filter((e) => e.albumId != albElt.albumId)))
         }
-    }, [downloadLocation, forceRefreshLocationsTracker, setForceRefreshLocationsTracker, ytCookiesEnabled, ytCookiesBrowser])
+    }, [downloadLocation, forceRefreshLocationsTracker, setForceRefreshLocationsTracker, ytCookiesEnabled, ytCookiesBrowser, downloadSong])
 
     const getAlbumExists = async (albElt) => {
-        const albSongs = await window.electron.ipcRenderer.invoke("get_album_songs", { id: albElt.albumId })
+        const albSongs = albElt.songs
+            ?
+            albElt.songs
+            :
+            await window.electron.ipcRenderer.invoke("get_album_songs", { id: albElt.albumId })
+        // console.log(albElt.name)
+        // console.log(albSongs)
         const exists = await window.electron.ipcRenderer.invoke("get_album_exists", { songs: (albSongs || []).map((e) => computedSongPath(e)) })
         return exists
     }
@@ -220,7 +240,7 @@ export default function DownloadTab() {
         await updateOneSongExists(songElt)
         setQueuedSongsDelete((p) => p.filter((e) => e != songElt.videoId))
         if (result) {
-            setForceRefreshLocationsTracker(forceRefreshLocationsTracker + 1)
+            setForceRefreshLocationsTracker((p) => p + 1)
             // console.log(path)
             // console.log(queue)
             setQueuedSongsFailed((p) => (p.filter((e) => e.videoId != songElt.videoId)))
@@ -232,21 +252,26 @@ export default function DownloadTab() {
                 setCurrentTrack("")
             }
         }
-    }, [queuedSongsDelete, downloadLocation, forceRefreshLocationsTracker, currentTrack, queue, history])
+    }, [queuedSongsDelete, setQueuedSongsComplete, setQueuedSongsFailed, downloadLocation, forceRefreshLocationsTracker, currentTrack, queue, history])
 
     const deleteAlbum = useCallback(async (albElt) => {
         if (!downloadLocation || !albElt.name) return
-        setQueuedSongsDelete((p) => ([...new Set([...p, albElt.playlistId])]))
+        setQueuedAlbumsDelete((p) => ([...new Set([...p, albElt.albumId])]))
         const path = computedAlbumFolder(albElt)
+        const { songs } = await window.electron.ipcRenderer.invoke("get_album", { id: albElt.albumId })
+        setQueuedAlbumsDelete((p) => p.filter((e) => e != albElt.albumId))
+
+        for (let songElt of songs) {
+            await deleteSong(songElt)
+        }
+
         const result = await window.electron.ipcRenderer.invoke("delete_dir", { path: path })
-        const exists = await updateOneAlbumExists(albElt)
-        setQueuedSongsDelete((p) => p.filter((e) => e != albElt.playlistId))
         if (result) {
-            setForceRefreshLocationsTracker(forceRefreshLocationsTracker + 1)
+            setForceRefreshLocationsTracker((p) => (p + 1))
             // console.log(path)
             // console.log(queue)
-            setQueuedAlbumsFailed((p) => (p.filter((e) => e.playlistId != albElt.playlistId)))
-            setQueuedAlbumsComplete((p) => (p.filter((e) => e.playlistId != albElt.playlistId)))
+            setQueuedAlbumsFailed((p) => (p.filter((e) => e.albumId != albElt.albumId)))
+            setQueuedAlbumsComplete((p) => (p.filter((e) => e.albumId != albElt.albumId)))
             setHistory([...history.filter((e) => !e.includes(path))])
             setQueue([...queue.filter((e) => !e.includes(path))])
             if (currentTrack.includes(path)) {
@@ -254,24 +279,45 @@ export default function DownloadTab() {
                 setCurrentTrack("")
             }
         }
-    }, [queuedSongsDelete, downloadLocation, forceRefreshLocationsTracker, currentTrack, queue, history])
+    }, [queuedAlbumsDelete, downloadLocation, forceRefreshLocationsTracker, currentTrack, queue, history, deleteSong])
 
-    const fetchSongsResults = async (q) => {
+    const fetchSongsResults = async (q, i) => {
         const res = await window.electron.ipcRenderer.invoke("ytm_songs", { query: q })
         await refreshSongExistsDb(res)
-        setSearchSongsResults(res)
+        if (i == searchRequestCount.current) {
+            setSearchSongsResults(res)
+        }
     }
 
-    const fetchAlbumsResults = async (q) => {
+    const fetchAlbumsResults = async (q, i) => {
         const res = await window.electron.ipcRenderer.invoke("ytm_albums", { query: q })
         refreshAlbumExistsDb(res)
         // console.log(res)
-        setSearchAlbumsResults(res)
+        if (i == searchRequestCount.current) {
+            setSearchAlbumsResults(res)
+        }
     }
 
-    const fetchArtistsResults = async (q) => {
-
+    const fetchHiddenAlbums = async (songList, i) => {
+        const albums = []
+        songList.map((e) => {
+            if (e.album?.albumId && !albums.includes(e.album.albumId)) {
+                albums.push(e.album.albumId)
+            }
+        })
+        const albumElts = []
+        for (let alb of albums) {
+            const elt = await window.electron.ipcRenderer.invoke("get_album", { id: alb })
+            albumElts.push(elt)
+        }
+        if (i == searchRequestCount.current) {
+            setHiddenAlbumsResults(albumElts)
+        }
     }
+
+    // const fetchArtistsResults = async (q) => {
+
+    // }
 
     const refreshSongExistsDb = async (songElts) => {
         const songs = {}
@@ -285,7 +331,7 @@ export default function DownloadTab() {
     const refreshAlbumExistsDb = async (albElts) => {
         for (let e of albElts) {
             const albums = {}
-            albums[e.playlistId] = await getAlbumExists(e)
+            albums[e.albumId] = await getAlbumExists(e)
             setAlbumExistsDb((p) => ({ ...p, ...albums }))
         }
     }
@@ -293,28 +339,21 @@ export default function DownloadTab() {
     // refresh locations when new items get downloaded or removed
     useEffect(() => {
         refreshSongExistsDb(searchSongsResults)
-        refreshAlbumExistsDb(searchAlbumsResults)
+        refreshAlbumExistsDb(mergedAlbumsResults)
     }, [libraryLocations, forceRefreshLocationsTracker])
 
     // requests
     useEffect(() => {
+        searchRequestCount.current += 1
         if (!search || search.length < 3) {
             setSearchSongsResults([])
             setSearchAlbumsResults([])
+            setHiddenAlbumsResults([])
             // setSearchArtistsResults([])
         } else {
             const update = (search) => {
-                switch (filter) {
-                    case "songs":
-                        fetchSongsResults(search)
-                        break
-                    case "albums":
-                        fetchAlbumsResults(search)
-                        break
-                    case "artists":
-                        fetchArtistsResults(search)
-                        break
-                }
+                fetchSongsResults(search, searchRequestCount.current)
+                fetchAlbumsResults(search, searchRequestCount.current)
             }
             const t = setTimeout(() => {
                 update(search)
@@ -323,18 +362,35 @@ export default function DownloadTab() {
                 clearTimeout(t)
             }
         }
-    }, [search, filter])
+    }, [search])
+
+    // process unlisted albums
+    useEffect(() => {
+        fetchHiddenAlbums(searchSongsResults, searchRequestCount.current)
+    }, [searchSongsResults])
+
+    // merge unlisted albums with regular albums list
+    useEffect(() => {
+        const result = [...hiddenAlbumsResults]
+        const IDs = result.map((e) => e.albumId)
+        // console.log(IDs)
+        for (let elt of searchAlbumsResults) {
+            if (!IDs.includes(elt.albumId)) {
+                IDs.push(elt.albumId)
+                result.push(elt)
+            }
+        }
+        // console.log(result)
+        refreshAlbumExistsDb(result)
+        setMergedAlbumsResults(result)
+    }, [hiddenAlbumsResults, searchAlbumsResults])
 
     const downloadingLabel = useMemo(() => {
-        if ((queuedSongsDownload.length > 0) && !(queuedAlbumsDownload.length > 0)) {
+        if (queuedSongsDownload.length > 0) {
             return `Downloading ${queuedSongsDownload.length} song(s)`
-        } else if (!(queuedSongsDownload.length > 0) && (queuedAlbumsDownload.length > 0)) {
-            return `Downloading ${queuedAlbumsDownload.length} album(s)`
-        } else if (queuedSongsDownload.length > 0 && queuedAlbumsDownload.length > 0) {
-            return `Downloading ${queuedSongsDownload.length} song(s), ${queuedAlbumsDownload.length} album(s)`
         }
         return ""
-    }, [queuedSongsDownload, queuedSongsDownload])
+    }, [queuedSongsDownload])
 
     const failedLabel = useMemo(() => {
         if ((queuedSongsFailed.length > 0) && !(queuedAlbumsFailed.length > 0)) {
@@ -362,7 +418,7 @@ export default function DownloadTab() {
         return (
             <div
                 title={`${e.name} - ${e.artist.name}`}
-                onClick={() => { if (songExistsDb[e.videoId]) showSongInLibrary(e.name) }}
+                onClick={() => { if (songExistsDb[e.videoId]) showSongInLibrary(getSongName(computedSongPath(e))) }}
                 className={cn("flex flex-row items-center justify-between w-full h-10 rounded-lg overflow-clip bg-pink-500/15 hover:bg-pink-500/25 relative gap-2 transition ease-out duration-200",
                     songExistsDb[e.videoId] ? "cursor-pointer bg-pink-600/25 hover:bg-pink-600/35" : ""
                 )}
@@ -442,18 +498,18 @@ export default function DownloadTab() {
         return (
             <div
                 title={`${e.name} - ${e.artist.name}`}
-                onClick={() => { if (albumExistsDb[e.playlistId]) showAlbumInLibrary(e.name) }}
+                onClick={() => { if (albumExistsDb[e.albumId]) showAlbumInLibrary(getFolderName(computedAlbumFolder(e))) }}
                 className={cn("flex flex-row items-center justify-between w-full h-10 rounded-lg overflow-clip bg-pink-500/15 hover:bg-pink-500/25 relative gap-2 transition ease-out duration-200",
-                    albumExistsDb[e.playlistId] ? "cursor-pointer bg-pink-400/15 hover:bg-pink-400/25" : ""
+                    albumExistsDb[e.albumId] ? "cursor-pointer bg-pink-600/25 hover:bg-pink-600/35" : ""
                 )}
             >
                 <div className="flex flex-row items-center gap-2">
                     <img className="h-10 min-w-10 rounded-lg pointer-events-none" src={e.thumbnails[0].url} />
                     <span className="line-clamp-1">{`${e.name} - ${e.artist.name}`}</span>
                 </div>
-                {albumExistsDb[e.playlistId] !== undefined && (
+                {albumExistsDb[e.albumId] !== undefined && (
                     <>
-                        {queuedAlbumsDownload.includes(e.playlistId) ? (
+                        {queuedAlbumsDownload.includes(e.albumId) ? (
                             <>
                                 <div
                                     title="Downloading..."
@@ -464,11 +520,11 @@ export default function DownloadTab() {
                             </>
                         ) : (
                             <>
-                                {albumExistsDb[e.playlistId] ? (
+                                {albumExistsDb[e.albumId] ? (
                                     <motion.div
                                         title="Downloaded. Click to remove album"
                                         className={cn("bg-green-900 hover:bg-red-800 hover:border-red-100 hover:text-red-100 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-green-300 text-green-300 transition ease-out duration-200 group/check",
-                                            queuedAlbumsDelete.includes(e.playlistId) ? "" : "cursor-pointer"
+                                            queuedAlbumsDelete.includes(e.albumId) ? "" : "cursor-pointer"
                                         )}
                                         onClick={(event) => { event.preventDefault(); event.stopPropagation(); deleteAlbum(e) }}
                                         initial={{
@@ -478,7 +534,7 @@ export default function DownloadTab() {
                                             scale: 1.0
                                         }}
                                         whileTap={{
-                                            scale: queuedAlbumsDelete.includes(e.playlistId) ? 1.0 : 0.8
+                                            scale: queuedAlbumsDelete.includes(e.albumId) ? 1.0 : 0.8
                                         }}
                                         transition={{
                                             duration: 0.025,
@@ -773,37 +829,49 @@ export default function DownloadTab() {
             </div>
             {/* Content */}
             {filter == "songs" && (
-                <div className="flex flex-col gap-2">
-                    {searchSongsResults.map((e, i) => (
-                        <div key={i}>
+                <motion.ul layout className="flex flex-col gap-2">
+                    {searchSongsResults.map((e) => (
+                        <motion.li layout key={e.videoId}>
                             {SongEntry(e)}
-                        </div>
+                        </motion.li>
                     ))}
-                </div>
+                </motion.ul>
             )}
             {filter == "albums" && (
-                <div className="flex flex-col gap-2">
-                    {searchAlbumsResults.map((e, i) => (
-                        <div key={i}>
+                <motion.ul layout className="flex flex-col gap-2">
+                    {mergedAlbumsResults.map((e) => (
+                        <motion.div layout key={e.albumId}>
                             {AlbumEntry(e)}
-                        </div>
+                        </motion.div>
                     ))}
-                </div>
+                </motion.ul>
             )}
             {filter == "downloaded" && (
                 <>
-                    <div className="flex flex-col gap-2">
-                        {queuedSongsComplete.map((e, i) => (
-                            <div key={i}>
-                                {SongEntry(e)}
-                            </div>
-                        ))}
-                        {queuedAlbumsComplete.map((e, i) => (
-                            <div key={i}>
-                                {AlbumEntry(e)}
-                            </div>
-                        ))}
-                    </div>
+                    {queuedAlbumsComplete.length > 0 && (
+                        <>
+                            <p className="font-bold">Albums</p>
+                            <motion.ul layout className="flex flex-col gap-2">
+                                {queuedAlbumsComplete.map((e) => (
+                                    <motion.div layout key={e.albumId}>
+                                        {AlbumEntry(e)}
+                                    </motion.div>
+                                ))}
+                            </motion.ul>
+                        </>
+                    )}
+                    {queuedSongsComplete.length > 0 && (
+                        <>
+                            <p className="font-bold">Songs</p>
+                            <motion.ul layout className="flex flex-col gap-2">
+                                {queuedSongsComplete.map((e) => (
+                                    <motion.li layout key={e.videoId}>
+                                        {SongEntry(e)}
+                                    </motion.li>
+                                ))}
+                            </motion.ul>
+                        </>
+                    )}
                 </>
             )}
             {filter == "failed" && (
@@ -880,18 +948,30 @@ export default function DownloadTab() {
                         </>
 
                     )}
-                    <div className="flex flex-col gap-2">
-                        {queuedSongsFailed.map((e, i) => (
-                            <div key={i}>
-                                {SongEntry(e)}
-                            </div>
-                        ))}
-                        {queuedAlbumsFailed.map((e, i) => (
-                            <div key={i}>
-                                {AlbumEntry(e)}
-                            </div>
-                        ))}
-                    </div>
+                    {queuedAlbumsFailed.length > 0 && (
+                        <>
+                            <p className="font-bold">Albums</p>
+                            <motion.ul layout className="flex flex-col gap-2">
+                                {queuedAlbumsFailed.map((e) => (
+                                    <motion.div layout key={e.albumId}>
+                                        {AlbumEntry(e)}
+                                    </motion.div>
+                                ))}
+                            </motion.ul>
+                        </>
+                    )}
+                    {queuedSongsFailed.length > 0 && (
+                        <>
+                            <p className="font-bold">Songs</p>
+                            <motion.ul layout className="flex flex-col gap-2">
+                                {queuedSongsFailed.map((e) => (
+                                    <motion.li layout key={e.videoId}>
+                                        {SongEntry(e)}
+                                    </motion.li>
+                                ))}
+                            </motion.ul>
+                        </>
+                    )}
                 </>
             )}
         </>

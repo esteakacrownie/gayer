@@ -202,7 +202,7 @@ export default function LibraryTab() {
 			// console.log(album_sorted)
 			setSelectedAlbumSongs(album_sorted.filter((s) => isMusicFile(s)))
 		} else {
-			setSelectedAlbumSongs([])
+			setSelectedAlbumSongs(getPlaylistFromId(selectedPlaylist).songs)
 		}
 	}, [selectedPlaylist, playlists, idInPlaylists, setSelectedAlbumSongs])
 
@@ -265,7 +265,7 @@ export default function LibraryTab() {
 					toSearchString(search),
 				) || hasAlbumFilteredSong(elt.path),
 		)
-	}, [albumSongsCount, search])
+	}, [albumSongsCount, search, hasAlbumFilteredSong])
 
 	const filteredAlbumsSongs = useMemo(() => {
 		let list = []

@@ -331,7 +331,9 @@ app.whenReady().then(() => {
 		try {
 			const result = {}
 			for (let song of Object.keys(args.songs)) {
-				result[song] = existsSync(args.songs[song])
+				const s = existsSync(args.songs[song])
+				result[song] = s
+				//(!s && console.log(args.songs[song]))
 			}
 			return result
 		} catch (error) {
@@ -343,6 +345,7 @@ app.whenReady().then(() => {
 		try {
 			for (let s of args.songs) {
 				if (!existsSync(s)) {
+					// console.log(s)
 					return false
 				}
 			}
@@ -396,6 +399,18 @@ app.whenReady().then(() => {
 			return error
 		}
 	})
+	ipcMain.handle('get_album', async (event, args) => {
+		try {
+			if (!YTM_INITIALIZED) {
+				return {}
+			}
+			const result = await ytmusic.getAlbum(args.id)
+			return result
+		} catch (error) {
+			console.log(error)
+			return error
+		}
+	})
 	ipcMain.handle('get_album_songs', async (event, args) => {
 		try {
 			if (!YTM_INITIALIZED) {
@@ -431,7 +446,7 @@ app.whenReady().then(() => {
 					format: { filter: 'audioonly', quality: "0", type: "mp3" },
 					output: join(args.destination, `%(title)s - ${args.artist}.mp3`),
 					rawArgs: args.browserCookies ? ["--cookies-from-browser", args.browserCookies] : [],
-					// onProgress: (p) => console.log(`${p.percentage_str}`),
+					onProgress: (p) => console.log(`${p.percentage_str}`),
 				})
 			return true
 		} catch (error) {
@@ -450,7 +465,7 @@ app.whenReady().then(() => {
 					format: { filter: 'audioonly', quality: "0", type: "mp3" },
 					output: args.path,
 					rawArgs: args.browserCookies ? ["--cookies-from-browser", args.browserCookies] : [],
-					// onProgress: (p) => console.log(`${p.percentage_str}`),
+					onProgress: (p) => console.log(`${p.percentage_str}`),
 				})
 			return true
 		} catch (error) {
