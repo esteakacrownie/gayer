@@ -20,7 +20,7 @@ import usePlayerControls from "../hooks/usePlayerControls"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import { getFolderName, getSortedFilesAt, shuffleArray } from "../utils"
 import { FaPlay, FaStepForward } from "react-icons/fa"
-import { MdPlaylistAdd } from "react-icons/md"
+import { MdAddCircleOutline, MdPlaylistAdd } from "react-icons/md"
 import CoverImage from "./CoverImage"
 import { motion } from "motion/react"
 import { useCallback, useEffect, useState } from "react"
@@ -34,16 +34,29 @@ export default function PlaylistElement({
 	isGrabbable = false,
 	showPlayNext = true,
 	showAddToQueue = true,
+	showAddToPlaylist = true,
 }) {
-	const { autoplay, setAutoplay, queue, setQueue, setNextAction, currentTrack, setSelectedPlaylist } = usePlayerStore()
+	const {
+		autoplay,
+		setAutoplay,
+		queue,
+		setQueue,
+		setNextAction,
+		currentTrack,
+		setSelectedPlaylist
+	} = usePlayerStore()
 
 	const { shufflePlay } = useSettingsStore()
 
 	const { playSongs, playBatchNext } = usePlayerControls()
 
-	const { playlists } = usePlaylistsStore()
+	const { playlists, setSelectedSongPath } = usePlaylistsStore()
 
 	const [songs, setSongs] = useState([])
+
+	const handleAddToPlaylist = useCallback(() => {
+		setSelectedSongPath(songs)
+	}, [songs])
 
 	const fetchSongs = useCallback(async () => {
 		const { songs: res } = await getSortedFilesAt(playlist)
@@ -184,6 +197,31 @@ export default function PlaylistElement({
 						}}
 					>
 						<MdPlaylistAdd size={20} />
+					</motion.div>
+				)}
+				{showAddToPlaylist && songs.length > 0 && (
+					<motion.div
+						title="Add to playlist"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						onClick={(e) => {
+							e.stopPropagation()
+							handleAddToPlaylist()
+						}}
+						initial={{
+							scale: 1.0
+						}}
+						animate={{
+							scale: 1.0
+						}}
+						whileTap={{
+							scale: 0.8
+						}}
+						transition={{
+							duration: 0.025,
+							ease: "easeOut"
+						}}
+					>
+						<MdAddCircleOutline size={20} />
 					</motion.div>
 				)}
 			</motion.div>

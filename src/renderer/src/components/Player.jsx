@@ -15,7 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import { useEffect, useMemo, useState, useCallback } from "react"
 import { FaPlay, FaPause, FaStepForward, FaStepBackward } from "react-icons/fa"
-import { IoMdVolumeHigh, IoMdVolumeLow, IoMdVolumeMute, IoMdShuffle } from "react-icons/io"
+import { IoMdVolumeHigh, IoMdVolumeLow, IoMdVolumeMute, IoMdShuffle, IoMdAddCircleOutline } from "react-icons/io"
 import { MdLoop } from "react-icons/md"
 import { AnimatePresence, motion } from "motion/react"
 import { getSongName } from "../utils"
@@ -29,6 +29,7 @@ import { useFilesStore } from "../stores/useFilesStore"
 import TimeLine from "./TimeLine"
 import { useCacheStore } from "../stores/useCacheStore"
 import { useHotkeys } from "react-hotkeys-hook"
+import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 
 export default function Player() {
 
@@ -45,6 +46,8 @@ export default function Player() {
 	} = useSettingsStore()
 
 	const { thumbnailCache, setThumbnailCache } = useCacheStore()
+
+	const { setSelectedSongPath } = usePlaylistsStore()
 
 	const { files } = useFilesStore()
 
@@ -95,6 +98,11 @@ export default function Player() {
 			resume()
 		}
 	}, [isPlaying])
+
+	const handleAddToPlaylist = useCallback(() => {
+		if (!currentTrack) return
+		setSelectedSongPath(currentTrack)
+	}, [currentTrack])
 
 	const handleLoopMode = useCallback(() => {
 		// console.log(loopMode)
@@ -365,6 +373,25 @@ export default function Player() {
 								{loopMode == "current" && (
 									<span className="absolute right-2 text-xs bottom-4.5 font-bold">1</span>
 								)}
+							</motion.button>
+							<motion.button
+								className="hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
+								onClick={handleAddToPlaylist}
+								initial={{
+									scale: 1.0
+								}}
+								animate={{
+									scale: 1.0
+								}}
+								whileTap={{
+									scale: 0.8
+								}}
+								transition={{
+									duration: 0.025,
+									ease: "easeOut"
+								}}
+							>
+								<IoMdAddCircleOutline size={20} />
 							</motion.button>
 						</div>
 						<div className="flex flex-row justify-end items-center absolute w-full right-0 top-1.75 pointer-events-none">

@@ -19,9 +19,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { IoMdCheckmark, IoMdClose, IoMdDownload } from "react-icons/io"
 import { TbLoader2, TbNetwork, TbNetworkOff } from "react-icons/tb";
 import PowerSavingButton from "./PowerSavingButton"
-import { getFolderName, getSongName, toAllowedPlaylistName, ytLogin } from "../utils"
+import { getFolderName, getSongName, ytLogin } from "../utils"
 import { motion } from "motion/react"
-import { IoLogoChrome, IoLogoFirefox, IoMusicalNotes, IoPeopleSharp, IoWarningOutline } from "react-icons/io5";
+import { IoLogoChrome, IoLogoFirefox, IoMusicalNotes, IoWarningOutline } from "react-icons/io5";
 import { GiCompactDisc, GiSpermWhale } from "react-icons/gi";
 import { usePlayerStore } from "../stores/usePlayerStore";
 import { MdCheckCircleOutline, MdErrorOutline } from "react-icons/md";

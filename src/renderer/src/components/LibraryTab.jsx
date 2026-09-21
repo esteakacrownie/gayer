@@ -459,9 +459,11 @@ export default function LibraryTab() {
 						</button>
 					</>
 				)}
-				{libraryFilter == "playlists" && selectedPlaylist && idInPlaylists(selectedPlaylist) && (
+				{libraryFilter == "playlists" && selectedPlaylist && (
 					<>
-						<PlaylistExportButton />
+						{idInPlaylists(selectedPlaylist) && (
+							<PlaylistExportButton />
+						)}
 						<DeletePlaylistButton pid={selectedPlaylist} />
 					</>
 				)}

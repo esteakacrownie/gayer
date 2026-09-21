@@ -15,14 +15,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import { cn } from "@sglara/cn"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { getSongName, isPlaylistFile, parseM3U8, randomStr, toAllowedPlaylistName } from "../utils"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { getSongName, isPlaylistFile, parseM3U8, toAllowedPlaylistName } from "../utils"
 import { IoAdd, IoChevronBack } from "react-icons/io5"
 import { IoIosFolderOpen, IoMdClose } from "react-icons/io"
 import { PiPlaylist } from "react-icons/pi"
 import ManagedPlaylistItem from "./ManagedPlaylistItem"
 import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 import { motion } from "motion/react"
+import { useClickOutside } from "../hooks/useClickOutside"
 
 export default function PlaylistDialog() {
 
@@ -34,8 +35,29 @@ export default function PlaylistDialog() {
 
     const playlistsHavingSong = useMemo(() => {
         // console.log(playlists)
-        return playlists.filter((e) => e.songs.includes(selectedSongPath)).map((e) => e.id)
+        if (Array.isArray(selectedSongPath)) {
+            const res = playlists.filter((e) => {
+                for (let elt of e.songs) {
+                    // console.log(elt)
+                    if (selectedSongPath.includes(elt)) {
+                        return true
+                    }
+                }
+                return false
+            })
+            return res.map((e) => e.id)
+        } else {
+            return playlists.filter((e) => e.songs.includes(selectedSongPath)).map((e) => e.id)
+        }
     }, [selectedSongPath, playlists])
+
+    const closeDialogModal = () => {
+        setSelectedSongPath("")
+    }
+
+    const mainContainer = useRef(null)
+    const container = useRef(null)
+    useClickOutside(container, closeDialogModal, selectedSongPath !== "", mainContainer)
 
     const importNewPlaylist = useCallback(async () => {
         const path = await window.electron.ipcRenderer.invoke("open_file", {})
@@ -56,9 +78,26 @@ export default function PlaylistDialog() {
 
     const handlePlaylistSelected = useCallback((pid) => {
         if (selectedSongPath == "*") return
-        if (playlists.filter((e) => e.id == pid)[0].songs.includes(selectedSongPath)) {
+
+        // handle whether playlist has one of the selected songs 
+        const hasSelected = () => {
+            if (Array.isArray(selectedSongPath)) {
+                for (let elt of selectedSongPath) {
+                    if (playlists.filter((e) => e.id == pid)[0].songs.includes(elt)) {
+                        return true
+                    }
+                }
+                return false
+            } else {
+                return playlists.filter((e) => e.id == pid)[0].songs.includes(selectedSongPath)
+            }
+        }
+
+        if (hasSelected()) {
+            // remove from playlist
             const p = [...playlists]
             let idx = 0
+            // finding playlist's index
             for (let elt of p) {
                 if (elt.id == pid) {
                     break
@@ -66,11 +105,20 @@ export default function PlaylistDialog() {
                 idx += 1
             }
             if (idx < p.length) {
-                p[idx] = { ...p[idx], songs: [...new Set(p[idx].songs.filter((e) => e != selectedSongPath))] }
+                let songs = []
+                if (Array.isArray(selectedSongPath)) {
+                    // console.log(p[idx].songs.filter((e) => !selectedSongPath.includes(e)))
+                    songs = [...new Set(p[idx].songs.filter((e) => !selectedSongPath.includes(e)))]
+                } else {
+                    songs = [...new Set(p[idx].songs.filter((e) => e != selectedSongPath))]
+                }
+                p[idx] = { ...p[idx], songs }
             }
             setPlaylists(p)
         } else {
+            // add to playlist
             const p = [...playlists]
+            // finding playlist's index
             let idx = 0
             for (let elt of p) {
                 if (elt.id == pid) {
@@ -79,11 +127,31 @@ export default function PlaylistDialog() {
                 idx += 1
             }
             if (idx < p.length) {
-                p[idx] = { ...p[idx], songs: [...new Set([...p[idx].songs, selectedSongPath])] }
+                let songs = []
+                if (Array.isArray(selectedSongPath)) {
+                    songs = [...new Set([...p[idx].songs, ...selectedSongPath])]
+                } else {
+                    songs = [...new Set([...p[idx].songs, selectedSongPath])]
+                }
+                p[idx] = { ...p[idx], songs }
             }
             setPlaylists(p)
         }
     }, [playlists, setPlaylists, selectedSongPath])
+
+    const displaySelectedSong = useMemo(() => {
+        if (Array.isArray(selectedSongPath)) {
+            if (selectedSongPath.length == 0) return ""
+            return (
+                <>
+                    {getSongName(selectedSongPath[0])}&nbsp;
+                    <span className="font-bold text-sm">{selectedSongPath.length > 1 ? ` + ${selectedSongPath.length - 1}` : ""}</span>
+                </>
+            )
+        } else {
+            return getSongName(selectedSongPath)
+        }
+    }, [selectedSongPath])
 
     useEffect(() => {
         setNewPlaylistName("")
@@ -92,14 +160,15 @@ export default function PlaylistDialog() {
 
     return (
         <div
+            ref={mainContainer}
             className={cn("fixed z-10 top-0 w-screen h-screen mx-auto pt-4 pb-34 backdrop-blur-sm backdrop-brightness-75", selectedSongPath ? "flex flex-col justify-center items-center" : "hidden pointer-events-none")}
         >
-            <div className="px-4 flex flex-col w-full h-full justify-start gap-4 max-w-200 mx-auto">
+            <div ref={container} className="px-8 flex flex-col w-full h-full justify-start gap-4 max-w-200 mx-auto">
                 <div className="p-4 flex flex-col gap-2 justify-start items-center w-full  h-full from-slate-950 to-pink-700 from-[-25%] to-150% bg-linear-180 rounded-2xl border-2 border-pink-300 shadow-pink-400/40 shadow-[0_0_7px_7px]">
                     <div className="flex flex-row w-full items-center justify-between gap-2">
                         <motion.div
                             className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200"
-                            onClick={() => setSelectedSongPath("")}
+                            onClick={closeDialogModal}
                             initial={{
                                 scale: 1.0
                             }}
@@ -124,7 +193,7 @@ export default function PlaylistDialog() {
                                 </div>
                             </>
                             :
-                            <p className="w-full text-center line-clamp-1">{getSongName(selectedSongPath)}</p>
+                            <p className="w-full text-center line-clamp-1">{displaySelectedSong}</p>
                         }
                         <motion.div
                             className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200"
