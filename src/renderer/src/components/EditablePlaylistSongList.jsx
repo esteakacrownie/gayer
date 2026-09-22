@@ -84,7 +84,11 @@ export default function EditablePlaylistSongList() {
                     </motion.div>
                     <div className="w-full flex flex-col text-center justify-center">
                         <PlaylistRenamer />
-                        <p className="font-bold text-xs line-clamp-1 mr-12">{selectedPlaylistReorderSongs.length > 0 ? selectedPlaylistReorderSongs.length : ""}&nbsp;{selectedPlaylistReorderSongs.length > 0 ? "item(s)" : ""}</p>
+                        <p className="font-bold text-xs line-clamp-1 mr-12">
+                            {selectedPlaylistReorderSongs.length > 0 && selectedPlaylistReorderSongs.length}
+                            &nbsp;
+                            {selectedPlaylistReorderSongs.length > 0 && "item(s)"}
+                        </p>
                     </div>
                 </div>
                 {search ? (

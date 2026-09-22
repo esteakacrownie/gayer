@@ -330,7 +330,7 @@ export default function Player() {
 							<motion.button
 								className={cn(
 									"hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
-									shufflePlay ? "bg-pink-400/50 outline-2 outline-pink-300" : ""
+									shufflePlay && "bg-pink-400/50 outline-2 outline-pink-300"
 								)}
 								onClick={() => setShufflePlay(!shufflePlay)}
 								initial={{
@@ -352,7 +352,7 @@ export default function Player() {
 							<motion.button
 								className={cn(
 									"relative hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
-									loopMode != "off" ? "bg-pink-400/50 outline-2 outline-pink-300" : ""
+									loopMode != "off" && "bg-pink-400/50 outline-2 outline-pink-300"
 								)}
 								onClick={handleLoopMode}
 								initial={{

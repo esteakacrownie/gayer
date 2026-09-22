@@ -24,6 +24,7 @@ import ManagedPlaylistItem from "./ManagedPlaylistItem"
 import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 import { motion } from "motion/react"
 import { useClickOutside } from "../hooks/useClickOutside"
+import { useHotkeys } from "react-hotkeys-hook"
 
 export default function PlaylistDialog() {
 
@@ -158,6 +159,12 @@ export default function PlaylistDialog() {
         // console.log(playlists)
     }, [selectedSongPath])
 
+    useHotkeys("escape", () => {
+        if (selectedSongPath) {
+            setSelectedSongPath("")
+        }
+    })
+
     if (!selectedSongPath) return
 
     return (
@@ -229,10 +236,16 @@ export default function PlaylistDialog() {
                             placeholder=" +  Create new Playlist"
                             value={newPlaylistName}
                             onChange={(e) => setNewPlaylistName(toAllowedPlaylistName(e.target.value))}
-                            onKeyDown={(e) => { if (e.key == "Enter") createNewPlaylist() }}
+                            onKeyDown={(e) => {
+                                if (e.key == "Enter") {
+                                    createNewPlaylist()
+                                } else if (e.key == "Escape") {
+                                    e.target.blur()
+                                }
+                            }}
                         />
                         <button
-                            className="absolute right-12 top-0 h-full p-2 cursor-pointer hover:scale-125 transition ease-out duration-200"
+                            className="absolute right-12 top-0 h-full p-2 cursor-pointer hover:scale-125 active:scale-95 transition ease-out duration-200"
                             onClick={() => setNewPlaylistName("")}
                         >
                             <IoMdClose size={20} />

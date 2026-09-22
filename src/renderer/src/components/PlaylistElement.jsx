@@ -250,7 +250,7 @@ export default function PlaylistElement({
 						title={`Delete ${isPlaylist ? "Playlist" : "Album"}`}
 						className={cn(
 							"hover:bg-red-600/50 text-red-700 bg-red-200/70 hover:text-white rounded-lg flex flex-row gap-4 justify-start items-center h-10 transition ease-out duration-200 cursor-pointer overflow-clip",
-							deleting ? "pr-2 gap-0" : ""
+							deleting && "pr-2 gap-0"
 						)}
 						onClick={(e) => {
 							e.stopPropagation()
@@ -281,7 +281,7 @@ export default function PlaylistElement({
 						<span
 							className={cn(
 								"min-w-max transition ease-out duration-200",
-								deleting ? "-translate-x-1" : ""
+								deleting && "-translate-x-1"
 							)}
 						>
 							Confirm Deletion ?

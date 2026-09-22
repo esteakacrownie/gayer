@@ -70,7 +70,7 @@ export default function SongElement({
 				highlightIfPlaying && currentTrack == song
 					? "bg-linear-90 from-pink-950 to-pink-900 brightness-175 border-2 border-pink-400 shadow-pink-500/40 shadow-[0_0_7px_7px]"
 					: "brightness-110 hover:brightness-150 border-2 border-slate-400/50",
-				isGrabbable ? "cursor-grab" : "",
+				isGrabbable && "cursor-grab",
 			)}
 		>
 			<div
@@ -229,7 +229,7 @@ export default function SongElement({
 						title="Delete Track"
 						className={cn(
 							"hover:bg-red-600/50 text-red-700 bg-red-200/70 hover:text-white rounded-lg flex flex-row gap-4 justify-start items-center h-10 transition ease-out duration-200 cursor-pointer overflow-clip",
-							deleting ? "pr-2 gap-0" : ""
+							deleting && "pr-2 gap-0"
 						)}
 						onClick={(e) => {
 							e.stopPropagation()
@@ -260,7 +260,7 @@ export default function SongElement({
 						<span
 							className={cn(
 								"min-w-max transition ease-out duration-200",
-								deleting ? "-translate-x-1" : ""
+								deleting && "-translate-x-1"
 							)}
 						>
 							Confirm Deletion ?

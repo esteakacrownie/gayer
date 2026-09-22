@@ -124,11 +124,6 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 
-// requirements for youtube features
-initYTModules().then(() => YTDLP_READY = true)
-ytmusic.initialize().then(() => YTM_INITIALIZED = true)
-
-
 // setup and build app window
 async function createWindow() {
 
@@ -152,6 +147,10 @@ async function createWindow() {
 			// allowRunningInsecureContent: true,
 		}
 	})
+
+	// requirements for youtube features
+	initYTModules().then(() => YTDLP_READY = true).then(() => mainWindow.webContents.send("ytdlp_ready", true))
+	ytmusic.initialize().then(() => YTM_INITIALIZED = true).then(() => mainWindow.webContents.send("ytm_initialized", true))
 
 	// Track window state
 	mainWindowStateKeeper.track(mainWindow)
@@ -436,20 +435,39 @@ app.whenReady().then(() => {
 			return error
 		}
 	})
-	ipcMain.handle('download_album', async (event, args) => {
+	ipcMain.handle('download_from_url', async (event, args) => {
 		try {
 			if (!YTDLP_READY) {
 				return false
 			}
 			// args : url, destination, artist
-			await createYTDownloader()
-				.downloadAsync("https://www.youtube.com/playlist?list=" + args.url, {
+			const res = await createYTDownloader()
+				.downloadAsync(args.url, {
 					format: { filter: 'audioonly', quality: "0", type: "mp3" },
-					output: join(args.destination, `%(title)s - ${args.artist}.mp3`),
+					output: join(args.destination, "%(channel)s/%(title)s - %(channel)s.mp3"),
 					rawArgs: args.browserCookies ? ["--cookies-from-browser", args.browserCookies] : [],
 					onProgress: (p) => console.log(`${p.percentage_str}`),
 				})
-			return true
+			return res.filePaths
+		} catch (error) {
+			console.log(error)
+			return false
+		}
+	})
+	ipcMain.handle('download_playlist_from_url', async (event, args) => {
+		try {
+			if (!YTDLP_READY) {
+				return false
+			}
+			// args : url, destination, artist
+			const res = await createYTDownloader()
+				.downloadAsync(args.url, {
+					format: { filter: 'audioonly', quality: "0", type: "mp3" },
+					output: join(args.destination, "%(playlist_title)s - %(channel)s/%(title)s - %(channel)s.mp3"),
+					rawArgs: args.browserCookies ? ["--cookies-from-browser", args.browserCookies] : [],
+					onProgress: (p) => console.log(`${p.percentage_str}`),
+				})
+			return res.filePaths
 		} catch (error) {
 			console.log(error)
 			return false
@@ -482,6 +500,9 @@ app.whenReady().then(() => {
 			console.log(error)
 			return error
 		}
+	})
+	ipcMain.handle('is_ytdlp_ready', async (event, args) => {
+		return YTDLP_READY
 	})
 
 	createWindow()

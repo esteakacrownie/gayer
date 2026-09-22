@@ -27,7 +27,7 @@ import { usePlayerStore } from "../stores/usePlayerStore";
 import { MdCheckCircleOutline, MdErrorOutline } from "react-icons/md";
 import { useLibraryStore } from "../stores/useLibraryStore";
 import { toSanitized } from "../sanitize-filename";
-import { FaBrave, FaOpera, FaSafari } from "react-icons/fa6";
+import { FaBrave, FaLink, FaOpera, FaSafari } from "react-icons/fa6";
 import { RiEdgeNewFill } from "react-icons/ri";
 import { SiVivaldi } from "react-icons/si";
 
@@ -54,6 +54,10 @@ export default function DownloadTab() {
     const { setSearch: setLibrarySearch } = useLibraryStore()
     const { currentTrack, queue, setQueue, history, setHistory, setNextAction, setCurrentTrack } = usePlayerStore()
     const searchRequestCount = useRef(0)
+    const [ytdlpReady, setYtdlpReady] = useState(false)
+    const [urlDownloadStatus, setUrlDownloadStatus] = useState("idle") // idle, downloading, success, failed
+    const [urlDownloadedAudio, setUrlDownloadedAudio] = useState([])
+    const [urlDownloadedPlaylists, setUrlDownloadedPlaylists] = useState([])
     const [search, setSearch] = useState("")
     const [isFetching, setIsFetching] = useState(false)
     const [searchSongsResults, setSearchSongsResults] = useState([])
@@ -71,6 +75,7 @@ export default function DownloadTab() {
     const [queuedAlbumsDelete, setQueuedAlbumsDelete] = useState([])
     const [songExistsDb, setSongExistsDb] = useState({})
     const [albumExistsDb, setAlbumExistsDb] = useState({})
+    const [linkEnabled, setLinkEnabled] = useState(false)
     const [filter, setFilter] = useState("songs")
 
     const clearSearch = () => {
@@ -272,6 +277,40 @@ export default function DownloadTab() {
         }
     }, [queuedAlbumsDelete, downloadLocation, forceRefreshLocationsTracker, currentTrack, queue, history, deleteSong])
 
+    const handleDownloadFromLink = useCallback(async () => {
+        if (urlDownloadStatus == "downloading") return
+        setUrlDownloadStatus("downloading")
+        const isPlaylist = search.includes("?list=") || search.includes("&list=")
+        let result = false
+        if (isPlaylist) {
+            result = await window.electron.ipcRenderer.invoke("download_playlist_from_url", {
+                url: search,
+                destination: downloadLocation,
+                browserCookies: ytCookiesEnabled ? ytCookiesBrowser : ""
+            })
+        } else {
+            result = await window.electron.ipcRenderer.invoke("download_from_url", {
+                url: search,
+                destination: downloadLocation,
+                browserCookies: ytCookiesEnabled ? ytCookiesBrowser : ""
+            })
+        }
+
+        if (result) {
+            setUrlDownloadStatus("success")
+            if (isPlaylist) {
+                setUrlDownloadedPlaylists((p) => ([...new Set([...p, getFolderName(result[0])])]))
+                setUrlDownloadedAudio((p) => ([...new Set([...p, ...result])]))
+            } else {
+                setUrlDownloadedAudio((p) => ([...new Set([...p, ...result])]))
+            }
+        } else {
+            setUrlDownloadStatus("failed")
+        }
+
+        setForceRefreshLocationsTracker((p) => p + 1)
+    }, [search, downloadLocation, ytCookiesBrowser, ytCookiesEnabled, urlDownloadStatus])
+
     const fetchSongsResults = async (q, i) => {
         const res = await window.electron.ipcRenderer.invoke("ytm_songs", { query: q })
         await refreshSongExistsDb(res)
@@ -305,10 +344,6 @@ export default function DownloadTab() {
             setHiddenAlbumsResults(albumElts)
         }
     }
-
-    // const fetchArtistsResults = async (q) => {
-
-    // }
 
     const refreshSongExistsDb = async (songElts) => {
         const songs = {}
@@ -344,7 +379,7 @@ export default function DownloadTab() {
     // requests
     useEffect(() => {
         searchRequestCount.current += 1
-        if (!search || search.length < 3) {
+        if (!search || search.length < 3 || linkEnabled) {
             setIsFetching(false)
             setSearchSongsResults([])
             setSearchAlbumsResults([])
@@ -362,6 +397,13 @@ export default function DownloadTab() {
             return () => {
                 clearTimeout(t)
             }
+        }
+    }, [search, linkEnabled])
+
+    // auto switch to link mode
+    useEffect(() => {
+        if (search.startsWith("https://")) {
+            setLinkEnabled(true)
         }
     }, [search])
 
@@ -386,9 +428,21 @@ export default function DownloadTab() {
         setMergedAlbumsResults(result)
     }, [hiddenAlbumsResults, searchAlbumsResults])
 
+    // disable loading request icon after merging
     useEffect(() => {
         setIsFetching(false)
     }, [hiddenAlbumsResults])
+
+    // disable UI until ytdlp is ready
+    useEffect(() => {
+        window.electron.ipcRenderer.invoke("is_ytdlp_ready", {}).then((e) => setYtdlpReady(e))
+        window.electron.ipcRenderer.on("ytdlp_ready", (v) => {
+            setYtdlpReady(v)
+        })
+        return () => {
+            window.electron.ipcRenderer.on("ytdlp_ready", () => { })
+        }
+    }, [])
 
     const downloadingLabel = useMemo(() => {
         if (queuedSongsDownload.length > 0) {
@@ -409,15 +463,32 @@ export default function DownloadTab() {
     }, [queuedSongsFailed, queuedAlbumsFailed])
 
     const completeLabel = useMemo(() => {
-        if ((queuedSongsComplete.length > 0) && !(queuedAlbumsComplete.length > 0)) {
-            return `${queuedSongsComplete.length} song(s) downloaded`
-        } else if (!(queuedSongsComplete.length > 0) && (queuedAlbumsComplete.length > 0)) {
-            return `${queuedAlbumsComplete.length} album(s) downloaded`
-        } else if (queuedSongsComplete.length > 0 && queuedAlbumsComplete.length > 0) {
-            return `${queuedSongsComplete.length} song(s), ${queuedAlbumsComplete.length} album(s) downloaded`
+        const songs = queuedSongsComplete.length + urlDownloadedAudio.length
+        const albums = queuedAlbumsComplete.length + urlDownloadedPlaylists.length
+        if (songs && !albums) {
+            return `${songs} song(s) downloaded`
+        } else if (!songs && albums) {
+            return `${albums} album(s) downloaded`
+        } else if (songs && albums) {
+            return `${songs} song(s), ${albums} album(s) downloaded`
         }
         return ""
-    }, [queuedSongsComplete, queuedAlbumsComplete])
+    }, [queuedSongsComplete, queuedAlbumsComplete, urlDownloadedAudio, urlDownloadedPlaylists])
+
+    const urlDownloadLabel = useMemo(() => {
+        switch (urlDownloadStatus) {
+            case "idle":
+                return "Ready to start downloading."
+            case "downloading":
+                return "Downloading content..."
+            case "success":
+                return "Downloads completed successfully."
+            case "failed":
+                return "An error occured. Double check your link, and activate cookies if necessary."
+            default:
+                return ""
+        }
+    }, [urlDownloadStatus])
 
     const SongEntry = (e) => {
         return (
@@ -425,12 +496,15 @@ export default function DownloadTab() {
                 title={`${e.name} - ${e.artist.name}`}
                 onClick={() => { if (songExistsDb[e.videoId]) showSongInLibrary(getSongName(computedSongPath(e))) }}
                 className={cn("flex flex-row items-center justify-between w-full h-10 rounded-lg overflow-clip bg-pink-500/15 hover:bg-pink-500/25 relative gap-2 transition ease-out duration-200",
-                    songExistsDb[e.videoId] ? "cursor-pointer bg-pink-600/25 hover:bg-pink-600/35" : ""
+                    songExistsDb[e.videoId] && "cursor-pointer bg-pink-600/25 hover:bg-pink-600/35"
                 )}
             >
                 <div className="flex flex-row items-center gap-2">
                     <img className="h-10 min-w-10 rounded-lg pointer-events-none" src={e.thumbnails[0]?.url || "#"} />
                     <span className="line-clamp-1">{`${e.name} - ${e.artist.name}`}</span>
+                    {e.album?.name && (
+                        <span title={e.album.name} className="line-clamp-1 text-xs opacity-50 font-bold">{e.album.name}</span>
+                    )}
                 </div>
                 {queuedSongsDownload.includes(e.videoId) ? (
                     <>
@@ -505,12 +579,15 @@ export default function DownloadTab() {
                 title={`${e.name} - ${e.artist.name}`}
                 onClick={() => { if (albumExistsDb[e.albumId]) showAlbumInLibrary(getFolderName(computedAlbumFolder(e))) }}
                 className={cn("flex flex-row items-center justify-between w-full h-10 rounded-lg overflow-clip bg-pink-500/15 hover:bg-pink-500/25 relative gap-2 transition ease-out duration-200",
-                    albumExistsDb[e.albumId] ? "cursor-pointer bg-pink-600/25 hover:bg-pink-600/35" : ""
+                    albumExistsDb[e.albumId] && "cursor-pointer bg-pink-600/25 hover:bg-pink-600/35"
                 )}
             >
                 <div className="flex flex-row items-center gap-2">
                     <img className="h-10 min-w-10 rounded-lg pointer-events-none" src={e.thumbnails[0]?.url || "#"} />
                     <span className="line-clamp-1">{`${e.name} - ${e.artist.name}`}</span>
+                    {e.year && (
+                        <span className="line-clamp-1 text-xs opacity-50 font-bold min-w-max">{e.year}</span>
+                    )}
                 </div>
                 {albumExistsDb[e.albumId] !== undefined && (
                     <motion.div
@@ -594,6 +671,36 @@ export default function DownloadTab() {
         )
     }
 
+    const URLSongEntry = (e) => {
+        return (
+            <div
+                title={getSongName(e)}
+                onClick={() => showSongInLibrary(getSongName(e))}
+                className={cn("flex flex-row items-center justify-between w-full h-10 px-3 rounded-lg overflow-clip bg-pink-600/25 hover:bg-pink-500/25 relative gap-2 transition ease-out duration-200 cursor-pointer hover:bg-pink-600/35",
+                )}
+            >
+                <div className="flex flex-row items-center gap-2">
+                    <span className="line-clamp-1">{getSongName(e)}</span>
+                </div>
+            </div>
+        )
+    }
+
+    const URLAlbumEntry = (e) => {
+        return (
+            <div
+                title={e}
+                onClick={() => showAlbumInLibrary(e)}
+                className={cn("flex flex-row items-center justify-between w-full h-10 px-3 rounded-lg overflow-clip bg-pink-600/25 hover:bg-pink-500/25 relative gap-2 transition ease-out duration-200 cursor-pointer hover:bg-pink-600/35",
+                )}
+            >
+                <div className="flex flex-row items-center gap-2">
+                    <span className="line-clamp-1">{e}</span>
+                </div>
+            </div>
+        )
+    }
+
     const browserCookiesIcon = useMemo(() => {
         switch (ytCookiesBrowser) {
             case "chrome":
@@ -649,6 +756,12 @@ export default function DownloadTab() {
 
     if (tab != "download") return
 
+    if (!ytdlpReady) return (
+        <div className="w-full h-full flex flex-col justify-center text-center">
+            Loading Download modules...
+        </div>
+    )
+
     return (
         <>
             {/* Main toolbar */}
@@ -688,7 +801,7 @@ export default function DownloadTab() {
                         {browserSelector}
                     </>
                 )}
-                {(queuedAlbumsDownload.length > 0 || queuedSongsDownload.length > 0) && (
+                {(queuedAlbumsDownload.length > 0 || queuedSongsDownload.length > 0 || urlDownloadStatus == "downloading") && (
                     <>
                         <button
                             title={downloadingLabel}
@@ -703,7 +816,7 @@ export default function DownloadTab() {
                         </button>
                     </>
                 )}
-                {(queuedSongsComplete.length > 0 || queuedAlbumsComplete.length > 0) && (
+                {(queuedSongsComplete.length > 0 || queuedAlbumsComplete.length > 0 || urlDownloadedAudio.length > 0 || urlDownloadedPlaylists.length > 0) && (
                     <>
                         <button
                             title={completeLabel}
@@ -712,7 +825,7 @@ export default function DownloadTab() {
                         >
                             <MdCheckCircleOutline size={18} />
                             <span>
-                                {`${queuedSongsComplete.length + queuedAlbumsComplete.length} item(s) downloaded`}
+                                {`${queuedSongsComplete.length + queuedAlbumsComplete.length + urlDownloadedAudio.length + urlDownloadedPlaylists.length} item(s) downloaded`}
                             </span>
                             <div
                                 className="absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply bg-green-300 outline-2 outline-green-300 transition ease-out duration-200"
@@ -740,38 +853,78 @@ export default function DownloadTab() {
                 <PowerSavingButton />
             </div>
             {/* Search bar */}
-            <div className="relative w-full flex flex-row">
-                <input
-                    className={cn(
-                        "outline-none w-full bg-pink-950/50 border-2 border-pink-300 shadow-[0_0_5px_5px] not-focus:shadow-transparent rounded-lg p-2 pr-14 transition ease-out duration-200",
-                        "focus:shadow-pink-400/40",
-                    )}
-                    autoFocus
-                    type="text"
-                    spellCheck={false}
-                    placeholder="Search for artists, songs, albums..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
-                <TbLoader2
-                    className={cn(
-                        "animate-spin absolute right-8 h-full transition ease-out duration-200",
-                        isFetching ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"
-                    )}
-                    size={20}
-                />
-                <button
-                    className="absolute right-0 top-0 outline-none h-full p-2 cursor-pointer hover:scale-125 transition ease-out duration-200"
-                    onClick={clearSearch}
-                >
-                    <IoMdClose size={20} />
-                </button>
+            <div className="flex flex-row items-center gap-1">
+                <div className="relative w-full flex flex-row">
+                    <input
+                        className={cn(
+                            "outline-none w-full bg-pink-950/50 border-2 border-pink-300 shadow-[0_0_5px_5px] not-focus:shadow-transparent rounded-lg p-2 pl-9 pr-14 transition ease-out duration-200",
+                            "focus:shadow-pink-400/40",
+                            linkEnabled && "pr-8"
+                        )}
+                        autoFocus
+                        type="text"
+                        spellCheck={false}
+                        placeholder={linkEnabled ? "Paste link from YouTube (Ctrl/Cmd+V)" : "Search for artists, songs, albums..."}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (linkEnabled && e.key == "Enter") {
+                                handleDownloadFromLink()
+                            }
+                        }}
+                    />
+                    <button
+                        title={linkEnabled ? "Click to search instead" : "Download from link"}
+                        className={cn(
+                            "absolute left-0 top-0 outline-none h-10 translate-y-0.5 translate-x-0.5 py-2 px-1.5 rounded-md cursor-pointer active:scale-80 transition ease-out duration-200",
+                            linkEnabled ? "bg-pink-700 hover:bg-pink-600" : "hover:bg-pink-200/25"
+                        )}
+                        onClick={() => setLinkEnabled(!linkEnabled)}
+                    >
+                        <FaLink size={20} />
+                    </button>
+                    <TbLoader2
+                        className={cn(
+                            "animate-spin absolute right-8 pointer-events-none h-full transition ease-out duration-200",
+                            isFetching ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"
+                        )}
+                        size={20}
+                    />
+                    <button
+                        className="absolute right-0 top-0 outline-none h-full p-2 cursor-pointer hover:scale-125 active:scale-95 transition ease-out duration-200"
+                        onClick={clearSearch}
+                    >
+                        <IoMdClose size={20} />
+                    </button>
+                </div>
+                {linkEnabled && (
+                    <motion.div
+                        title="Download from entered link"
+                        className="bg-slate-800 hover:bg-slate-700 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-slate-400 cursor-pointer transition ease-out duration-200"
+                        onClick={handleDownloadFromLink}
+                        initial={{
+                            scale: 1.0
+                        }}
+                        animate={{
+                            scale: 1.0
+                        }}
+                        whileTap={{
+                            scale: 0.8
+                        }}
+                        transition={{
+                            duration: 0.025,
+                            ease: "easeOut"
+                        }}
+                    >
+                        <IoMdDownload size={20} />
+                    </motion.div>
+                )}
             </div>
             {/* Filter bar */}
             <div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
                 <button
                     className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
-                        filter == "songs" ? "brightness-105" : ""
+                        filter == "songs" && "brightness-105"
                     )}
                     onClick={() => {
                         setFilter("songs")
@@ -782,15 +935,13 @@ export default function DownloadTab() {
                     <div
                         className={cn(
                             "absolute w-full h-full rounded-full  top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-                            filter == "songs"
-                                ? "bg-pink-300 outline-2 outline-pink-300"
-                                : "",
+                            filter == "songs" && "bg-pink-300 outline-2 outline-pink-300"
                         )}
                     />
                 </button>
                 <button
                     className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
-                        filter == "albums" ? "brightness-105" : ""
+                        filter == "albums" && "brightness-105"
                     )}
                     onClick={() => {
                         setFilter("albums")
@@ -801,15 +952,13 @@ export default function DownloadTab() {
                     <div
                         className={cn(
                             "absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-                            filter == "albums"
-                                ? "bg-pink-300 outline-2 outline-pink-300"
-                                : "",
+                            filter == "albums" && "bg-pink-300 outline-2 outline-pink-300"
                         )}
                     />
                 </button>
                 <button
                     className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
-                        filter == "downloaded" ? "brightness-105" : ""
+                        filter == "downloaded" && "brightness-105"
                     )}
                     onClick={() => {
                         setFilter("downloaded")
@@ -820,15 +969,13 @@ export default function DownloadTab() {
                     <div
                         className={cn(
                             "absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-                            filter == "downloaded"
-                                ? "bg-green-300 outline-2 outline-green-300"
-                                : "",
+                            filter == "downloaded" && "bg-green-300 outline-2 outline-green-300"
                         )}
                     />
                 </button>
                 <button
                     className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
-                        filter == "failed" ? "brightness-105" : ""
+                        filter == "failed" && "brightness-105"
                     )}
                     onClick={() => {
                         setFilter("failed")
@@ -839,39 +986,83 @@ export default function DownloadTab() {
                     <div
                         className={cn(
                             "absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-                            filter == "failed"
-                                ? "bg-red-300 outline-2 outline-red-300"
-                                : "",
+                            filter == "failed" && "bg-red-300 outline-2 outline-red-300"
                         )}
                     />
                 </button>
-                {/* <button
-                    className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]"
-                    onClick={() => {
-                        setFilter("artists")
-                    }}
-                >
-                    <IoPeopleSharp size={14} />
-                    <span>Artists</span>
-                    <div
-                        className={cn(
-                            "absolute w-full h-full rounded-full  top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-                            filter == "artists"
-                                ? "bg-pink-300 outline-2 outline-pink-300"
-                                : "",
-                        )}
-                    />
-                </button> */}
             </div>
             {/* Content */}
-            <motion.ul className={cn("flex flex-col gap-2", filter != "songs" ? "hidden" : "")}>
+            {linkEnabled ? (
+                <div className="flex flex-col gap-2">
+                    {["songs", "albums"].includes(filter) && (
+                        <>
+                            <div className={cn(
+                                "flex flex-row gap-2 items-center w-full p-2 px-3 rounded-lg border-2 mb-2 transition ease-out duration-200",
+                                ["idle", "downloading"].includes(urlDownloadStatus) && "bg-slate-800 border-slate-600",
+                                urlDownloadStatus == "success" && "bg-green-900/75 border-green-700/75",
+                                urlDownloadStatus == "failed" && "bg-red-900/75 border-red-700/75",
+
+                            )}>
+                                {urlDownloadLabel}
+                                {urlDownloadStatus == "downloading" && (
+                                    <TbLoader2 className="animate-spin" size={20} />
+                                )}
+                            </div>
+                        </>
+                    )}
+                    {["downloaded", "albums"].includes(filter) && urlDownloadedPlaylists.length > 0 && (
+                        <motion.ul className="flex flex-col gap-2">
+                            <motion.li layout key="urlDownloadedPlaylistsLabel" className="font-bold">Playlists downloaded from link</motion.li>
+                            {urlDownloadedPlaylists.map((e) => (
+                                <motion.li layout key={e}>
+                                    {URLAlbumEntry(e)}
+                                </motion.li>
+                            ))}
+                        </motion.ul>
+                    )}
+                    {["songs", "downloaded"].includes(filter) && urlDownloadedAudio.length > 0 && (
+                        <motion.ul className="flex flex-col gap-2">
+                            <motion.li layout key="?urlDownloadedAudioLabel" className="font-bold">Audio downloaded from link</motion.li>
+                            {urlDownloadedAudio.map((e) => (
+                                <motion.li layout key={e}>
+                                    {URLSongEntry(e)}
+                                </motion.li>
+                            ))}
+                        </motion.ul>
+                    )}
+                </div>
+            ) : (
+                <>
+                    {filter == "downloaded" && urlDownloadedPlaylists.length > 0 && (
+                        <motion.ul className="flex flex-col gap-2">
+                            <motion.li layout key="urlDownloadedPlaylistsLabel" className="font-bold">Playlists downloaded from link</motion.li>
+                            {urlDownloadedPlaylists.map((e) => (
+                                <motion.li layout key={e}>
+                                    {URLAlbumEntry(e)}
+                                </motion.li>
+                            ))}
+                        </motion.ul>
+                    )}
+                    {filter == "downloaded" && urlDownloadedAudio.length > 0 && (
+                        <motion.ul className="flex flex-col gap-2">
+                            <motion.li layout key="?urlDownloadedAudioLabel" className="font-bold">Audio downloaded from link</motion.li>
+                            {urlDownloadedAudio.map((e) => (
+                                <motion.li layout key={e}>
+                                    {URLSongEntry(e)}
+                                </motion.li>
+                            ))}
+                        </motion.ul>
+                    )}
+                </>
+            )}
+            <motion.ul className={cn("flex flex-col gap-2", filter != "songs" && "hidden")}>
                 {searchSongsResults.map((e) => (
                     <motion.li layout key={e.videoId}>
                         {SongEntry(e)}
                     </motion.li>
                 ))}
             </motion.ul>
-            <motion.ul className={cn("flex flex-col gap-2", filter != "albums" ? "hidden" : "")}>
+            <motion.ul className={cn("flex flex-col gap-2", filter != "albums" && "hidden")}>
                 {mergedAlbumsResults.map((e) => (
                     <motion.li layout key={e.albumId}>
                         {AlbumEntry(e)}
@@ -879,8 +1070,8 @@ export default function DownloadTab() {
                 ))}
             </motion.ul>
             <div className={(filter == "downloaded" && queuedAlbumsComplete.length > 0) ? "" : "hidden"}>
-                <p className="font-bold">Albums</p>
                 <motion.ul className="flex flex-col gap-2">
+                    <motion.li layout key="?DownloadedAlbumsLabel" className="font-bold">Albums</motion.li>
                     {queuedAlbumsComplete.map((e) => (
                         <motion.li layout key={e.albumId}>
                             {AlbumEntry(e)}
@@ -889,8 +1080,8 @@ export default function DownloadTab() {
                 </motion.ul>
             </div>
             <div className={(filter == "downloaded" && queuedSongsComplete.length > 0) ? "" : "hidden"}>
-                <p className="font-bold">Songs</p>
                 <motion.ul className="flex flex-col gap-2">
+                    <motion.li layout key="?DownloadedSongsLabel" className="font-bold">Songs</motion.li>
                     {queuedSongsComplete.map((e) => (
                         <motion.li layout key={e.videoId}>
                             {SongEntry(e)}
@@ -974,8 +1165,8 @@ export default function DownloadTab() {
                 </>
             )}
             <div className={(filter == "failed" && queuedAlbumsFailed.length > 0) ? "" : "hidden"}>
-                <p className="font-bold">Albums</p>
                 <motion.ul className="flex flex-col gap-2">
+                    <motion.li layout key="?DownloadedAlbumsLabel" className="font-bold">Albums</motion.li>
                     {queuedAlbumsFailed.map((e) => (
                         <motion.li layout key={e.albumId}>
                             {AlbumEntry(e)}
@@ -984,8 +1175,8 @@ export default function DownloadTab() {
                 </motion.ul>
             </div>
             <div className={(filter == "failed" && queuedSongsFailed.length > 0) ? "" : "hidden"}>
-                <p className="font-bold">Songs</p>
                 <motion.ul className="flex flex-col gap-2">
+                    <motion.li layout key="?DownloadedSongsLabel" className="font-bold">Songs</motion.li>
                     {queuedSongsFailed.map((e) => (
                         <motion.li layout key={e.videoId}>
                             {SongEntry(e)}

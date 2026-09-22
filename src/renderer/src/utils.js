@@ -28,13 +28,13 @@ export const getSongName = (p) => {
 	return res
 }
 
-export const getFolderName = (p) => {
+export const getFolderName = (p, parentLevels = 0) => {
 	if (!p) return
 	let splits = p.split((p.includes("/") ? "/" : "\\"))
 	if (isMusicFile(p)) {
-		return splits[splits.length - 2]
+		return splits[splits.length - (2 + parentLevels)]
 	} else {
-		return splits[splits.length - ((p.endsWith("/") || p.endsWith("\\")) ? 2 : 1)]
+		return splits[splits.length - (((p.endsWith("/") || p.endsWith("\\")) ? 2 : 1) + parentLevels)]
 	}
 }
 

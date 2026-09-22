@@ -321,7 +321,8 @@ export default function LibraryTab() {
 					<>
 						<button
 							className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer",
-								libraryLocations.length == 0 ? "bg-slate-700 hover:bg-slate-600 brightness-120 contrast-125 shadow-purple-500/25 shadow-[0_0_7px_7px]" : ""
+								libraryLocations.length == 0
+								&& "bg-slate-700 hover:bg-slate-600 brightness-120 contrast-125 shadow-purple-500/25 shadow-[0_0_7px_7px]"
 							)}
 							onClick={addLocation}
 						>
@@ -366,7 +367,7 @@ export default function LibraryTab() {
 					onChange={(e) => setSearch(e.target.value)}
 				/>
 				<button
-					className="absolute outline-none right-0 top-0 h-full p-2 cursor-pointer hover:scale-125 transition ease-out duration-200"
+					className="absolute outline-none right-0 top-0 h-full p-2 cursor-pointer hover:scale-125 active:scale-95 transition ease-out duration-200"
 					onClick={clearSearch}
 				>
 					<IoMdClose size={20} />
@@ -376,7 +377,7 @@ export default function LibraryTab() {
 			<div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
 				<button
 					className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
-						libraryFilter == "songs" ? "brightness-105" : ""
+						libraryFilter == "songs" && "brightness-105"
 					)}
 					onClick={() => {
 						setLibraryFilter("songs")
@@ -395,7 +396,7 @@ export default function LibraryTab() {
 				</button>
 				<button
 					className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
-						libraryFilter == "playlists" ? "brightness-105" : ""
+						libraryFilter == "playlists" && "brightness-105"
 					)}
 					onClick={() => {
 						setLibraryFilter("playlists")
@@ -414,8 +415,8 @@ export default function LibraryTab() {
 				</button>
 				<button
 					className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer shadow-purple-400/35 shadow-[0_0_3px_3px]",
-						libraryFilter == "locations" ? "brightness-105" : "",
-						libraryLocations.length == 0 && libraryFilter != "locations" ? "bg-slate-700 hover:bg-slate-600 brightness-120 contrast-125 shadow-purple-500/25 shadow-[0_0_7px_7px]" : ""
+						libraryFilter == "locations" && "brightness-105",
+						libraryLocations.length == 0 && libraryFilter != "locations" && "bg-slate-700 hover:bg-slate-600 brightness-120 contrast-125 shadow-purple-500/25 shadow-[0_0_7px_7px]"
 					)}
 					onClick={() => {
 						setLibraryFilter("locations")
