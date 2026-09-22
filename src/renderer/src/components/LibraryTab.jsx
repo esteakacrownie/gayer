@@ -227,9 +227,9 @@ export default function LibraryTab() {
 	}, [libraryLocations])
 
 	const refreshLocationsContent = () => {
-		setSongs([])
-		setAlbumSongsCount([])
-		setSelectedAlbumSongs([])
+		// setSongs([])
+		// setAlbumSongsCount([])
+		// setSelectedAlbumSongs([])
 		fetchSongs()
 			.then((s) => setSongs(s))
 			.catch(() => console.log("Couldn't fetch songs"))
@@ -358,6 +358,7 @@ export default function LibraryTab() {
 						"outline-none w-full bg-pink-950/50 border-2 border-pink-300 shadow-[0_0_5px_5px] not-focus:shadow-transparent rounded-lg p-2 pr-8 transition ease-out duration-200",
 						"focus:shadow-pink-400/40",
 					)}
+					autoFocus
 					type="text"
 					spellCheck={false}
 					placeholder="Search your Library"
@@ -365,7 +366,7 @@ export default function LibraryTab() {
 					onChange={(e) => setSearch(e.target.value)}
 				/>
 				<button
-					className="absolute right-0 top-0 h-full p-2 cursor-pointer hover:scale-125 transition ease-out duration-200"
+					className="absolute outline-none right-0 top-0 h-full p-2 cursor-pointer hover:scale-125 transition ease-out duration-200"
 					onClick={clearSearch}
 				>
 					<IoMdClose size={20} />
@@ -470,9 +471,10 @@ export default function LibraryTab() {
 			</div>
 			{/* Content */}
 			{libraryFilter == "locations" && (
-				<div className="flex flex-col gap-2">
+				<motion.ul className="flex flex-col gap-2">
 					{libraryLocations.map((elt) => (
-						<li
+						<motion.li
+							layout
 							key={elt}
 							className="relative p-1 flex flex-col justify-around items-start rounded-lg overflow-clip font-bold text-white/75 bg-slate-800 select-none border-2 border-slate-400/50"
 						>
@@ -490,9 +492,9 @@ export default function LibraryTab() {
 							>
 								<IoMdClose size={20} />
 							</button>
-						</li>
+						</motion.li>
 					))}
-				</div>
+				</motion.ul>
 			)}
 			{libraryFilter == "playlists" && (
 				<>
@@ -528,19 +530,23 @@ export default function LibraryTab() {
 												<p className="font-bold text-xs line-clamp-1">{selectedAlbumSongs.length > 0 ? selectedAlbumSongs.length : ""}&nbsp;{selectedAlbumSongs.length > 0 ? "item(s)" : ""}</p>
 											</div>
 										</div>
-										<div className="flex flex-col gap-2">
+										<motion.ul className="flex flex-col gap-2">
 											{filteredSelectedAlbumSongs
 												.map((elt) => (
-													<SongElement key={elt} song={elt} />
+													<motion.li layout key={elt}>
+														<SongElement song={elt} />
+													</motion.li>
 												))}
-										</div>
+										</motion.ul>
 									</div>
 								</>
 							)}
 						</>
 					) : (
-						<div className="flex flex-col gap-2">
-							<div
+						<motion.ul className="flex flex-col gap-2">
+							<motion.li
+								layout
+								key="PlaylistFolder"
 								className="flex flex-row items-center gap-2 cursor-pointer bg-pink-400/35 hover:bg-pink-400/50 px-2 py-1 rounded-lg transition ease-out duration-200"
 								onClick={() => setPlaylistsFolded(!playlistsFolded)}
 							>
@@ -556,11 +562,15 @@ export default function LibraryTab() {
 								</motion.div>
 								<PiPlaylist size={20} />
 								<span className="line-clamp-1 font-bold">Playlists</span>
-							</div>
+							</motion.li>
 							{!playlistsFolded && filteredPlaylists.map((elt) => (
-								<PlaylistElement key={elt.id} playlist={elt.id} count={getPlaylistFromId(elt.id).songs.length} isPlaylist={true} />
+								<motion.li layout key={elt.id}>
+									<PlaylistElement playlist={elt.id} count={getPlaylistFromId(elt.id).songs.length} isPlaylist={true} />
+								</motion.li>
 							))}
-							<div
+							<motion.li
+								layout
+								key="AlbumFolder"
 								className="flex flex-row items-center gap-2 cursor-pointer bg-pink-400/35 hover:bg-pink-400/50 px-2 py-1 rounded-lg transition ease-out duration-200"
 								onClick={() => setAlbumsFolded(!albumsFolded)}
 							>
@@ -576,16 +586,18 @@ export default function LibraryTab() {
 								</motion.div>
 								<GiCompactDisc size={20} />
 								<span className="line-clamp-1 font-bold">Albums</span>
-							</div>
+							</motion.li>
 							{!albumsFolded && filteredAlbums.map((elt) => (
-								<PlaylistElement key={elt.path} playlist={elt.path} count={elt.count} />
+								<motion.li layout key={elt.path}>
+									<PlaylistElement playlist={elt.path} count={elt.count} />
+								</motion.li>
 							))}
-						</div>
+						</motion.ul>
 					)}
 				</>
 			)}
 			{libraryFilter == "songs" && (
-				<div className="flex flex-col gap-2">
+				<motion.ul className="flex flex-col gap-2">
 					{filteredSongs
 						.slice(
 							powerSavingMode
@@ -596,7 +608,9 @@ export default function LibraryTab() {
 								: songs.length,
 						)
 						.map((elt) => (
-							<SongElement key={elt} song={elt} />
+							<motion.li layout key={elt}>
+								<SongElement song={elt} />
+							</motion.li>
 						))}
 					{powerSavingMode && filteredSongs.length > maxLength && (
 						<div className="flex flex-row my-1 gap-2 text-sm justify-center">
@@ -626,7 +640,7 @@ export default function LibraryTab() {
 							</button>
 						</div>
 					)}
-				</div>
+				</motion.ul>
 			)}
 		</>
 	)

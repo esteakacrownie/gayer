@@ -158,10 +158,12 @@ export default function PlaylistDialog() {
         // console.log(playlists)
     }, [selectedSongPath])
 
+    if (!selectedSongPath) return
+
     return (
         <div
             ref={mainContainer}
-            className={cn("fixed z-10 top-0 w-screen h-screen mx-auto pt-4 pb-34 backdrop-blur-sm backdrop-brightness-75", selectedSongPath ? "flex flex-col justify-center items-center" : "hidden pointer-events-none")}
+            className="fixed z-10 top-0 w-screen h-screen mx-auto pt-4 pb-34 backdrop-blur-sm backdrop-brightness-75 flex flex-col justify-center items-center"
         >
             <div ref={container} className="px-8 flex flex-col w-full h-full justify-start gap-4 max-w-200 mx-auto">
                 <div className="p-4 flex flex-col gap-2 justify-start items-center w-full  h-full from-slate-950 to-pink-700 from-[-25%] to-150% bg-linear-180 rounded-2xl border-2 border-pink-300 shadow-pink-400/40 shadow-[0_0_7px_7px]">
@@ -221,6 +223,7 @@ export default function PlaylistDialog() {
                                 "outline-none w-full bg-pink-950/50 border-2 border-pink-300 shadow-[0_0_5px_5px] not-focus:shadow-transparent rounded-lg p-2 pr-8 transition ease-out duration-200",
                                 "focus:shadow-pink-400/40",
                             )}
+                            autoFocus
                             type="text"
                             spellCheck={false}
                             placeholder=" +  Create new Playlist"
@@ -254,12 +257,15 @@ export default function PlaylistDialog() {
                             <IoAdd size={20} />
                         </motion.div>
                     </div>
-                    <div className="h-full w-full flex flex-col items-center justify-start gap-2 overflow-y-scroll">
+                    <motion.ul className="h-full w-full flex flex-col items-center justify-start gap-2 overflow-y-scroll">
                         {playlists.map((e) => {
                             return selectedSongPath == "*" ?
-                                <ManagedPlaylistItem key={e.id} pid={e.id} pname={e.name} plength={e.songs.length} />
+                                <motion.li className="w-full" layout key={e.id}>
+                                    <ManagedPlaylistItem pid={e.id} pname={e.name} plength={e.songs.length} />
+                                </motion.li>
                                 :
-                                <div
+                                <motion.li
+                                    layout
                                     key={e.id}
                                     className={cn(
                                         "relative p-2 gap-2 w-full flex flex-row overflow-clip jutify-start items-center rounded-lg font-bold text-white transition ease-out duration-200 select-none brightness-110 bg-pink-500/10 hover:bg-pink-500/25 cursor-pointer",
@@ -270,9 +276,9 @@ export default function PlaylistDialog() {
                                 >
                                     <p className="line-clamp-1">{e.name}</p>
                                     <p className="min-w-max line-clamp-1 opacity-75 text-xs brightness-90">{`${e.songs.length} item(s)`}</p>
-                                </div>
+                                </motion.li>
                         })}
-                    </div>
+                    </motion.ul>
                 </div>
             </div>
         </div >

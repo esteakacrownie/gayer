@@ -18,11 +18,14 @@ import usePlayerControls from "../hooks/usePlayerControls"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import { getSongName } from "../utils"
 import { FaPlay, FaStepForward } from "react-icons/fa"
-import { MdAddCircleOutline, MdPlaylistAdd, MdPlaylistRemove } from "react-icons/md"
+import { MdAddCircleOutline, MdDelete, MdPlaylistAdd, MdPlaylistRemove } from "react-icons/md"
 import { IoMusicalNotes } from "react-icons/io5"
 import CoverImage from "./CoverImage"
 import { motion } from "motion/react"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
+import { useSettingsStore } from "../stores/useSettingsStore"
+import useConfirm from "../hooks/useConfirmationButton"
+import { useCallback } from "react"
 
 export default function SongElement({
 	song,
@@ -34,17 +37,31 @@ export default function SongElement({
 	showAddToQueue = true,
 	showRemoveFromQueue = false,
 	showAddToPlaylist = true,
+	showDelete = true,
 	highlightIfPlaying = true,
 }) {
 	const { currentTrack } = usePlayerStore()
 
 	const { setSelectedSongPath } = usePlaylistsStore()
 
+	const { setForceRefreshLocationsTracker } = useSettingsStore()
+
 	const { handlePlayNext, handleAddToQueue, handleRemoveFromQueue, playFromQueue, setMusic } = usePlayerControls()
 
 	const handleAddToPlaylist = () => {
 		setSelectedSongPath(song)
 	}
+
+	const [deleting, setDeleting] = useConfirm()
+	const handleRemoveTrack = useCallback(async () => {
+		if (deleting) {
+			await window.electron.ipcRenderer.invoke("delete_file", { path: song })
+			setForceRefreshLocationsTracker((p) => p + 1)
+			setDeleting(false)
+		} else {
+			setDeleting(true)
+		}
+	}, [deleting])
 
 	return (
 		<motion.div
@@ -205,6 +222,49 @@ export default function SongElement({
 						}}
 					>
 						<MdAddCircleOutline size={20} />
+					</motion.div>
+				)}
+				{showDelete && (
+					<motion.div
+						title="Delete Track"
+						className={cn(
+							"hover:bg-red-600/50 text-red-700 bg-red-200/70 hover:text-white rounded-lg flex flex-row gap-4 justify-start items-center h-10 transition ease-out duration-200 cursor-pointer overflow-clip",
+							deleting ? "pr-2 gap-0" : ""
+						)}
+						onClick={(e) => {
+							e.stopPropagation()
+							handleRemoveTrack()
+						}}
+						initial={{
+							scale: 1.0
+						}}
+						animate={{
+							scale: 1.0,
+							width: deleting ? "auto" : "40px"
+						}}
+						whileTap={{
+							scale: 0.8
+						}}
+						transition={{
+							duration: 0.025,
+							ease: "easeOut",
+							width: {
+								duration: 0.15,
+								ease: "easeOut"
+							}
+						}}
+					>
+						<div className="h-full flex flex-col items-center justify-center aspect-square">
+							<MdDelete size={20} />
+						</div>
+						<span
+							className={cn(
+								"min-w-max transition ease-out duration-200",
+								deleting ? "-translate-x-1" : ""
+							)}
+						>
+							Confirm Deletion ?
+						</span>
 					</motion.div>
 				)}
 			</motion.div>

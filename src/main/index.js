@@ -251,6 +251,7 @@ app.whenReady().then(() => {
 	})
 	ipcMain.handle('ls', async (event, args) => {
 		try {
+			if (!existsSync(args.path)) return false
 			const files = (await readdir(args.path)).map((elt) => join(args.path, elt))
 			return files
 		} catch (error) {

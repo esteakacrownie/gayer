@@ -17,9 +17,25 @@ import { create } from 'zustic'
 
 const persist = () => (set, get) => (next) => async (partial) => {
   await next(partial)
+  const s = get()
   window.electron.ipcRenderer.invoke('writeConfigFile', {
     path: 'settings.json',
-    content: JSON.stringify(get())
+    content: JSON.stringify({
+      volume: s.volume ?? 0.45,
+      powerSavingMode: s.powerSavingMode ?? false,
+      defaultAutoplay: s.defaultAutoplay ?? true,
+      shufflePlay: s.shufflePlay ?? false,
+      loopMode: s.loopMode ?? 'off',
+      tab: s.tab ?? 'library',
+      libraryLocations: s.libraryLocations ?? [],
+      libraryFilter: s.libraryFilter ?? 'playlists',
+      downloadLocation: s.downloadLocation ?? "",
+      playlistsFolded: s.playlistsFolded ?? false,
+      albumsFolded: s.albumsFolded ?? false,
+      ytCookiesEnabled: s.ytCookiesEnabled ?? false,
+      ytCookiesBrowser: s.ytCookiesBrowser ?? "",
+      showYtCookiesHint: s.showYtCookiesHint ?? true,
+    })
   })
 }
 
@@ -62,7 +78,7 @@ export const useSettingsStore = create(
         defaultAutoplay: s.defaultAutoplay ?? true,
         shufflePlay: s.shufflePlay ?? false,
         loopMode: s.loopMode ?? 'off',
-        tab: s.tab ?? 'queue',
+        tab: s.tab ?? 'library',
         libraryLocations: s.libraryLocations ?? [],
         libraryFilter: s.libraryFilter ?? 'playlists',
         downloadLocation: s.downloadLocation ?? "",

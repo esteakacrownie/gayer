@@ -20,12 +20,13 @@ import usePlayerControls from "../hooks/usePlayerControls"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import { getFolderName, getSortedFilesAt, shuffleArray } from "../utils"
 import { FaPlay, FaStepForward } from "react-icons/fa"
-import { MdAddCircleOutline, MdPlaylistAdd } from "react-icons/md"
+import { MdAddCircleOutline, MdDelete, MdPlaylistAdd } from "react-icons/md"
 import CoverImage from "./CoverImage"
 import { motion } from "motion/react"
 import { useCallback, useEffect, useState } from "react"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
+import useConfirm from "../hooks/useConfirmationButton"
 
 export default function PlaylistElement({
 	playlist,
@@ -35,6 +36,7 @@ export default function PlaylistElement({
 	showPlayNext = true,
 	showAddToQueue = true,
 	showAddToPlaylist = true,
+	showDelete = true,
 }) {
 	const {
 		autoplay,
@@ -46,11 +48,11 @@ export default function PlaylistElement({
 		setSelectedPlaylist
 	} = usePlayerStore()
 
-	const { shufflePlay } = useSettingsStore()
+	const { shufflePlay, setForceRefreshLocationsTracker } = useSettingsStore()
 
 	const { playSongs, playBatchNext } = usePlayerControls()
 
-	const { playlists, setSelectedSongPath } = usePlaylistsStore()
+	const { playlists, setPlaylists, setSelectedSongPath } = usePlaylistsStore()
 
 	const [songs, setSongs] = useState([])
 
@@ -70,6 +72,26 @@ export default function PlaylistElement({
 			fetchSongs()
 		}
 	}, [playlist, playlists, isPlaylist])
+
+	const [deleting, setDeleting] = useConfirm()
+	const handleRemoveAlbum = useCallback(async () => {
+		if (deleting) {
+			await window.electron.ipcRenderer.invoke("delete_dir", { path: playlist })
+			setForceRefreshLocationsTracker((p) => p + 1)
+			setDeleting(false)
+		} else {
+			setDeleting(true)
+		}
+	}, [deleting])
+
+	const handleRemovePlaylist = useCallback(async () => {
+		if (deleting) {
+			setPlaylists(playlists.filter((e) => e.id != playlist))
+			setDeleting(false)
+		} else {
+			setDeleting(true)
+		}
+	}, [deleting, playlists])
 
 	const handleBatchPlay = useCallback(() => {
 		// console.log(p)
@@ -109,7 +131,6 @@ export default function PlaylistElement({
 				{isPlaylist ? <PiPlaylistFill className="m-0.5" size={20} /> : <GiCompactDisc className="m-0.5" size={20} />}
 			</div>
 			<motion.div
-				layout
 				transition={{
 					duration: 0.2,
 				}}
@@ -222,6 +243,49 @@ export default function PlaylistElement({
 						}}
 					>
 						<MdAddCircleOutline size={20} />
+					</motion.div>
+				)}
+				{showDelete && (
+					<motion.div
+						title={`Delete ${isPlaylist ? "Playlist" : "Album"}`}
+						className={cn(
+							"hover:bg-red-600/50 text-red-700 bg-red-200/70 hover:text-white rounded-lg flex flex-row gap-4 justify-start items-center h-10 transition ease-out duration-200 cursor-pointer overflow-clip",
+							deleting ? "pr-2 gap-0" : ""
+						)}
+						onClick={(e) => {
+							e.stopPropagation()
+							isPlaylist ? handleRemovePlaylist() : handleRemoveAlbum()
+						}}
+						initial={{
+							scale: 1.0
+						}}
+						animate={{
+							scale: 1.0,
+							width: deleting ? "auto" : "40px"
+						}}
+						whileTap={{
+							scale: 0.8
+						}}
+						transition={{
+							duration: 0.025,
+							ease: "easeOut",
+							width: {
+								duration: 0.15,
+								ease: "easeOut"
+							}
+						}}
+					>
+						<div className="h-full flex flex-col items-center justify-center aspect-square">
+							<MdDelete size={20} />
+						</div>
+						<span
+							className={cn(
+								"min-w-max transition ease-out duration-200",
+								deleting ? "-translate-x-1" : ""
+							)}
+						>
+							Confirm Deletion ?
+						</span>
 					</motion.div>
 				)}
 			</motion.div>

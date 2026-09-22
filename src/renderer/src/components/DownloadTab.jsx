@@ -55,6 +55,7 @@ export default function DownloadTab() {
     const { currentTrack, queue, setQueue, history, setHistory, setNextAction, setCurrentTrack } = usePlayerStore()
     const searchRequestCount = useRef(0)
     const [search, setSearch] = useState("")
+    const [isFetching, setIsFetching] = useState(false)
     const [searchSongsResults, setSearchSongsResults] = useState([])
     const [searchAlbumsResults, setSearchAlbumsResults] = useState([])
     const [hiddenAlbumsResults, setHiddenAlbumsResults] = useState([])
@@ -150,16 +151,10 @@ export default function DownloadTab() {
             setForceRefreshLocationsTracker((p) => p + 1)
         } else {
             setQueuedSongsFailed((p) => {
-                let hasSelf = false
-                p.map((e) => {
-                    if (e.videoId == songElt.videoId) {
-                        hasSelf = true
-                    }
-                })
-                if (!hasSelf) {
-                    return [...p, songElt]
+                if (p.map((e) => e.videoId).includes(songElt.videoId)) {
+                    return p
                 }
-                return [...p]
+                return ([...p, songElt])
             })
             setQueuedSongsComplete((p) => (p.filter((e) => e.videoId != songElt.videoId)))
         }
@@ -189,16 +184,10 @@ export default function DownloadTab() {
             setForceRefreshLocationsTracker((p) => p + 1)
         } else {
             setQueuedAlbumsFailed((p) => {
-                let hasSelf = false
-                p.map((e) => {
-                    if (e.albumId == albElt.albumId) {
-                        hasSelf = true
-                    }
-                })
-                if (!hasSelf) {
-                    return [...p, albElt]
+                if (p.map((e) => e.albumId).includes(albElt.albumId)) {
+                    return p
                 }
-                return [...p]
+                return ([...p, albElt])
             })
             setQueuedAlbumsComplete((p) => (p.filter((e) => e.albumId != albElt.albumId)))
         }
@@ -228,7 +217,7 @@ export default function DownloadTab() {
     const updateOneAlbumExists = async (albElt) => {
         const exists = await getAlbumExists(albElt)
         const updated = {}
-        updated[albElt.videoId] = exists
+        updated[albElt.albumId] = exists
         setAlbumExistsDb((p) => ({ ...p, ...updated }))
         return exists
     }
@@ -267,6 +256,7 @@ export default function DownloadTab() {
         }
 
         const result = await window.electron.ipcRenderer.invoke("delete_dir", { path: path })
+        await updateOneAlbumExists(albElt)
         if (result) {
             setForceRefreshLocationsTracker((p) => (p + 1))
             // console.log(path)
@@ -323,6 +313,9 @@ export default function DownloadTab() {
     const refreshSongExistsDb = async (songElts) => {
         const songs = {}
         for (let e of songElts) {
+            if (Object.keys(songs).includes(e.videoId)) {
+                continue
+            }
             songs[e.videoId] = computedSongPath(e)
         }
         const songExists = await window.electron.ipcRenderer.invoke("get_songs_exist", { songs: songs })
@@ -330,29 +323,36 @@ export default function DownloadTab() {
     }
 
     const refreshAlbumExistsDb = async (albElts) => {
-        for (let e of albElts) {
-            const albums = {}
-            albums[e.albumId] = await getAlbumExists(e)
-            setAlbumExistsDb((p) => ({ ...p, ...albums }))
+        const albums = []
+        for (let elt of albElts) {
+            if (albums.includes(elt.albumId)) {
+                continue
+            }
+            albums.push(elt.albumId)
+            const album = {}
+            album[elt.albumId] = await getAlbumExists(elt)
+            setAlbumExistsDb((p) => ({ ...p, ...album }))
         }
     }
 
     // refresh locations when new items get downloaded or removed
     useEffect(() => {
-        refreshSongExistsDb(searchSongsResults)
-        refreshAlbumExistsDb(mergedAlbumsResults)
+        refreshSongExistsDb(searchSongsResults.concat(queuedSongsComplete).concat(queuedSongsFailed))
+        refreshAlbumExistsDb(mergedAlbumsResults.concat(queuedAlbumsComplete).concat(queuedAlbumsFailed))
     }, [libraryLocations, forceRefreshLocationsTracker])
 
     // requests
     useEffect(() => {
         searchRequestCount.current += 1
         if (!search || search.length < 3) {
+            setIsFetching(false)
             setSearchSongsResults([])
             setSearchAlbumsResults([])
             setHiddenAlbumsResults([])
             // setSearchArtistsResults([])
         } else {
             const update = (search) => {
+                setIsFetching(true)
                 fetchSongsResults(search, searchRequestCount.current)
                 fetchAlbumsResults(search, searchRequestCount.current)
             }
@@ -385,6 +385,10 @@ export default function DownloadTab() {
         refreshAlbumExistsDb(result)
         setMergedAlbumsResults(result)
     }, [hiddenAlbumsResults, searchAlbumsResults])
+
+    useEffect(() => {
+        setIsFetching(false)
+    }, [hiddenAlbumsResults])
 
     const downloadingLabel = useMemo(() => {
         if (queuedSongsDownload.length > 0) {
@@ -425,7 +429,7 @@ export default function DownloadTab() {
                 )}
             >
                 <div className="flex flex-row items-center gap-2">
-                    <img className="h-10 min-w-10 rounded-lg pointer-events-none" src={e.thumbnails[0].url} />
+                    <img className="h-10 min-w-10 rounded-lg pointer-events-none" src={e.thumbnails[0]?.url || "#"} />
                     <span className="line-clamp-1">{`${e.name} - ${e.artist.name}`}</span>
                 </div>
                 {queuedSongsDownload.includes(e.videoId) ? (
@@ -505,11 +509,22 @@ export default function DownloadTab() {
                 )}
             >
                 <div className="flex flex-row items-center gap-2">
-                    <img className="h-10 min-w-10 rounded-lg pointer-events-none" src={e.thumbnails[0].url} />
+                    <img className="h-10 min-w-10 rounded-lg pointer-events-none" src={e.thumbnails[0]?.url || "#"} />
                     <span className="line-clamp-1">{`${e.name} - ${e.artist.name}`}</span>
                 </div>
                 {albumExistsDb[e.albumId] !== undefined && (
-                    <>
+                    <motion.div
+                        initial={{
+                            scale: 0.0
+                        }}
+                        animate={{
+                            scale: 1.0
+                        }}
+                        transition={{
+                            duration: 0.25,
+                            ease: "easeOut"
+                        }}
+                    >
                         {queuedAlbumsDownload.includes(e.albumId) ? (
                             <>
                                 <div
@@ -573,7 +588,7 @@ export default function DownloadTab() {
                                 )}
                             </>
                         )}
-                    </>
+                    </motion.div>
                 )}
             </div>
         )
@@ -728,17 +743,25 @@ export default function DownloadTab() {
             <div className="relative w-full flex flex-row">
                 <input
                     className={cn(
-                        "outline-none w-full bg-pink-950/50 border-2 border-pink-300 shadow-[0_0_5px_5px] not-focus:shadow-transparent rounded-lg p-2 pr-8 transition ease-out duration-200",
+                        "outline-none w-full bg-pink-950/50 border-2 border-pink-300 shadow-[0_0_5px_5px] not-focus:shadow-transparent rounded-lg p-2 pr-14 transition ease-out duration-200",
                         "focus:shadow-pink-400/40",
                     )}
+                    autoFocus
                     type="text"
                     spellCheck={false}
                     placeholder="Search for artists, songs, albums..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
+                <TbLoader2
+                    className={cn(
+                        "animate-spin absolute right-8 h-full transition ease-out duration-200",
+                        isFetching ? "opacity-100 translate-x-0" : "opacity-0 translate-x-6"
+                    )}
+                    size={20}
+                />
                 <button
-                    className="absolute right-0 top-0 h-full p-2 cursor-pointer hover:scale-125 transition ease-out duration-200"
+                    className="absolute right-0 top-0 outline-none h-full p-2 cursor-pointer hover:scale-125 transition ease-out duration-200"
                     onClick={clearSearch}
                 >
                     <IoMdClose size={20} />
@@ -841,52 +864,40 @@ export default function DownloadTab() {
                 </button> */}
             </div>
             {/* Content */}
-            {filter == "songs" && (
-                <motion.ul layout className="flex flex-col gap-2">
-                    {searchSongsResults.map((e) => (
+            <motion.ul className={cn("flex flex-col gap-2", filter != "songs" ? "hidden" : "")}>
+                {searchSongsResults.map((e) => (
+                    <motion.li layout key={e.videoId}>
+                        {SongEntry(e)}
+                    </motion.li>
+                ))}
+            </motion.ul>
+            <motion.ul className={cn("flex flex-col gap-2", filter != "albums" ? "hidden" : "")}>
+                {mergedAlbumsResults.map((e) => (
+                    <motion.li layout key={e.albumId}>
+                        {AlbumEntry(e)}
+                    </motion.li>
+                ))}
+            </motion.ul>
+            <div className={(filter == "downloaded" && queuedAlbumsComplete.length > 0) ? "" : "hidden"}>
+                <p className="font-bold">Albums</p>
+                <motion.ul className="flex flex-col gap-2">
+                    {queuedAlbumsComplete.map((e) => (
+                        <motion.li layout key={e.albumId}>
+                            {AlbumEntry(e)}
+                        </motion.li>
+                    ))}
+                </motion.ul>
+            </div>
+            <div className={(filter == "downloaded" && queuedSongsComplete.length > 0) ? "" : "hidden"}>
+                <p className="font-bold">Songs</p>
+                <motion.ul className="flex flex-col gap-2">
+                    {queuedSongsComplete.map((e) => (
                         <motion.li layout key={e.videoId}>
                             {SongEntry(e)}
                         </motion.li>
                     ))}
                 </motion.ul>
-            )}
-            {filter == "albums" && (
-                <motion.ul layout className="flex flex-col gap-2">
-                    {mergedAlbumsResults.map((e) => (
-                        <motion.div layout key={e.albumId}>
-                            {AlbumEntry(e)}
-                        </motion.div>
-                    ))}
-                </motion.ul>
-            )}
-            {filter == "downloaded" && (
-                <>
-                    {queuedAlbumsComplete.length > 0 && (
-                        <>
-                            <p className="font-bold">Albums</p>
-                            <motion.ul layout className="flex flex-col gap-2">
-                                {queuedAlbumsComplete.map((e) => (
-                                    <motion.div layout key={e.albumId}>
-                                        {AlbumEntry(e)}
-                                    </motion.div>
-                                ))}
-                            </motion.ul>
-                        </>
-                    )}
-                    {queuedSongsComplete.length > 0 && (
-                        <>
-                            <p className="font-bold">Songs</p>
-                            <motion.ul layout className="flex flex-col gap-2">
-                                {queuedSongsComplete.map((e) => (
-                                    <motion.li layout key={e.videoId}>
-                                        {SongEntry(e)}
-                                    </motion.li>
-                                ))}
-                            </motion.ul>
-                        </>
-                    )}
-                </>
-            )}
+            </div>
             {filter == "failed" && (
                 <>
                     {(queuedSongsFailed.length > 0 || queuedAlbumsFailed > 0) && (
@@ -959,34 +970,29 @@ export default function DownloadTab() {
                                 </div>
                             )}
                         </>
-
-                    )}
-                    {queuedAlbumsFailed.length > 0 && (
-                        <>
-                            <p className="font-bold">Albums</p>
-                            <motion.ul layout className="flex flex-col gap-2">
-                                {queuedAlbumsFailed.map((e) => (
-                                    <motion.div layout key={e.albumId}>
-                                        {AlbumEntry(e)}
-                                    </motion.div>
-                                ))}
-                            </motion.ul>
-                        </>
-                    )}
-                    {queuedSongsFailed.length > 0 && (
-                        <>
-                            <p className="font-bold">Songs</p>
-                            <motion.ul layout className="flex flex-col gap-2">
-                                {queuedSongsFailed.map((e) => (
-                                    <motion.li layout key={e.videoId}>
-                                        {SongEntry(e)}
-                                    </motion.li>
-                                ))}
-                            </motion.ul>
-                        </>
                     )}
                 </>
             )}
+            <div className={(filter == "failed" && queuedAlbumsFailed.length > 0) ? "" : "hidden"}>
+                <p className="font-bold">Albums</p>
+                <motion.ul className="flex flex-col gap-2">
+                    {queuedAlbumsFailed.map((e) => (
+                        <motion.li layout key={e.albumId}>
+                            {AlbumEntry(e)}
+                        </motion.li>
+                    ))}
+                </motion.ul>
+            </div>
+            <div className={(filter == "failed" && queuedSongsFailed.length > 0) ? "" : "hidden"}>
+                <p className="font-bold">Songs</p>
+                <motion.ul className="flex flex-col gap-2">
+                    {queuedSongsFailed.map((e) => (
+                        <motion.li layout key={e.videoId}>
+                            {SongEntry(e)}
+                        </motion.li>
+                    ))}
+                </motion.ul>
+            </div>
         </>
     )
 }
