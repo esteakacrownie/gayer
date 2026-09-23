@@ -301,6 +301,30 @@ app.whenReady().then(() => {
 			return false
 		}
 	})
+	ipcMain.handle('get_files_exist', async (event, args) => {
+		try {
+			const result = {}
+			for (let p of args.paths) {
+				result[p] = existsSync(p)
+			}
+			return result
+		} catch (error) {
+			console.log(error)
+			return {}
+		}
+	})
+	ipcMain.handle('get_dirs_exist', async (event, args) => {
+		try {
+			const result = {}
+			for (let p of args.paths) {
+				result[p] = existsSync(p) && (await stat(p)).isDirectory()
+			}
+			return result
+		} catch (error) {
+			console.log(error)
+			return {}
+		}
+	})
 	ipcMain.handle('delete_file', async (event, args) => {
 		try {
 			const exists = existsSync(args.path)
@@ -338,7 +362,7 @@ app.whenReady().then(() => {
 			return result
 		} catch (error) {
 			console.log(error)
-			return false
+			return {}
 		}
 	})
 	ipcMain.handle('get_album_exists', async (event, args) => {

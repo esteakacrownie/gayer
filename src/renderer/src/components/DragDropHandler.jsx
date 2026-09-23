@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import { handleDropped, shuffleArray } from "../utils"
 import { useSettingsStore } from "../stores/useSettingsStore"
+import { useFilesStore } from "../stores/useFilesStore"
 
 export default function DragDropHandler() {
 	const [enabled, setEnabled] = useState(false)
@@ -27,12 +28,15 @@ export default function DragDropHandler() {
 
 	const { shufflePlay } = useSettingsStore()
 
+	const { setFilesIgnoreExistenceCheck } = useFilesStore()
+
 	const addDropped = useCallback(
 		async (event) => {
 			setEnabled(false)
 			event.preventDefault()
 			// console.log(JSON.stringify(event.dataTransfer.files[0]))
 			let songs = await handleDropped(window.api.getFilePaths(Object.values(event.dataTransfer.files)))
+			setFilesIgnoreExistenceCheck(songs)
 			if (shufflePlay) {
 				songs = shuffleArray(songs)
 			}

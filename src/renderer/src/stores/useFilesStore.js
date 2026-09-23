@@ -17,5 +17,7 @@ import { create } from "zustic"
 
 export const useFilesStore = create((set) => ({
 	files: [],
+	filesIgnoreExistenceCheck: [],
 	setFiles: (v) => set((state) => ({ files: v })),
+	setFilesIgnoreExistenceCheck: (v) => set((state) => ({ filesIgnoreExistenceCheck: [...new Set([...state.filesIgnoreExistenceCheck, ...v])] })),
 }))

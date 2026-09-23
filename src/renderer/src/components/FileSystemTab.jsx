@@ -30,7 +30,7 @@ import { cn } from "@sglara/cn"
 import { IoIosFolderOpen } from "react-icons/io"
 
 export default function FileSystemTab() {
-	const { setFiles } = useFilesStore()
+	const { setFiles, setFilesIgnoreExistenceCheck } = useFilesStore()
 
 	const { queue, setQueue, setAutoplay, setNextAction, currentTrack } =
 		usePlayerStore()
@@ -48,6 +48,7 @@ export default function FileSystemTab() {
 		const { songs, timed } = await getSortedFilesAt(dir, true)
 		setFiles(timed)
 		setFolderSongs(songs)
+		setFilesIgnoreExistenceCheck(songs)
 	}
 
 	const handlePlayAll = () => {

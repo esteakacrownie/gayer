@@ -48,11 +48,12 @@ import EditablePlaylistSongList from "./EditablePlaylistSongList"
 import { useLibraryStore } from "../stores/useLibraryStore"
 import { motion } from "motion/react"
 import { PiPlaylist } from "react-icons/pi"
+import { useFilesStore } from "../stores/useFilesStore"
 
 export default function LibraryTab() {
 	const maxLength = 25
 
-	const { queue, setQueue, currentTrack, setAutoplay, setNextAction, selectedPlaylist, setSelectedPlaylist } =
+	const { queue, setQueue, history, setHistory, currentTrack, setAutoplay, setNextAction, selectedPlaylist, setSelectedPlaylist } =
 		usePlayerStore()
 
 	const {
@@ -74,6 +75,7 @@ export default function LibraryTab() {
 	const { playlists, setSelectedSongPath } = usePlaylistsStore()
 	const { getPlaylistFromId, idInPlaylists } = usePlaylistUtils()
 	const { search, setSearch } = useLibraryStore()
+	const { filesIgnoreExistenceCheck } = useFilesStore()
 
 	const [songs, setSongs] = useState([])
 	const [songsScrollPage, setSongsScrollPage] = useState(1)
@@ -91,14 +93,6 @@ export default function LibraryTab() {
 			setLibraryLocations([...new Set(libraryLocations.concat(dir))])
 		}
 	}
-
-	useEffect(() => {
-		if (selectedPlaylist) {
-			fetchSelectedAlbumSongs()
-		} else {
-			setSelectedAlbumSongs([])
-		}
-	}, [selectedPlaylist, songs, playlists])
 
 	const handlePlayAll = () => {
 		if (filteredSongs.length == 0) return
@@ -164,6 +158,8 @@ export default function LibraryTab() {
 
 	const fetchSongs = useCallback(async () => {
 		let allSongs = []
+
+		// from library locations and subfolders
 		for (let i of libraryLocations) {
 			const { songs: sorted } = await getSortedFilesAt(i)
 			allSongs = [
@@ -183,15 +179,26 @@ export default function LibraryTab() {
 				]
 			}
 		}
+
+		// from playlists + check songs exist
+		let playlistSongs = []
 		for (let i of playlists) {
-			allSongs = [
-				...new Set(
-					allSongs.concat(
-						i.songs,
-					),
-				),
-			]
+			playlistSongs = [...playlistSongs, ...i.songs]
 		}
+		const playlistSongsExistDb = await window.electron.ipcRenderer.invoke("get_files_exist", { paths: [...new Set(playlistSongs)] })
+		let playlistSongsExist = []
+		Object.keys(playlistSongsExistDb).map((e) => {
+			if (playlistSongsExistDb[e] === true) {
+				playlistSongsExist.push(e)
+			}
+		})
+		allSongs = [
+			...new Set(
+				allSongs.concat(
+					playlistSongsExist,
+				),
+			),
+		]
 		// console.log(allSongs)
 		return allSongs
 	}, [playlists, libraryLocations])
@@ -286,10 +293,21 @@ export default function LibraryTab() {
 		)
 	}, [selectedAlbumSongs, search])
 
+	// fetch album or playlist songs upon browsing
+	useEffect(() => {
+		if (selectedPlaylist) {
+			fetchSelectedAlbumSongs()
+		} else {
+			setSelectedAlbumSongs([])
+		}
+	}, [selectedPlaylist, songs, playlists])
+
+	// refresh content on disk update
 	useEffect(() => {
 		refreshLocationsContent()
 	}, [libraryLocations, forceRefreshLocationsTracker])
 
+	// reset scroll page on search filter update
 	useEffect(() => {
 		setSongsScrollPage(
 			Math.max(
@@ -302,6 +320,16 @@ export default function LibraryTab() {
 		)
 		setSongsScrollPage(1)
 	}, [filteredSongs])
+
+	// remove non-existent media from queue and history
+	useEffect(() => {
+		const ignore = filesIgnoreExistenceCheck.filter((e) => !songs.includes(e))
+		setQueue([...queue.filter((e) => songs.includes(e) || ignore.includes(e))])
+		setHistory([...history.filter((e) => songs.includes(e) || ignore.includes(e))])
+		if (!songs.includes(currentTrack) && !ignore.includes(currentTrack)) {
+			setNextAction("setNext")
+		}
+	}, [songs])
 
 	if (tab != "library") return
 

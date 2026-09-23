@@ -28,12 +28,14 @@ import { useCacheStore } from "./stores/useCacheStore"
 import PlaylistDialog from "./components/PlaylistDialog"
 import { usePlaylistsStore } from "./stores/usePlaylistsStore"
 import DownloadTab from "./components/DownloadTab"
+import { useFilesStore } from "./stores/useFilesStore"
 
 function App() {
 	const { setQueue, setAutoplay, setNextAction } = usePlayerStore()
 	const { setSettings } = useSettingsStore()
 	const { setCache } = useCacheStore()
 	const { setPlaylists } = usePlaylistsStore()
+	const { setFilesIgnoreExistenceCheck } = useFilesStore()
 
 	useEffect(() => {
 		// load settings
@@ -72,6 +74,8 @@ function App() {
 			.then((songs) => {
 				// const songs = elt.args.files.value.filter((v) => isMusicFile(v))
 				if (songs && songs.length < 1) return
+
+				setFilesIgnoreExistenceCheck(songs)
 				setAutoplay(true)
 				setQueue([...new Set(shufflePlayOnStart ? shuffleArray(songs) : songs)])
 				setNextAction('setArgQueue')

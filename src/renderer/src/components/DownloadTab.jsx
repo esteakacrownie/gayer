@@ -56,8 +56,10 @@ export default function DownloadTab() {
     const searchRequestCount = useRef(0)
     const [ytdlpReady, setYtdlpReady] = useState(false)
     const [urlDownloadStatus, setUrlDownloadStatus] = useState("idle") // idle, downloading, success, failed
-    const [urlDownloadedAudio, setUrlDownloadedAudio] = useState([])
+    const [urlDownloadedSongs, setUrlDownloadedSongs] = useState([])
     const [urlDownloadedPlaylists, setUrlDownloadedPlaylists] = useState([])
+    const [urlSongExistsDb, setUrlSongExistsDb] = useState({})
+    const [urlPlaylistExistsDb, setUrlPlaylistExistsDb] = useState({})
     const [search, setSearch] = useState("")
     const [isFetching, setIsFetching] = useState(false)
     const [searchSongsResults, setSearchSongsResults] = useState([])
@@ -227,90 +229,6 @@ export default function DownloadTab() {
         return exists
     }
 
-    const deleteSong = useCallback(async (songElt) => {
-        if (!downloadLocation || !songElt.name) return
-        setQueuedSongsDelete((p) => ([...new Set([...p, songElt.videoId])]))
-        const path = computedSongPath(songElt)
-        const result = await window.electron.ipcRenderer.invoke("delete_file", { path: path })
-        await updateOneSongExists(songElt)
-        setQueuedSongsDelete((p) => p.filter((e) => e != songElt.videoId))
-        if (result) {
-            setForceRefreshLocationsTracker((p) => p + 1)
-            // console.log(path)
-            // console.log(queue)
-            setQueuedSongsFailed((p) => (p.filter((e) => e.videoId != songElt.videoId)))
-            setQueuedSongsComplete((p) => (p.filter((e) => e.videoId != songElt.videoId)))
-            setHistory([...history.filter((e) => e != path)])
-            setQueue([...queue.filter((e) => e != path)])
-            if (currentTrack == path) {
-                setNextAction("setNext")
-                setCurrentTrack("")
-            }
-        }
-    }, [queuedSongsDelete, setQueuedSongsComplete, setQueuedSongsFailed, downloadLocation, forceRefreshLocationsTracker, currentTrack, queue, history])
-
-    const deleteAlbum = useCallback(async (albElt) => {
-        if (!downloadLocation || !albElt.name) return
-        setQueuedAlbumsDelete((p) => ([...new Set([...p, albElt.albumId])]))
-        const path = computedAlbumFolder(albElt)
-        const { songs } = await window.electron.ipcRenderer.invoke("get_album", { id: albElt.albumId })
-        setQueuedAlbumsDelete((p) => p.filter((e) => e != albElt.albumId))
-
-        for (let songElt of songs) {
-            await deleteSong(songElt)
-        }
-
-        const result = await window.electron.ipcRenderer.invoke("delete_dir", { path: path })
-        await updateOneAlbumExists(albElt)
-        if (result) {
-            setForceRefreshLocationsTracker((p) => (p + 1))
-            // console.log(path)
-            // console.log(queue)
-            setQueuedAlbumsFailed((p) => (p.filter((e) => e.albumId != albElt.albumId)))
-            setQueuedAlbumsComplete((p) => (p.filter((e) => e.albumId != albElt.albumId)))
-            setHistory([...history.filter((e) => !e.includes(path))])
-            setQueue([...queue.filter((e) => !e.includes(path))])
-            if (currentTrack.includes(path)) {
-                setNextAction("setNext")
-                setCurrentTrack("")
-            }
-        }
-    }, [queuedAlbumsDelete, downloadLocation, forceRefreshLocationsTracker, currentTrack, queue, history, deleteSong])
-
-    const handleDownloadFromLink = useCallback(async () => {
-        if (urlDownloadStatus == "downloading") return
-        setUrlDownloadStatus("downloading")
-        const isPlaylist = search.includes("?list=") || search.includes("&list=")
-        let result = false
-        if (isPlaylist) {
-            result = await window.electron.ipcRenderer.invoke("download_playlist_from_url", {
-                url: search,
-                destination: downloadLocation,
-                browserCookies: ytCookiesEnabled ? ytCookiesBrowser : ""
-            })
-        } else {
-            result = await window.electron.ipcRenderer.invoke("download_from_url", {
-                url: search,
-                destination: downloadLocation,
-                browserCookies: ytCookiesEnabled ? ytCookiesBrowser : ""
-            })
-        }
-
-        if (result) {
-            setUrlDownloadStatus("success")
-            if (isPlaylist) {
-                setUrlDownloadedPlaylists((p) => ([...new Set([...p, getFolderName(result[0])])]))
-                setUrlDownloadedAudio((p) => ([...new Set([...p, ...result])]))
-            } else {
-                setUrlDownloadedAudio((p) => ([...new Set([...p, ...result])]))
-            }
-        } else {
-            setUrlDownloadStatus("failed")
-        }
-
-        setForceRefreshLocationsTracker((p) => p + 1)
-    }, [search, downloadLocation, ytCookiesBrowser, ytCookiesEnabled, urlDownloadStatus])
-
     const fetchSongsResults = async (q, i) => {
         const res = await window.electron.ipcRenderer.invoke("ytm_songs", { query: q })
         await refreshSongExistsDb(res)
@@ -353,8 +271,8 @@ export default function DownloadTab() {
             }
             songs[e.videoId] = computedSongPath(e)
         }
-        const songExists = await window.electron.ipcRenderer.invoke("get_songs_exist", { songs: songs })
-        setSongExistsDb((p) => ({ ...p, ...songExists }))
+        const songsExist = await window.electron.ipcRenderer.invoke("get_songs_exist", { songs: songs })
+        setSongExistsDb((p) => ({ ...p, ...songsExist }))
     }
 
     const refreshAlbumExistsDb = async (albElts) => {
@@ -370,127 +288,110 @@ export default function DownloadTab() {
         }
     }
 
-    // refresh locations when new items get downloaded or removed
-    useEffect(() => {
-        refreshSongExistsDb(searchSongsResults.concat(queuedSongsComplete).concat(queuedSongsFailed))
-        refreshAlbumExistsDb(mergedAlbumsResults.concat(queuedAlbumsComplete).concat(queuedAlbumsFailed))
-    }, [libraryLocations, forceRefreshLocationsTracker])
+    const refreshUrlSongExistsDb = async (paths) => {
+        const res = await window.electron.ipcRenderer.invoke("get_files_exist", { paths: [...new Set(paths)] })
+        setUrlSongExistsDb((p) => ({ ...p, ...res }))
+    }
 
-    // requests
-    useEffect(() => {
-        searchRequestCount.current += 1
-        if (!search || search.length < 3 || linkEnabled) {
-            setIsFetching(false)
-            setSearchSongsResults([])
-            setSearchAlbumsResults([])
-            setHiddenAlbumsResults([])
-            // setSearchArtistsResults([])
+    const refreshUrlPlaylistExistsDb = async (paths) => {
+        const res = await window.electron.ipcRenderer.invoke("get_dirs_exist", { paths: [...new Set(paths.map((e) => `${downloadLocation}/${e}`))] })
+        setUrlPlaylistExistsDb((p) => ({ ...p, ...res }))
+    }
+
+    const deleteSong = useCallback(async (songElt) => {
+        if (!downloadLocation || !songElt.name) return
+        setQueuedSongsDelete((p) => ([...new Set([...p, songElt.videoId])]))
+        const path = computedSongPath(songElt)
+        const result = await window.electron.ipcRenderer.invoke("delete_file", { path: path })
+        await updateOneSongExists(songElt)
+        setQueuedSongsDelete((p) => p.filter((e) => e != songElt.videoId))
+        if (result) {
+            setForceRefreshLocationsTracker((p) => p + 1)
+            // console.log(path)
+            // console.log(queue)
+            // setQueuedSongsFailed((p) => (p.filter((e) => e.videoId != songElt.videoId)))
+            // setQueuedSongsComplete((p) => (p.filter((e) => e.videoId != songElt.videoId)))
+            // setHistory([...history.filter((e) => e != path)])
+            // setQueue([...queue.filter((e) => e != path)])
+            if (currentTrack == path) {
+                setNextAction("setNext")
+                setCurrentTrack("")
+            }
+        }
+    }, [queuedSongsDelete, setQueuedSongsComplete, setQueuedSongsFailed, downloadLocation, forceRefreshLocationsTracker, currentTrack, queue, history])
+
+    const deleteAlbum = useCallback(async (albElt) => {
+        if (!downloadLocation || !albElt.name) return
+        setQueuedAlbumsDelete((p) => ([...new Set([...p, albElt.albumId])]))
+        const path = computedAlbumFolder(albElt)
+        const { songs } = await window.electron.ipcRenderer.invoke("get_album", { id: albElt.albumId })
+        setQueuedAlbumsDelete((p) => p.filter((e) => e != albElt.albumId))
+
+        for (let songElt of songs) {
+            await deleteSong(songElt)
+        }
+
+        const result = await window.electron.ipcRenderer.invoke("delete_dir", { path: path })
+        await updateOneAlbumExists(albElt)
+        if (result) {
+            setForceRefreshLocationsTracker((p) => (p + 1))
+            // console.log(path)
+            // console.log(queue)
+            // setQueuedAlbumsFailed((p) => (p.filter((e) => e.albumId != albElt.albumId)))
+            // setQueuedAlbumsComplete((p) => (p.filter((e) => e.albumId != albElt.albumId)))
+            // setHistory([...history.filter((e) => !e.includes(path))])
+            // setQueue([...queue.filter((e) => !e.includes(path))])
+            // if (currentTrack.includes(path)) {
+            //     setNextAction("setNext")
+            //     setCurrentTrack("")
+            // }
+        }
+    }, [queuedAlbumsDelete, downloadLocation, forceRefreshLocationsTracker, currentTrack, queue, history, deleteSong])
+
+    const handleDownloadFromLink = useCallback(async () => {
+        if (!downloadLocation || urlDownloadStatus == "downloading" || search.length < 8) return
+
+        setUrlDownloadStatus("downloading")
+        const isPlaylist = search.includes("?list=") || search.includes("&list=")
+        let result = false
+
+        if (isPlaylist) {
+            result = await window.electron.ipcRenderer.invoke("download_playlist_from_url", {
+                url: search,
+                destination: downloadLocation,
+                browserCookies: ytCookiesEnabled ? ytCookiesBrowser : ""
+            })
         } else {
-            const update = (search) => {
-                setIsFetching(true)
-                fetchSongsResults(search, searchRequestCount.current)
-                fetchAlbumsResults(search, searchRequestCount.current)
+            result = await window.electron.ipcRenderer.invoke("download_from_url", {
+                url: search,
+                destination: downloadLocation,
+                browserCookies: ytCookiesEnabled ? ytCookiesBrowser : ""
+            })
+        }
+
+        if (result) {
+            setUrlDownloadStatus("success")
+            if (isPlaylist) {
+                setUrlDownloadedPlaylists((p) => ([...new Set([...p, getFolderName(result[0])])]))
+                setUrlDownloadedSongs((p) => ([...new Set([...p, ...result])]))
+            } else {
+                setUrlDownloadedSongs((p) => ([...new Set([...p, ...result])]))
             }
-            const t = setTimeout(() => {
-                update(search)
-            }, 500)
-            return () => {
-                clearTimeout(t)
-            }
+            setSearch((p) => {
+                if (p == search) {
+                    return ""
+                } else {
+                    return p
+                }
+            })
+        } else {
+            setUrlDownloadStatus("failed")
         }
-    }, [search, linkEnabled])
 
-    // auto switch to link mode
-    useEffect(() => {
-        if (search.startsWith("https://")) {
-            setLinkEnabled(true)
-        }
-    }, [search])
+        setForceRefreshLocationsTracker((p) => p + 1)
+    }, [search, setSearch, downloadLocation, ytCookiesBrowser, ytCookiesEnabled, urlDownloadStatus])
 
-    // process unlisted albums
-    useEffect(() => {
-        fetchHiddenAlbums(searchSongsResults, searchRequestCount.current)
-    }, [searchSongsResults])
-
-    // merge unlisted albums with regular albums list
-    useEffect(() => {
-        const result = [...hiddenAlbumsResults]
-        const IDs = result.map((e) => e.albumId)
-        // console.log(IDs)
-        for (let elt of searchAlbumsResults) {
-            if (!IDs.includes(elt.albumId)) {
-                IDs.push(elt.albumId)
-                result.push(elt)
-            }
-        }
-        // console.log(result)
-        refreshAlbumExistsDb(result)
-        setMergedAlbumsResults(result)
-    }, [hiddenAlbumsResults, searchAlbumsResults])
-
-    // disable loading request icon after merging
-    useEffect(() => {
-        setIsFetching(false)
-    }, [hiddenAlbumsResults])
-
-    // disable UI until ytdlp is ready
-    useEffect(() => {
-        window.electron.ipcRenderer.invoke("is_ytdlp_ready", {}).then((e) => setYtdlpReady(e))
-        window.electron.ipcRenderer.on("ytdlp_ready", (v) => {
-            setYtdlpReady(v)
-        })
-        return () => {
-            window.electron.ipcRenderer.on("ytdlp_ready", () => { })
-        }
-    }, [])
-
-    const downloadingLabel = useMemo(() => {
-        if (queuedSongsDownload.length > 0) {
-            return `Downloading ${queuedSongsDownload.length} song(s)`
-        }
-        return ""
-    }, [queuedSongsDownload])
-
-    const failedLabel = useMemo(() => {
-        if ((queuedSongsFailed.length > 0) && !(queuedAlbumsFailed.length > 0)) {
-            return `${queuedSongsFailed.length} song(s) failed`
-        } else if (!(queuedSongsFailed.length > 0) && (queuedAlbumsFailed.length > 0)) {
-            return `${queuedAlbumsFailed.length} album(s) failed`
-        } else if (queuedSongsFailed.length > 0 && queuedAlbumsFailed.length > 0) {
-            return `${queuedSongsFailed.length} song(s), ${queuedAlbumsFailed.length} album(s) failed`
-        }
-        return ""
-    }, [queuedSongsFailed, queuedAlbumsFailed])
-
-    const completeLabel = useMemo(() => {
-        const songs = queuedSongsComplete.length + urlDownloadedAudio.length
-        const albums = queuedAlbumsComplete.length + urlDownloadedPlaylists.length
-        if (songs && !albums) {
-            return `${songs} song(s) downloaded`
-        } else if (!songs && albums) {
-            return `${albums} album(s) downloaded`
-        } else if (songs && albums) {
-            return `${songs} song(s), ${albums} album(s) downloaded`
-        }
-        return ""
-    }, [queuedSongsComplete, queuedAlbumsComplete, urlDownloadedAudio, urlDownloadedPlaylists])
-
-    const urlDownloadLabel = useMemo(() => {
-        switch (urlDownloadStatus) {
-            case "idle":
-                return "Ready to start downloading."
-            case "downloading":
-                return "Downloading content..."
-            case "success":
-                return "Downloads completed successfully."
-            case "failed":
-                return "An error occured. Double check your link, and activate cookies if necessary."
-            default:
-                return ""
-        }
-    }, [urlDownloadStatus])
-
-    const SongEntry = (e) => {
+    const SongEntry = useCallback((e) => {
         return (
             <div
                 title={`${e.name} - ${e.artist.name}`}
@@ -571,9 +472,9 @@ export default function DownloadTab() {
                 )}
             </div>
         )
-    }
+    }, [downloadLocation, queuedSongsDelete, songExistsDb, queuedSongsDownload, deleteSong, downloadSong, computedSongPath])
 
-    const AlbumEntry = (e) => {
+    const AlbumEntry = useCallback((e) => {
         return (
             <div
                 title={`${e.name} - ${e.artist.name}`}
@@ -669,9 +570,9 @@ export default function DownloadTab() {
                 )}
             </div>
         )
-    }
+    }, [downloadLocation, queuedAlbumsDelete, albumExistsDb, queuedAlbumsDownload, deleteAlbum, downloadAlbum, computedAlbumFolder])
 
-    const URLSongEntry = (e) => {
+    const URLSongEntry = useCallback((e) => {
         return (
             <div
                 title={getSongName(e)}
@@ -684,9 +585,9 @@ export default function DownloadTab() {
                 </div>
             </div>
         )
-    }
+    }, [])
 
-    const URLAlbumEntry = (e) => {
+    const URLAlbumEntry = useCallback((e) => {
         return (
             <div
                 title={e}
@@ -699,7 +600,53 @@ export default function DownloadTab() {
                 </div>
             </div>
         )
-    }
+    }, [])
+
+    const downloadingLabel = useMemo(() => {
+        if (queuedSongsDownload.length > 0) {
+            return `Downloading ${queuedSongsDownload.length} song(s)`
+        }
+        return ""
+    }, [queuedSongsDownload])
+
+    const failedLabel = useMemo(() => {
+        if ((queuedSongsFailed.length > 0) && !(queuedAlbumsFailed.length > 0)) {
+            return `${queuedSongsFailed.length} song(s) failed`
+        } else if (!(queuedSongsFailed.length > 0) && (queuedAlbumsFailed.length > 0)) {
+            return `${queuedAlbumsFailed.length} album(s) failed`
+        } else if (queuedSongsFailed.length > 0 && queuedAlbumsFailed.length > 0) {
+            return `${queuedSongsFailed.length} song(s), ${queuedAlbumsFailed.length} album(s) failed`
+        }
+        return ""
+    }, [queuedSongsFailed, queuedAlbumsFailed])
+
+    const completeLabel = useMemo(() => {
+        const songs = queuedSongsComplete.length + urlDownloadedSongs.length
+        const albums = queuedAlbumsComplete.length + urlDownloadedPlaylists.length
+        if (songs && !albums) {
+            return `${songs} song(s) downloaded`
+        } else if (!songs && albums) {
+            return `${albums} album(s) downloaded`
+        } else if (songs && albums) {
+            return `${songs} song(s), ${albums} album(s) downloaded`
+        }
+        return ""
+    }, [queuedSongsComplete, queuedAlbumsComplete, urlDownloadedSongs, urlDownloadedPlaylists])
+
+    const urlDownloadLabel = useMemo(() => {
+        switch (urlDownloadStatus) {
+            case "idle":
+                return "Ready to start downloading."
+            case "downloading":
+                return "Downloading content..."
+            case "success":
+                return "Downloads completed successfully."
+            case "failed":
+                return "An error occured. Double check your link, and activate cookies if necessary."
+            default:
+                return ""
+        }
+    }, [urlDownloadStatus])
 
     const browserCookiesIcon = useMemo(() => {
         switch (ytCookiesBrowser) {
@@ -753,6 +700,102 @@ export default function DownloadTab() {
             </button>
         )
     }, [browserCookiesIcon, ytCookiesBrowser, setYtCookiesBrowser])
+
+    const urlSongsOnDisk = useMemo(() => {
+        const res = []
+        Object.keys(urlSongExistsDb).map((e) => {
+            if (urlSongExistsDb[e] === true) {
+                res.push(e)
+            }
+        })
+        return res
+    }, [urlSongExistsDb])
+
+    const urlPlaylistsOnDisk = useMemo(() => {
+        const res = []
+        Object.keys(urlPlaylistExistsDb).map((e) => {
+            if (urlPlaylistExistsDb[e] === true) {
+                res.push(e)
+            }
+        })
+        return res
+    }, [urlPlaylistExistsDb])
+
+    // refresh locations when new items get downloaded or removed
+    useEffect(() => {
+        refreshSongExistsDb(searchSongsResults.concat(queuedSongsComplete).concat(queuedSongsFailed))
+        refreshAlbumExistsDb(mergedAlbumsResults.concat(queuedAlbumsComplete).concat(queuedAlbumsFailed))
+        refreshUrlSongExistsDb(urlDownloadedSongs)
+        refreshUrlPlaylistExistsDb(urlDownloadedPlaylists)
+    }, [libraryLocations, forceRefreshLocationsTracker])
+
+    // requests
+    useEffect(() => {
+        searchRequestCount.current += 1
+        if (!search || search.length < 3 || linkEnabled) {
+            setIsFetching(false)
+            setSearchSongsResults([])
+            setSearchAlbumsResults([])
+            setHiddenAlbumsResults([])
+            // setSearchArtistsResults([])
+        } else {
+            const update = (search) => {
+                setIsFetching(true)
+                fetchSongsResults(search, searchRequestCount.current)
+                fetchAlbumsResults(search, searchRequestCount.current)
+            }
+            const t = setTimeout(() => {
+                update(search)
+            }, 500)
+            return () => {
+                clearTimeout(t)
+            }
+        }
+    }, [search, linkEnabled])
+
+    // auto switch to link mode
+    useEffect(() => {
+        if (search.startsWith("https://")) {
+            setLinkEnabled(true)
+        }
+    }, [search])
+
+    // process unlisted albums
+    useEffect(() => {
+        fetchHiddenAlbums(searchSongsResults, searchRequestCount.current)
+    }, [searchSongsResults])
+
+    // merge unlisted albums with regular albums list
+    useEffect(() => {
+        const result = [...hiddenAlbumsResults]
+        const IDs = result.map((e) => e.albumId)
+        // console.log(IDs)
+        for (let elt of searchAlbumsResults) {
+            if (!IDs.includes(elt.albumId)) {
+                IDs.push(elt.albumId)
+                result.push(elt)
+            }
+        }
+        // console.log(result)
+        refreshAlbumExistsDb(result)
+        setMergedAlbumsResults(result)
+    }, [hiddenAlbumsResults, searchAlbumsResults])
+
+    // disable loading request icon after merging
+    useEffect(() => {
+        setIsFetching(false)
+    }, [hiddenAlbumsResults])
+
+    // disable UI until ytdlp is ready
+    useEffect(() => {
+        window.electron.ipcRenderer.invoke("is_ytdlp_ready", {}).then((e) => setYtdlpReady(e))
+        window.electron.ipcRenderer.on("ytdlp_ready", (v) => {
+            setYtdlpReady(v)
+        })
+        return () => {
+            window.electron.ipcRenderer.on("ytdlp_ready", () => { })
+        }
+    }, [])
 
     if (tab != "download") return
 
@@ -816,7 +859,7 @@ export default function DownloadTab() {
                         </button>
                     </>
                 )}
-                {(queuedSongsComplete.length > 0 || queuedAlbumsComplete.length > 0 || urlDownloadedAudio.length > 0 || urlDownloadedPlaylists.length > 0) && (
+                {(queuedSongsComplete.length > 0 || queuedAlbumsComplete.length > 0 || urlDownloadedSongs.length > 0 || urlDownloadedPlaylists.length > 0) && (
                     <>
                         <button
                             title={completeLabel}
@@ -825,7 +868,7 @@ export default function DownloadTab() {
                         >
                             <MdCheckCircleOutline size={18} />
                             <span>
-                                {`${queuedSongsComplete.length + queuedAlbumsComplete.length + urlDownloadedAudio.length + urlDownloadedPlaylists.length} item(s) downloaded`}
+                                {`${queuedSongsComplete.length + queuedAlbumsComplete.length + urlDownloadedSongs.length + urlDownloadedPlaylists.length} item(s) downloaded`}
                             </span>
                             <div
                                 className="absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply bg-green-300 outline-2 outline-green-300 transition ease-out duration-200"
@@ -994,6 +1037,7 @@ export default function DownloadTab() {
             {/* Content */}
             {linkEnabled ? (
                 <div className="flex flex-col gap-2">
+                    {/* Url download feedback */}
                     {["songs", "albums"].includes(filter) && (
                         <>
                             <div className={cn(
@@ -1010,20 +1054,20 @@ export default function DownloadTab() {
                             </div>
                         </>
                     )}
-                    {["downloaded", "albums"].includes(filter) && urlDownloadedPlaylists.length > 0 && (
+                    {["downloaded", "albums"].includes(filter) && urlPlaylistsOnDisk.length > 0 && (
                         <motion.ul className="flex flex-col gap-2">
                             <motion.li layout key="urlDownloadedPlaylistsLabel" className="font-bold">Playlists downloaded from link</motion.li>
-                            {urlDownloadedPlaylists.map((e) => (
-                                <motion.li layout key={e}>
-                                    {URLAlbumEntry(e)}
+                            {urlPlaylistsOnDisk.map((e) => (
+                                <motion.li layout key={getFolderName(e)}>
+                                    {URLAlbumEntry(getFolderName(e))}
                                 </motion.li>
                             ))}
                         </motion.ul>
                     )}
-                    {["songs", "downloaded"].includes(filter) && urlDownloadedAudio.length > 0 && (
+                    {["songs", "downloaded"].includes(filter) && urlSongsOnDisk.length > 0 && (
                         <motion.ul className="flex flex-col gap-2">
-                            <motion.li layout key="?urlDownloadedAudioLabel" className="font-bold">Audio downloaded from link</motion.li>
-                            {urlDownloadedAudio.map((e) => (
+                            <motion.li layout key="?urlDownloadedSongsLabel" className="font-bold">Audio downloaded from link</motion.li>
+                            {urlSongsOnDisk.map((e) => (
                                 <motion.li layout key={e}>
                                     {URLSongEntry(e)}
                                 </motion.li>
@@ -1033,20 +1077,20 @@ export default function DownloadTab() {
                 </div>
             ) : (
                 <>
-                    {filter == "downloaded" && urlDownloadedPlaylists.length > 0 && (
+                    {filter == "downloaded" && urlPlaylistsOnDisk.length > 0 && (
                         <motion.ul className="flex flex-col gap-2">
                             <motion.li layout key="urlDownloadedPlaylistsLabel" className="font-bold">Playlists downloaded from link</motion.li>
-                            {urlDownloadedPlaylists.map((e) => (
-                                <motion.li layout key={e}>
-                                    {URLAlbumEntry(e)}
+                            {urlPlaylistsOnDisk.map((e) => (
+                                <motion.li layout key={getFolderName(e)}>
+                                    {URLAlbumEntry(getFolderName(e))}
                                 </motion.li>
                             ))}
                         </motion.ul>
                     )}
-                    {filter == "downloaded" && urlDownloadedAudio.length > 0 && (
+                    {filter == "downloaded" && urlSongsOnDisk.length > 0 && (
                         <motion.ul className="flex flex-col gap-2">
-                            <motion.li layout key="?urlDownloadedAudioLabel" className="font-bold">Audio downloaded from link</motion.li>
-                            {urlDownloadedAudio.map((e) => (
+                            <motion.li layout key="?urlDownloadedSongsLabel" className="font-bold">Audio downloaded from link</motion.li>
+                            {urlSongsOnDisk.map((e) => (
                                 <motion.li layout key={e}>
                                     {URLSongEntry(e)}
                                 </motion.li>
