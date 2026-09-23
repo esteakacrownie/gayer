@@ -27,6 +27,7 @@ const persist = () => (set, get) => (next) => async (partial) => {
 export const useCacheStore = create(
 	(set) => ({
 		thumbnailCache: {},
+		version: 2,
 		setThumbnailCache: (v) => set((state) => ({ thumbnailCache: v })),
 		setCache: (c) => set((state) => c)
 	}),

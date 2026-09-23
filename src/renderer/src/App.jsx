@@ -52,7 +52,12 @@ function App() {
 		// load cache
 		window.electron.ipcRenderer
 			.invoke("read_configfile", { path: "cache.json" })
-			.then((d) => setCache(JSON.parse(d)))
+			.then((d) => {
+				const res = JSON.parse(d)
+				if ((res?.version || 0) >= 2) {
+					setCache(res)
+				}
+			})
 			.catch(() => console.log("Couldn't parse cache file"))
 		// load playlists
 		window.electron.ipcRenderer

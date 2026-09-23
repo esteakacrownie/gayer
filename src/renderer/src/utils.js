@@ -13,6 +13,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
+import albumArt from "album-art"
+
 export const getSongName = (p) => {
 	// console.log(p)
 	if (!p) return ""
@@ -38,6 +40,67 @@ export const getFolderName = (p, parentLevels = 0) => {
 			splits.length - ((p.endsWith("/") || p.endsWith("\\") ? 2 : 1) + parentLevels)
 		]
 	}
+}
+
+export const pathToCoverArtQuery = (p) => {
+	if (!p) return
+
+	const folder = getFolderName(p).toLocaleLowerCase()
+	const filename = getSongName(p).toLocaleLowerCase()
+
+	const foldersplits = folder.split(" - ")
+	const filesplits = filename.split(" - ")
+
+	let artist = ""
+	let album = ""
+	let track = ""
+
+	if (foldersplits.length == 2 && filesplits.length == 2 && foldersplits[1] == filesplits[1]) {
+		artist = foldersplits[1]
+		album = foldersplits[0]
+		track = filesplits[0]
+	} else {
+		if (filesplits.length == 2) {
+			artist = filesplits[1]
+			track = filesplits[0]
+		} else if (foldersplits.length == 2) {
+			artist = foldersplits[1]
+			album = foldersplits[0]
+		} else {
+			track = filename
+		}
+	}
+
+	const res = {
+		artist,
+		album,
+		track
+	}
+	console.log(res)
+	return res
+}
+
+export const albumArtQueryForPath = (p) => {
+	const query = pathToCoverArtQuery(p)
+	return albumArt(query.artist, {
+		album: `${query.album} ${query.track}`.trim(),
+		size: "medium"
+	})
+}
+
+export const batchAlbumArtQueriesForPaths = async (files) => {
+	const result = {}
+
+	for (let elt of files) {
+		try {
+			if (elt) {
+				result[elt] = await albumArtQueryForPath(elt)
+			}
+		} catch (error) {
+			result[elt] = error
+		}
+	}
+	return result
 }
 
 export const toAllowedPlaylistName = (n, r = "") => {

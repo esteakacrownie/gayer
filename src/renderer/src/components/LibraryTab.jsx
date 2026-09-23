@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 import { cn } from "@sglara/cn"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import PowerSavingButton from "./PowerSavingButton"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { IoMdArrowDropdown, IoMdClose } from "react-icons/io"
 import { GiCompactDisc } from "react-icons/gi"
 import { IoMusicalNotes, IoChevronBack } from "react-icons/io5"
@@ -35,7 +35,9 @@ import {
 	getSortedFilesAt,
 	isMusicFile,
 	shuffleArray,
-	toSearchString
+	toSearchString,
+	batchAlbumArtQueriesForPaths,
+	albumArtQueryForPath
 } from "../utils"
 import SongElement from "./SongElement"
 import { usePlayerStore } from "../stores/usePlayerStore"
@@ -49,6 +51,7 @@ import { useLibraryStore } from "../stores/useLibraryStore"
 import { motion } from "motion/react"
 import { PiPlaylist } from "react-icons/pi"
 import { useFilesStore } from "../stores/useFilesStore"
+import { useCacheStore } from "../stores/useCacheStore"
 
 export default function LibraryTab() {
 	const maxLength = 25
@@ -80,6 +83,9 @@ export default function LibraryTab() {
 		albumsFolded,
 		setAlbumsFolded
 	} = useSettingsStore()
+
+	const { thumbnailCache, setThumbnailCache } = useCacheStore()
+	const { files } = useFilesStore()
 
 	const { playlists, setSelectedSongPath } = usePlaylistsStore()
 	const { getPlaylistFromId, idInPlaylists } = usePlaylistUtils()
@@ -261,6 +267,38 @@ export default function LibraryTab() {
 		[filteredSongs]
 	)
 
+	const alreadyFetchedArtPaths = useRef([])
+	const processingArtPaths = useRef([])
+	const thumbnailCacheRef = useRef({})
+	const fetchCoverArts = useCallback(
+		async (f) => {
+			// console.log(f)
+			let pathsFortThisThread = f
+			while (pathsFortThisThread.length > 0) {
+				const i = pathsFortThisThread[0]
+				try {
+					const art = await albumArtQueryForPath(i)
+					if (!thumbnailCacheRef.current[i] && typeof art == "string") {
+						const r = {}
+						r[i] = art
+						// appending new found cover art
+						thumbnailCacheRef.current = { ...thumbnailCacheRef.current, ...r }
+						// appending to paths to ignore
+						alreadyFetchedArtPaths.current = [...alreadyFetchedArtPaths.current, i]
+						// removing to paths being processed
+						processingArtPaths.current = processingArtPaths.current.filter(
+							(e) => e != i
+						)
+						pathsFortThisThread.splice(0, 1)
+					}
+				} catch (error) {
+					console.log(error)
+				}
+			}
+		},
+		[thumbnailCacheRef, alreadyFetchedArtPaths]
+	)
+
 	const filteredPlaylists = useMemo(() => {
 		return playlists.filter((elt) => {
 			const element = getPlaylistFromId(elt.id)
@@ -329,6 +367,44 @@ export default function LibraryTab() {
 			setNextAction("setNext")
 		}
 	}, [songs])
+
+	// dynamic cover art
+	useEffect(() => {
+		if (alreadyFetchedArtPaths.current.length == 0) {
+			alreadyFetchedArtPaths.current = Object.keys(thumbnailCache)
+		}
+		if (Object.keys(thumbnailCacheRef.current) == 0) {
+			thumbnailCacheRef.current = { ...thumbnailCache }
+		}
+
+		const ignore = [
+			...new Set([...processingArtPaths.current, ...alreadyFetchedArtPaths.current])
+		]
+		const f = [...new Set([...songs, ...files.map((e) => e.path)])].filter(
+			(e) => !ignore.includes(e)
+		)
+		processingArtPaths.current = [...new Set([...processingArtPaths.current, ...f])]
+		fetchCoverArts(f)
+	}, [songs, files])
+
+	// cache auto refresh
+	useEffect(() => {
+		const cacheUpdate = setInterval(() => {
+			const paths = Object.keys(thumbnailCache)
+			// console.log(paths)
+			const diff = alreadyFetchedArtPaths.current.filter((e) => !paths.includes(e))
+			if (diff.length > 0) {
+				console.log("applying new cached covers")
+				// console.log(diff)
+				setThumbnailCache(thumbnailCacheRef.current)
+			} else {
+				console.log("nothing to update")
+			}
+		}, 5000)
+		return () => {
+			clearInterval(cacheUpdate)
+		}
+	}, [thumbnailCacheRef, thumbnailCache])
 
 	if (tab != "library") return
 

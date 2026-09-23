@@ -191,6 +191,14 @@ app.whenReady().then(() => {
 	})
 
 	// main process calls from renderer
+	ipcMain.handle("version", async (event, args) => {
+		try {
+			return process.env.npm_package_version
+		} catch (error) {
+			console.log(error)
+			return error
+		}
+	})
 	ipcMain.handle("read_configfile", async (event, args) => {
 		try {
 			return await readFile(join(dirs.data, args.path), {

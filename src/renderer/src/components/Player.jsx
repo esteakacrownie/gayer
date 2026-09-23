@@ -24,22 +24,18 @@ import {
 } from "react-icons/io"
 import { MdLoop } from "react-icons/md"
 import { AnimatePresence, motion } from "motion/react"
-import { getSongName } from "../utils"
+import { albumArtQueryForPath, getSongName } from "../utils"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import usePlayerControls from "../hooks/usePlayerControls"
 import { cn } from "@sglara/cn"
 import { useSettingsStore } from "../stores/useSettingsStore"
-import albumArt from "album-art"
-import AlbumWorker from "../workers/AlbumWorker"
-import { useFilesStore } from "../stores/useFilesStore"
 import TimeLine from "./TimeLine"
 import { useCacheStore } from "../stores/useCacheStore"
 import { useHotkeys } from "react-hotkeys-hook"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 
 export default function Player() {
-	const { isPlaying, currentTrack, setHistory, queue, nextAction, setNextAction } =
-		usePlayerStore()
+	const { isPlaying, currentTrack, setHistory, nextAction, setNextAction } = usePlayerStore()
 
 	const {
 		setVolume: setUiVolume,
@@ -54,8 +50,6 @@ export default function Player() {
 	const { thumbnailCache, setThumbnailCache } = useCacheStore()
 
 	const { setSelectedSongPath } = usePlaylistsStore()
-
-	const { files } = useFilesStore()
 
 	const { nextSong, previousSong, pause, resume, resetPlay } = usePlayerControls()
 
@@ -79,26 +73,6 @@ export default function Player() {
 	const volumeDown = useCallback(() => {
 		setVolumeClamped(uiVolume - 0.05)
 	}, [uiVolume, setVolumeClamped])
-
-	const fetchCoverArts = useCallback(
-		async (f) => {
-			try {
-				// console.log("fetching arts !")
-				const arts = await AlbumWorker(f)
-				// console.log(arts)
-				const r = {}
-				Object.keys(arts).map((elt) => {
-					if (!thumbnailCache[elt] && typeof arts[elt] == "string") {
-						r[elt] = arts[elt]
-					}
-				})
-				setThumbnailCache({ ...thumbnailCache, ...r })
-			} catch (error) {
-				console.log(error)
-			}
-		},
-		[thumbnailCache, setThumbnailCache]
-	)
 
 	const togglePlay = useCallback(() => {
 		if (isPlaying) {
@@ -144,41 +118,24 @@ export default function Player() {
 		if (!currentTrack) {
 			setCoverArt("#")
 		} else {
-			const splits = currentTrack.split("/")
-			const album = splits[splits.length - 2]
 			if (Object.keys(thumbnailCache).includes(currentTrack)) {
 				setCoverArt(thumbnailCache[currentTrack])
 			} else {
-				albumArt("", {
-					album: `${album} ${getSongName(currentTrack)}`,
-					size: "medium"
-				})
-					.then((i) => {
-						setCoverArt(i)
-						const updated = { ...thumbnailCache }
-						updated[currentTrack] = i
-						setThumbnailCache(updated)
-						// console.log(i)
-					})
-					.catch(() => {
-						setCoverArt("#")
-					})
+				setCoverArt("#")
+				// albumArtQueryForPath(currentTrack)
+				// 	.then((i) => {
+				// 		setCoverArt(i)
+				// 		const updated = { ...thumbnailCache }
+				// 		updated[currentTrack] = i
+				// 		setThumbnailCache(updated)
+				// 		// console.log(i)
+				// 	})
+				// 	.catch(() => {
+				// 		setCoverArt("#")
+				// 	})
 			}
 		}
-	}, [currentTrack])
-
-	useEffect(() => {
-		const q = queue.concat(files.map((elt) => elt.path))
-		if (q.length > 0) {
-			const f = []
-			q.map((elt) => {
-				if (!thumbnailCache[elt]) {
-					f.push(elt)
-				}
-			})
-			fetchCoverArts(f)
-		}
-	}, [queue, files, coverArt])
+	}, [currentTrack, thumbnailCache])
 
 	// action manager
 	useEffect(() => {
