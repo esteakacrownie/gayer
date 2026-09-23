@@ -33,8 +33,10 @@ Local music player and downloader :3
 
 ### Planned
 
-- Fix incorrect cover art manually when it fails to find your music, or allow disabling auto fetching
-- Ausio visualizer
+- Import m3u8 playlist and automatically download tracks
+- Fix incorrect cover art manually when it fails to find your music, or allow disabling cover art auto fetching
+- Audio visualizer
+- Lyrics support
 
 <br/>
 Stay tuned and support the project by starring it >:3
@@ -60,13 +62,13 @@ Stay tuned and support the project by starring it >:3
 ### Install
 
 ```bash
-$ npm install
+npm install
 ```
 
 ### Development
 
 ```bash
-$ npm run dev
+npm run dev
 ```
 
 ### Build
