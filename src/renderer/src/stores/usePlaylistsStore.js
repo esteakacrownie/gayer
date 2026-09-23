@@ -13,23 +13,26 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
-import { create } from 'zustic'
-import { toAllowedPlaylistName } from '../utils'
+import { create } from "zustic"
+import { toAllowedPlaylistName } from "../utils"
 
 const persist = () => (set, get) => (next) => async (partial) => {
-  await next(partial)
-  window.electron.ipcRenderer.invoke('writeConfigFile', {
-    path: 'playlists.json',
-    content: JSON.stringify(get().playlists)
-  })
+	await next(partial)
+	window.electron.ipcRenderer.invoke("writeConfigFile", {
+		path: "playlists.json",
+		content: JSON.stringify(get().playlists)
+	})
 }
 
 export const usePlaylistsStore = create(
-  (set) => ({
-    selectedSongPath: "", // songs / songs to be added to playlists in dialog
-    playlists: [], //[ { id, name, songs: ["path/to/song1"] } ]
-    setSelectedSongPath: (v) => set((state) => ({ selectedSongPath: v })),
-    setPlaylists: (v) => set((state) => ({ playlists: v.map((e) => ({ ...e, name: toAllowedPlaylistName(e.name) })) }))
-  }),
-  [persist()]
+	(set) => ({
+		selectedSongPath: "", // songs / songs to be added to playlists in dialog
+		playlists: [], //[ { id, name, songs: ["path/to/song1"] } ]
+		setSelectedSongPath: (v) => set((state) => ({ selectedSongPath: v })),
+		setPlaylists: (v) =>
+			set((state) => ({
+				playlists: v.map((e) => ({ ...e, name: toAllowedPlaylistName(e.name) }))
+			}))
+	}),
+	[persist()]
 )

@@ -16,15 +16,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 import { useEffect, useState } from "react"
 
 export default function useConfirm(t = 2000) {
-    const [confirmed, setConfirmed] = useState(false)
+	const [confirmed, setConfirmed] = useState(false)
 
-    useEffect(() => {
-        if (confirmed) {
-            const i = setTimeout(() => { setConfirmed(false) }, t)
-            return () => {
-                clearTimeout(i)
-            }
-        }
-    }, [confirmed])
-    return [confirmed, setConfirmed]
+	useEffect(() => {
+		if (confirmed) {
+			const i = setTimeout(() => {
+				setConfirmed(false)
+			}, t)
+			return () => {
+				clearTimeout(i)
+			}
+		}
+	}, [confirmed, t])
+	return [confirmed, setConfirmed]
 }

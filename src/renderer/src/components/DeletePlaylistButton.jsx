@@ -22,47 +22,63 @@ import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 import { useSettingsStore } from "../stores/useSettingsStore"
 
 export default function DeletePlaylistButton({ pid }) {
+	const { selectedPlaylist, setSelectedPlaylist } = usePlayerStore()
 
-    const { selectedPlaylist, setSelectedPlaylist } = usePlayerStore()
+	const { setForceRefreshLocationsTracker } = useSettingsStore()
 
-    const { setForceRefreshLocationsTracker } = useSettingsStore()
+	const { playlists, setPlaylists } = usePlaylistsStore()
 
-    const { playlists, setPlaylists } = usePlaylistsStore()
+	const { idInPlaylists } = usePlaylistUtils()
 
-    const { idInPlaylists } = usePlaylistUtils()
+	const [deletingSelectedPlaylist, setDeletingSelectedPlaylist] = useConfirm()
 
-    const [deletingSelectedPlaylist, setDeletingSelectedPlaylist] = useConfirm()
+	const removeSelectedPlaylist = useCallback(() => {
+		if (deletingSelectedPlaylist) {
+			setPlaylists(playlists.filter((e) => e.id != pid))
+			setSelectedPlaylist("")
+			setDeletingSelectedPlaylist(false)
+		} else {
+			setDeletingSelectedPlaylist(true)
+		}
+	}, [
+		playlists,
+		deletingSelectedPlaylist,
+		pid,
+		setDeletingSelectedPlaylist,
+		setPlaylists,
+		setSelectedPlaylist
+	])
 
-    const removeSelectedPlaylist = useCallback(() => {
-        if (deletingSelectedPlaylist) {
-            setPlaylists(playlists.filter((e) => e.id != pid))
-            setSelectedPlaylist("")
-            setDeletingSelectedPlaylist(false)
-        } else {
-            setDeletingSelectedPlaylist(true)
-        }
-    }, [playlists, selectedPlaylist, deletingSelectedPlaylist])
+	const removeSelectedAlbum = useCallback(async () => {
+		if (deletingSelectedPlaylist) {
+			await window.electron.ipcRenderer.invoke("delete_dir", { path: pid })
+			setSelectedPlaylist("")
+			setDeletingSelectedPlaylist(false)
+			setForceRefreshLocationsTracker((p) => p + 1)
+		} else {
+			setDeletingSelectedPlaylist(true)
+		}
+	}, [
+		pid,
+		deletingSelectedPlaylist,
+		setDeletingSelectedPlaylist,
+		setForceRefreshLocationsTracker,
+		setSelectedPlaylist
+	])
 
-    const removeSelectedAlbum = useCallback(async () => {
-        if (deletingSelectedPlaylist) {
-            await window.electron.ipcRenderer.invoke("delete_dir", { path: pid })
-            setSelectedPlaylist("")
-            setDeletingSelectedPlaylist(false)
-            setForceRefreshLocationsTracker((p) => p + 1)
-        } else {
-            setDeletingSelectedPlaylist(true)
-        }
-    }, [selectedPlaylist, pid, deletingSelectedPlaylist])
-
-    return (
-        <button
-            className="-my-1 flex flex-row relative outline-none min-w-max gap-1 text-sm justify-center items-center text-red-300 bg-red-950 rounded-full border border-red-300 py-1 px-2 transition ease-out duration-200 hover:bg-red-900 cursor-pointer"
-            onClick={() => idInPlaylists(pid) ? removeSelectedPlaylist() : removeSelectedAlbum()}
-        >
-            <MdDelete size={16} />
-            <span>
-                {deletingSelectedPlaylist ? "Confirm deletion ?" : (idInPlaylists(pid) ? "Delete Playlist" : "Delete Album")}
-            </span>
-        </button>
-    )
+	return (
+		<button
+			className="-my-1 flex flex-row relative outline-none min-w-max gap-1 text-sm justify-center items-center text-red-300 bg-red-950 rounded-full border border-red-300 py-1 px-2 transition ease-out duration-200 hover:bg-red-900 cursor-pointer"
+			onClick={() => (idInPlaylists(pid) ? removeSelectedPlaylist() : removeSelectedAlbum())}
+		>
+			<MdDelete size={16} />
+			<span>
+				{deletingSelectedPlaylist
+					? "Confirm deletion ?"
+					: idInPlaylists(pid)
+						? "Delete Playlist"
+						: "Delete Album"}
+			</span>
+		</button>
+	)
 }

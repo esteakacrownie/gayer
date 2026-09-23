@@ -42,7 +42,7 @@ export default function PowerSavingButton() {
 			<div
 				className={cn(
 					"absolute w-full h-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-					powerSavingMode ? "bg-yellow-100" : "bg-pink-200",
+					powerSavingMode ? "bg-yellow-100" : "bg-pink-200"
 				)}
 			/>
 		</button>

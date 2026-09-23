@@ -15,26 +15,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import { useEffect } from "react"
 
-export const useClickOutside = (
-    ref,
-    callback,
-    addEventListener = true,
-    outsideRef,
-) => {
-    const handleClick = (event) => {
-        if (ref.current && !ref.current.contains(event.target)) {
-            callback()
-        }
-    }
+export const useClickOutside = (ref, callback, addEventListener = true, outsideRef) => {
+	const handleClick = (event) => {
+		if (ref.current && !ref.current.contains(event.target)) {
+			callback()
+		}
+	}
 
-    useEffect(() => {
-        const elt = (outsideRef.current || document)
-        if (addEventListener) {
-            elt.addEventListener("click", handleClick)
-        }
+	useEffect(() => {
+		const elt = outsideRef.current || document
+		if (addEventListener) {
+			elt.addEventListener("click", handleClick)
+		}
 
-        return () => {
-            elt.removeEventListener("click", handleClick)
-        }
-    })
+		return () => {
+			elt.removeEventListener("click", handleClick)
+		}
+	})
 }

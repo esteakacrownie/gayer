@@ -13,7 +13,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
-import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import { IoMdDownload } from "react-icons/io"
 import { useCallback } from "react"
@@ -21,25 +20,22 @@ import { downloadTextFile, generateM3U8 } from "../utils"
 import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 
 export default function PlaylistExportButton() {
+	const { selectedPlaylist } = usePlayerStore()
+	const { getPlaylistFromId } = usePlaylistUtils()
 
-    const { playlists } = usePlaylistsStore()
-    const { selectedPlaylist } =
-        usePlayerStore()
-    const { getPlaylistFromId } = usePlaylistUtils()
+	const exportPlaylist = useCallback(() => {
+		if (!selectedPlaylist || selectedPlaylist == "*") return
+		const p = { ...getPlaylistFromId(selectedPlaylist) }
+		downloadTextFile(`${p.name || "My Playlist"}.m3u8`, generateM3U8(p))
+	}, [selectedPlaylist, getPlaylistFromId])
 
-    const exportPlaylist = useCallback(() => {
-        if (!selectedPlaylist || selectedPlaylist == "*") return
-        const p = { ...getPlaylistFromId(selectedPlaylist) }
-        downloadTextFile(`${p.name || "My Playlist"}.m3u8`, generateM3U8(p))
-    }, [playlists, selectedPlaylist])
-
-    return (
-        <button
-            className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer overflow-clip"
-            onClick={exportPlaylist}
-        >
-            <IoMdDownload size={16} />
-            <span>Export</span>
-        </button>
-    )
+	return (
+		<button
+			className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer overflow-clip"
+			onClick={exportPlaylist}
+		>
+			<IoMdDownload size={16} />
+			<span>Export</span>
+		</button>
+	)
 }

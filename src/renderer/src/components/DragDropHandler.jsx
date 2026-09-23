@@ -23,8 +23,7 @@ import { useFilesStore } from "../stores/useFilesStore"
 export default function DragDropHandler() {
 	const [enabled, setEnabled] = useState(false)
 
-	const { queue, setQueue, setAutoplay, currentTrack, setNextAction } =
-		usePlayerStore()
+	const { queue, setQueue, setAutoplay, currentTrack, setNextAction } = usePlayerStore()
 
 	const { shufflePlay } = useSettingsStore()
 
@@ -35,7 +34,9 @@ export default function DragDropHandler() {
 			setEnabled(false)
 			event.preventDefault()
 			// console.log(JSON.stringify(event.dataTransfer.files[0]))
-			let songs = await handleDropped(window.api.getFilePaths(Object.values(event.dataTransfer.files)))
+			let songs = await handleDropped(
+				window.api.getFilePaths(Object.values(event.dataTransfer.files))
+			)
 			setFilesIgnoreExistenceCheck(songs)
 			if (shufflePlay) {
 				songs = shuffleArray(songs)
@@ -51,11 +52,19 @@ export default function DragDropHandler() {
 				setQueue([...new Set(queue.concat(songs))])
 			}
 		},
-		[queue, setQueue, setAutoplay, currentTrack, setEnabled],
+		[
+			queue,
+			setQueue,
+			setAutoplay,
+			currentTrack,
+			setEnabled,
+			setFilesIgnoreExistenceCheck,
+			setNextAction,
+			shufflePlay
+		]
 	)
 
 	const counter = useRef(0)
-
 
 	useEffect(() => {
 		const dragEnterFunc = (event) => {
@@ -86,11 +95,14 @@ export default function DragDropHandler() {
 
 	return (
 		<div
-			className={cn("fixed z-30 top-0 w-screen h-screen", enabled ? "flex flex-col justify-center items-center" : "hidden pointer-events-none")}
+			className={cn(
+				"fixed z-30 top-0 w-screen h-screen",
+				enabled ? "flex flex-col justify-center items-center" : "hidden pointer-events-none"
+			)}
 		>
 			<div className="w-[80%] max-w-100 max-h-80 p-8 text-center text-lg font-bold rounded-2xl border-2 border-pink-300 shadow-[0_0_10px_10px] shadow-pink-400/40 backdrop-brightness-175 backdrop-contrast-175 bg-pink-800/95">
 				Add files to queue
 			</div>
-		</div >
+		</div>
 	)
 }

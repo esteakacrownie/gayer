@@ -13,10 +13,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
-import { cn } from '@sglara/cn'
-import { usePlayerStore } from '../stores/usePlayerStore'
-import { useSettingsStore } from '../stores/useSettingsStore'
-import { useCacheStore } from '../stores/useCacheStore'
+import { cn } from "@sglara/cn"
+import { usePlayerStore } from "../stores/usePlayerStore"
+import { useSettingsStore } from "../stores/useSettingsStore"
+import { useCacheStore } from "../stores/useCacheStore"
 
 export default function CoverImage({ song }) {
 	const { powerSavingMode } = useSettingsStore()
@@ -27,11 +27,15 @@ export default function CoverImage({ song }) {
 		<div className="overflow-clip w-full h-full -z-10 absolute top-0 left-0 rounded-md flex flex-row justify-start items-center">
 			<img
 				className={cn(
-					'w-full object-cover scale-105 brightness-50 transition ease-out duration-200 pointer-events-none',
-					thumbnailCache[song] ? (currentTrack == song ? 'opacity-50' : 'opacity-35') : 'opacity-0',
-					powerSavingMode ? '' : 'blur-[2px]'
+					"w-full object-cover scale-105 brightness-50 transition ease-out duration-200 pointer-events-none",
+					thumbnailCache[song]
+						? currentTrack == song
+							? "opacity-50"
+							: "opacity-35"
+						: "opacity-0",
+					powerSavingMode ? "" : "blur-[2px]"
 				)}
-				src={thumbnailCache[song] ?? '#'}
+				src={thumbnailCache[song] ?? "#"}
 				alt=""
 			/>
 		</div>

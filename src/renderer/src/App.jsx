@@ -62,11 +62,11 @@ function App() {
 				const parsed = JSON.parse(d)
 				const data = Array.isArray(parsed) ? parsed : []
 				setPlaylists(data)
-
 			})
 			.catch(() => console.log("Couldn't parse playlists file"))
 		// parse arguments
-		window.electron.ipcRenderer.invoke("get_args", {})
+		window.electron.ipcRenderer
+			.invoke("get_args", {})
 			.then((elt) => {
 				// console.log(elt)
 				return handleDropped(elt)
@@ -78,7 +78,7 @@ function App() {
 				setFilesIgnoreExistenceCheck(songs)
 				setAutoplay(true)
 				setQueue([...new Set(shufflePlayOnStart ? shuffleArray(songs) : songs)])
-				setNextAction('setArgQueue')
+				setNextAction("setArgQueue")
 			})
 			.catch((e) => console.log(e))
 	}, [])

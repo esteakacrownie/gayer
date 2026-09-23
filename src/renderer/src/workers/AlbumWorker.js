@@ -38,7 +38,7 @@ export default async function AlbumWorker(files) {
 				const album = splits[splits.length - 2]
 				result[elt] = await albumArt("", {
 					album: `${album} ${getSongName(elt)}`,
-					size: "medium",
+					size: "medium"
 				})
 			}
 		} catch (error) {

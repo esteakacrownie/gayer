@@ -38,7 +38,7 @@ export default function SongElement({
 	showRemoveFromQueue = false,
 	showAddToPlaylist = true,
 	showDelete = true,
-	highlightIfPlaying = true,
+	highlightIfPlaying = true
 }) {
 	const { currentTrack } = usePlayerStore()
 
@@ -46,7 +46,8 @@ export default function SongElement({
 
 	const { setForceRefreshLocationsTracker } = useSettingsStore()
 
-	const { handlePlayNext, handleAddToQueue, handleRemoveFromQueue, playFromQueue, setMusic } = usePlayerControls()
+	const { handlePlayNext, handleAddToQueue, handleRemoveFromQueue, playFromQueue, setMusic } =
+		usePlayerControls()
 
 	const handleAddToPlaylist = () => {
 		setSelectedSongPath(song)
@@ -61,7 +62,7 @@ export default function SongElement({
 		} else {
 			setDeleting(true)
 		}
-	}, [deleting])
+	}, [deleting, setDeleting, setForceRefreshLocationsTracker, song])
 
 	return (
 		<motion.div
@@ -70,7 +71,7 @@ export default function SongElement({
 				highlightIfPlaying && currentTrack == song
 					? "bg-linear-90 from-pink-950 to-pink-900 brightness-175 border-2 border-pink-400 shadow-pink-500/40 shadow-[0_0_7px_7px]"
 					: "brightness-110 hover:brightness-150 border-2 border-slate-400/50",
-				isGrabbable && "cursor-grab",
+				isGrabbable && "cursor-grab"
 			)}
 		>
 			<div
@@ -82,7 +83,7 @@ export default function SongElement({
 			<motion.div
 				layout
 				transition={{
-					duration: 0.2,
+					duration: 0.2
 				}}
 				initial={{
 					width: "40px"
@@ -93,9 +94,7 @@ export default function SongElement({
 				whileHover={{
 					width: "auto"
 				}}
-				className={cn(
-					"flex flex-row bg-slate-600/75 overflow-clip rounded-lg",
-				)}
+				className={cn("flex flex-row bg-slate-600/75 overflow-clip rounded-lg")}
 			>
 				{showPlayNow && (
 					<motion.div
@@ -103,9 +102,7 @@ export default function SongElement({
 						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation()
-							fromQueue && queueIdx >= 0
-								? playFromQueue(queueIdx)
-								: setMusic(song)
+							fromQueue && queueIdx >= 0 ? playFromQueue(queueIdx) : setMusic(song)
 						}}
 						initial={{
 							scale: 1.0
@@ -272,7 +269,7 @@ export default function SongElement({
 			<motion.p
 				layout
 				transition={{
-					duration: 0.2,
+					duration: 0.2
 				}}
 				className="ml-2 pr-6 line-clamp-1 text-shadow-lg text-shadow-black/75"
 			>

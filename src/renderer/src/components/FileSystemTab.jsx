@@ -22,7 +22,7 @@ import {
 	MdAddCircleOutline,
 	MdCheckCircleOutline,
 	MdPlayArrow,
-	MdPlaylistAdd,
+	MdPlaylistAdd
 } from "react-icons/md"
 import PowerSavingButton from "./PowerSavingButton"
 import { useSettingsStore } from "../stores/useSettingsStore"
@@ -32,11 +32,9 @@ import { IoIosFolderOpen } from "react-icons/io"
 export default function FileSystemTab() {
 	const { setFiles, setFilesIgnoreExistenceCheck } = useFilesStore()
 
-	const { queue, setQueue, setAutoplay, setNextAction, currentTrack } =
-		usePlayerStore()
+	const { queue, setQueue, setAutoplay, setNextAction, currentTrack } = usePlayerStore()
 
-	const { libraryLocations, setLibraryLocations, tab, setTab, shufflePlay } =
-		useSettingsStore()
+	const { libraryLocations, setLibraryLocations, tab, setTab, shufflePlay } = useSettingsStore()
 
 	const [folderSongs, setFolderSongs] = useState([])
 	const [folder, setFolder] = useState("")
@@ -73,9 +71,7 @@ export default function FileSystemTab() {
 	const handleAddLibrary = () => {
 		if (!folder) return
 		if (libraryLocations.includes(folder)) {
-			setLibraryLocations([
-				...new Set(libraryLocations.filter((elt) => elt != folder)),
-			])
+			setLibraryLocations([...new Set(libraryLocations.filter((elt) => elt != folder))])
 		} else {
 			setLibraryLocations([...new Set(libraryLocations.concat(folder))])
 		}
@@ -103,9 +99,7 @@ export default function FileSystemTab() {
 				<button
 					className={cn(
 						"flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer",
-						libraryLocations.includes(folder)
-							? "bg-violet-950 hover:bg-violet-900"
-							: "",
+						libraryLocations.includes(folder) ? "bg-violet-950 hover:bg-violet-900" : ""
 					)}
 					onClick={handleAddLibrary}
 				>
@@ -115,9 +109,7 @@ export default function FileSystemTab() {
 						<MdAddCircleOutline size={16} />
 					)}
 					<span>
-						{libraryLocations.includes(folder)
-							? "In Library"
-							: "Add to Library"}
+						{libraryLocations.includes(folder) ? "In Library" : "Add to Library"}
 					</span>
 				</button>
 				<PowerSavingButton />

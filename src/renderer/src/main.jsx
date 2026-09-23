@@ -13,11 +13,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App'
+import { StrictMode } from "react"
+import { createRoot } from "react-dom/client"
+import App from "./App"
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById("root")).render(
 	<StrictMode>
 		<App />
 	</StrictMode>

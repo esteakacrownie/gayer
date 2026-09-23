@@ -15,7 +15,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import { useEffect, useMemo, useState, useCallback } from "react"
 import { FaPlay, FaPause, FaStepForward, FaStepBackward } from "react-icons/fa"
-import { IoMdVolumeHigh, IoMdVolumeLow, IoMdVolumeMute, IoMdShuffle, IoMdAddCircleOutline } from "react-icons/io"
+import {
+	IoMdVolumeHigh,
+	IoMdVolumeLow,
+	IoMdVolumeMute,
+	IoMdShuffle,
+	IoMdAddCircleOutline
+} from "react-icons/io"
 import { MdLoop } from "react-icons/md"
 import { AnimatePresence, motion } from "motion/react"
 import { getSongName } from "../utils"
@@ -32,8 +38,8 @@ import { useHotkeys } from "react-hotkeys-hook"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 
 export default function Player() {
-
-	const { isPlaying, currentTrack, setHistory, queue, nextAction, setNextAction } = usePlayerStore()
+	const { isPlaying, currentTrack, setHistory, queue, nextAction, setNextAction } =
+		usePlayerStore()
 
 	const {
 		setVolume: setUiVolume,
@@ -59,17 +65,20 @@ export default function Player() {
 		return v > 0 ? (v > 0.5 ? "high" : "low") : "mute"
 	}
 
-	const setVolumeClamped = useCallback((v) => {
-		setUiVolume(Math.min(Math.max(v, 0.0), 1.0))
-	}, [setUiVolume])
+	const setVolumeClamped = useCallback(
+		(v) => {
+			setUiVolume(Math.min(Math.max(v, 0.0), 1.0))
+		},
+		[setUiVolume]
+	)
 
 	const volumeUp = useCallback(() => {
 		setVolumeClamped(uiVolume + 0.05)
-	}, [uiVolume, setUiVolume])
+	}, [uiVolume, setVolumeClamped])
 
 	const volumeDown = useCallback(() => {
 		setVolumeClamped(uiVolume - 0.05)
-	}, [uiVolume, setUiVolume])
+	}, [uiVolume, setVolumeClamped])
 
 	const fetchCoverArts = useCallback(
 		async (f) => {
@@ -97,12 +106,12 @@ export default function Player() {
 		} else {
 			resume()
 		}
-	}, [isPlaying])
+	}, [isPlaying, pause, resume])
 
 	const handleAddToPlaylist = useCallback(() => {
 		if (!currentTrack) return
 		setSelectedSongPath(currentTrack)
-	}, [currentTrack])
+	}, [currentTrack, setSelectedSongPath])
 
 	const handleLoopMode = useCallback(() => {
 		// console.log(loopMode)
@@ -117,7 +126,7 @@ export default function Player() {
 				setLoopMode("queue")
 				break
 		}
-	}, [loopMode])
+	}, [loopMode, setLoopMode])
 
 	const volumeIcon = useMemo(() => {
 		switch (getVolumeLabel(uiVolume)) {
@@ -230,13 +239,34 @@ export default function Player() {
 		})
 	}, [currentTrack, thumbnailCache])
 
-	useHotkeys("space", (e) => { e.preventDefault(); togglePlay() })
-	useHotkeys(["ctrl+right", "ctrl+n"], (e) => { e.preventDefault(); setNextAction("setNext") })
-	useHotkeys(["ctrl+left", "ctrl+p"], (e) => { e.preventDefault(); setNextAction("setPrevious") })
-	useHotkeys("ctrl+up", (e) => { e.preventDefault(); volumeUp() })
-	useHotkeys("ctrl+down", (e) => { e.preventDefault(); volumeDown() })
-	useHotkeys("ctrl+l", (e) => { e.preventDefault(); handleLoopMode() })
-	useHotkeys("ctrl+s", (e) => { e.preventDefault(); setShufflePlay(!shufflePlay) })
+	useHotkeys("space", (e) => {
+		e.preventDefault()
+		togglePlay()
+	})
+	useHotkeys(["ctrl+right", "ctrl+n"], (e) => {
+		e.preventDefault()
+		setNextAction("setNext")
+	})
+	useHotkeys(["ctrl+left", "ctrl+p"], (e) => {
+		e.preventDefault()
+		setNextAction("setPrevious")
+	})
+	useHotkeys("ctrl+up", (e) => {
+		e.preventDefault()
+		volumeUp()
+	})
+	useHotkeys("ctrl+down", (e) => {
+		e.preventDefault()
+		volumeDown()
+	})
+	useHotkeys("ctrl+l", (e) => {
+		e.preventDefault()
+		handleLoopMode()
+	})
+	useHotkeys("ctrl+s", (e) => {
+		e.preventDefault()
+		setShufflePlay(!shufflePlay)
+	})
 
 	return (
 		<div className="flex flex-col justify-center gap-4 fixed z-10 bottom-0 p-4 w-full ">
@@ -371,7 +401,9 @@ export default function Player() {
 							>
 								<MdLoop className="-scale-x-100" size={20} />
 								{loopMode == "current" && (
-									<span className="absolute right-2 text-xs bottom-4.5 font-bold">1</span>
+									<span className="absolute right-2 text-xs bottom-4.5 font-bold">
+										1
+									</span>
 								)}
 							</motion.button>
 							<motion.button

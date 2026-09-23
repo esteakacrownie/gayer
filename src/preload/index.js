@@ -13,8 +13,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
-import { contextBridge, webUtils } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
+import { contextBridge, webUtils } from "electron"
+import { electronAPI } from "@electron-toolkit/preload"
 
 // Custom APIs for renderer
 const api = {
@@ -36,8 +36,8 @@ const api = {
 // just add to the DOM global.
 if (process.contextIsolated) {
 	try {
-		contextBridge.exposeInMainWorld('electron', electronAPI)
-		contextBridge.exposeInMainWorld('api', api)
+		contextBridge.exposeInMainWorld("electron", electronAPI)
+		contextBridge.exposeInMainWorld("api", api)
 	} catch (error) {
 		console.error(error)
 	}

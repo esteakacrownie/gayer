@@ -1,3 +1,18 @@
+/* Copyright (C) 2026 esteakacrownie
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>. */
+
 /**
  * Replaces characters in strings that are illegal/unsafe for filenames.
  * Unsafe characters are either removed or replaced by a substitute set
@@ -19,14 +34,14 @@
  *
  * Capped at 255 characters in length.
  * http://unix.stackexchange.com/questions/32795/what-is-the-maximum-allowed-filename-and-folder-size-with-ecryptfs
-**/
+ **/
 
-import truncateUtf8Bytes from "truncate-utf8-bytes";
+import truncateUtf8Bytes from "truncate-utf8-bytes"
 
-var illegalRe = /[\/\?<>\\:\*\|"]/g;
-var controlRe = /[\x00-\x1f\x80-\x9f]/g;
-var reservedRe = /^\.+$/;
-var windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
+var illegalRe = /[\/\?<>\\:\*\|"]/g
+var controlRe = /[\x00-\x1f\x80-\x9f]/g
+var reservedRe = /^\.+$/
+var windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i
 
 /**
  * Strip trailing spaces and dots, which are not allowed on some Windows file
@@ -34,29 +49,29 @@ var windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
  * (CWE-1333).
  */
 function replaceTrailingDotsAndSpaces(str, replacement) {
-    var end = str.length;
-    while (end > 0 && (str[end - 1] === '.' || str[end - 1] === ' ')) end--;
-    return end < str.length ? str.slice(0, end) + replacement : str;
+	var end = str.length
+	while (end > 0 && (str[end - 1] === "." || str[end - 1] === " ")) end--
+	return end < str.length ? str.slice(0, end) + replacement : str
 }
 
 function sanitize(input, replacement) {
-    if (typeof input !== 'string') {
-        throw new Error('Input must be string');
-    }
-    var sanitized = input
-        .replace(illegalRe, replacement)
-        .replace(controlRe, replacement)
-        .replace(reservedRe, replacement)
-        .replace(windowsReservedRe, replacement);
-    sanitized = replaceTrailingDotsAndSpaces(sanitized, replacement);
-    return truncateUtf8Bytes(sanitized, 255);
+	if (typeof input !== "string") {
+		throw new Error("Input must be string")
+	}
+	var sanitized = input
+		.replace(illegalRe, replacement)
+		.replace(controlRe, replacement)
+		.replace(reservedRe, replacement)
+		.replace(windowsReservedRe, replacement)
+	sanitized = replaceTrailingDotsAndSpaces(sanitized, replacement)
+	return truncateUtf8Bytes(sanitized, 255)
 }
 
 export const toSanitized = (input, options) => {
-    var replacement = (options && options.replacement) || '';
-    var output = sanitize(input, replacement);
-    if (replacement === '') {
-        return output;
-    }
-    return sanitize(output, '');
-};
+	var replacement = (options && options.replacement) || ""
+	var output = sanitize(input, replacement)
+	if (replacement === "") {
+		return output
+	}
+	return sanitize(output, "")
+}

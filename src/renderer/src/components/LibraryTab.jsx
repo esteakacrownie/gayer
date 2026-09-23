@@ -27,7 +27,7 @@ import {
 	MdPlayArrow,
 	MdPlaylistAdd,
 	MdRefresh,
-	MdSettings,
+	MdSettings
 } from "react-icons/md"
 import {
 	getFolderName,
@@ -35,7 +35,7 @@ import {
 	getSortedFilesAt,
 	isMusicFile,
 	shuffleArray,
-	toSearchString,
+	toSearchString
 } from "../utils"
 import SongElement from "./SongElement"
 import { usePlayerStore } from "../stores/usePlayerStore"
@@ -53,8 +53,17 @@ import { useFilesStore } from "../stores/useFilesStore"
 export default function LibraryTab() {
 	const maxLength = 25
 
-	const { queue, setQueue, history, setHistory, currentTrack, setAutoplay, setNextAction, selectedPlaylist, setSelectedPlaylist } =
-		usePlayerStore()
+	const {
+		queue,
+		setQueue,
+		history,
+		setHistory,
+		currentTrack,
+		setAutoplay,
+		setNextAction,
+		selectedPlaylist,
+		setSelectedPlaylist
+	} = usePlayerStore()
 
 	const {
 		libraryFilter,
@@ -97,7 +106,11 @@ export default function LibraryTab() {
 	const handlePlayAll = () => {
 		if (filteredSongs.length == 0) return
 		let list =
-			libraryFilter == "songs" ? filteredSongs : (selectedPlaylist ? filteredSelectedAlbumSongs : filteredAlbumsSongs)
+			libraryFilter == "songs"
+				? filteredSongs
+				: selectedPlaylist
+					? filteredSelectedAlbumSongs
+					: filteredAlbumsSongs
 		// console.log(list)
 		if (shufflePlay) {
 			list = shuffleArray(list)
@@ -111,7 +124,11 @@ export default function LibraryTab() {
 	const handleAddAllToQueue = () => {
 		if (filteredSongs.length == 0) return
 		let list =
-			libraryFilter == "songs" ? filteredSongs : (selectedPlaylist ? filteredSelectedAlbumSongs : filteredAlbumsSongs)
+			libraryFilter == "songs"
+				? filteredSongs
+				: selectedPlaylist
+					? filteredSelectedAlbumSongs
+					: filteredAlbumsSongs
 		if (shufflePlay) {
 			list = shuffleArray(list)
 		}
@@ -127,10 +144,7 @@ export default function LibraryTab() {
 	}
 
 	const scrollSongPageMore = () => {
-		let page = Math.min(
-			Math.ceil(filteredSongs.length / maxLength),
-			songsScrollPage + 1,
-		)
+		let page = Math.min(Math.ceil(filteredSongs.length / maxLength), songsScrollPage + 1)
 		setSongsScrollPage(page)
 	}
 
@@ -140,21 +154,25 @@ export default function LibraryTab() {
 	}
 
 	const filteredSongs = useMemo(() => {
-		return songs.filter((n) =>
+		const res = songs.filter((n) =>
 			toSearchString(`${getFolderName(n)} - ${getSongName(n)}`).includes(
-				toSearchString(search),
-			),
+				toSearchString(search)
+			)
 		)
+		return res
 	}, [songs, search])
 
-	const hasAlbumFilteredSong = useCallback((elt) => {
-		for (let s of filteredSongs) {
-			if (s.includes(elt)) {
-				return true
+	const hasAlbumFilteredSong = useCallback(
+		(elt) => {
+			for (let s of filteredSongs) {
+				if (s.includes(elt)) {
+					return true
+				}
 			}
-		}
-		return false
-	}, [filteredSongs])
+			return false
+		},
+		[filteredSongs]
+	)
 
 	const fetchSongs = useCallback(async () => {
 		let allSongs = []
@@ -162,21 +180,11 @@ export default function LibraryTab() {
 		// from library locations and subfolders
 		for (let i of libraryLocations) {
 			const { songs: sorted } = await getSortedFilesAt(i)
-			allSongs = [
-				...new Set(
-					allSongs.concat(sorted.filter((s) => isMusicFile(s))),
-				),
-			]
+			allSongs = [...new Set(allSongs.concat(sorted.filter((s) => isMusicFile(s))))]
 			const dirs = await window.electron.ipcRenderer.invoke("ls_dirs", { path: i })
 			for (let j of dirs) {
 				const { songs: album_sorted } = await getSortedFilesAt(j)
-				allSongs = [
-					...new Set(
-						allSongs.concat(
-							album_sorted.filter((s) => isMusicFile(s)),
-						),
-					),
-				]
+				allSongs = [...new Set(allSongs.concat(album_sorted.filter((s) => isMusicFile(s))))]
 			}
 		}
 
@@ -185,20 +193,16 @@ export default function LibraryTab() {
 		for (let i of playlists) {
 			playlistSongs = [...playlistSongs, ...i.songs]
 		}
-		const playlistSongsExistDb = await window.electron.ipcRenderer.invoke("get_files_exist", { paths: [...new Set(playlistSongs)] })
+		const playlistSongsExistDb = await window.electron.ipcRenderer.invoke("get_files_exist", {
+			paths: [...new Set(playlistSongs)]
+		})
 		let playlistSongsExist = []
 		Object.keys(playlistSongsExistDb).map((e) => {
 			if (playlistSongsExistDb[e] === true) {
 				playlistSongsExist.push(e)
 			}
 		})
-		allSongs = [
-			...new Set(
-				allSongs.concat(
-					playlistSongsExist,
-				),
-			),
-		]
+		allSongs = [...new Set(allSongs.concat(playlistSongsExist))]
 		// console.log(allSongs)
 		return allSongs
 	}, [playlists, libraryLocations])
@@ -211,7 +215,7 @@ export default function LibraryTab() {
 		} else {
 			setSelectedAlbumSongs(getPlaylistFromId(selectedPlaylist).songs)
 		}
-	}, [selectedPlaylist, playlists, idInPlaylists, setSelectedAlbumSongs])
+	}, [selectedPlaylist, idInPlaylists, setSelectedAlbumSongs, getPlaylistFromId])
 
 	// [ {AlbumPath: song count} ]
 	const fetchAlbumsSongsCount = useCallback(async () => {
@@ -245,32 +249,33 @@ export default function LibraryTab() {
 			.catch(() => console.log("Couldn't fetch albums"))
 	}
 
-	const hasPlaylistFilteredSong = useCallback((elt) => {
-		for (let s of filteredSongs) {
-			if (elt.songs.includes(s)) {
-				return true
+	const hasPlaylistFilteredSong = useCallback(
+		(elt) => {
+			for (let s of filteredSongs) {
+				if (elt.songs.includes(s)) {
+					return true
+				}
 			}
-		}
-		return false
-	}, [filteredSongs])
+			return false
+		},
+		[filteredSongs]
+	)
 
 	const filteredPlaylists = useMemo(() => {
-		return playlists.filter(
-			(elt) => {
-				const element = getPlaylistFromId(elt.id)
-				return toSearchString(element.name).includes(
-					toSearchString(search),
-				) || hasPlaylistFilteredSong(element)
-			}
-		)
-	}, [playlists, search])
+		return playlists.filter((elt) => {
+			const element = getPlaylistFromId(elt.id)
+			return (
+				toSearchString(element.name).includes(toSearchString(search)) ||
+				hasPlaylistFilteredSong(element)
+			)
+		})
+	}, [playlists, search, getPlaylistFromId, hasPlaylistFilteredSong])
 
 	const filteredAlbums = useMemo(() => {
 		return albumSongsCount.filter(
 			(elt) =>
-				toSearchString(getFolderName(elt.path)).includes(
-					toSearchString(search),
-				) || hasAlbumFilteredSong(elt.path),
+				toSearchString(getFolderName(elt.path)).includes(toSearchString(search)) ||
+				hasAlbumFilteredSong(elt.path)
 		)
 	}, [albumSongsCount, search, hasAlbumFilteredSong])
 
@@ -283,13 +288,13 @@ export default function LibraryTab() {
 			list = list.concat(getPlaylistFromId(e.id).songs)
 		})
 		return [...new Set(list)]
-	}, [songs, playlists, filteredAlbums, filteredPlaylists, search])
+	}, [filteredAlbums, filteredPlaylists, getPlaylistFromId, songs])
 
 	const filteredSelectedAlbumSongs = useMemo(() => {
 		return selectedAlbumSongs.filter((n) =>
 			toSearchString(`${getFolderName(n)} - ${getSongName(n)}`).includes(
-				toSearchString(search),
-			),
+				toSearchString(search)
+			)
 		)
 	}, [selectedAlbumSongs, search])
 
@@ -310,13 +315,7 @@ export default function LibraryTab() {
 	// reset scroll page on search filter update
 	useEffect(() => {
 		setSongsScrollPage(
-			Math.max(
-				Math.min(
-					songsScrollPage,
-					Math.ceil(filteredSongs.length / maxLength),
-				),
-				1,
-			),
+			Math.max(Math.min(songsScrollPage, Math.ceil(filteredSongs.length / maxLength)), 1)
 		)
 		setSongsScrollPage(1)
 	}, [filteredSongs])
@@ -348,9 +347,10 @@ export default function LibraryTab() {
 				{libraryFilter == "locations" && (
 					<>
 						<button
-							className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer",
-								libraryLocations.length == 0
-								&& "bg-slate-700 hover:bg-slate-600 brightness-120 contrast-125 shadow-purple-500/25 shadow-[0_0_7px_7px]"
+							className={cn(
+								"flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer",
+								libraryLocations.length == 0 &&
+									"bg-slate-700 hover:bg-slate-600 brightness-120 contrast-125 shadow-purple-500/25 shadow-[0_0_7px_7px]"
 							)}
 							onClick={addLocation}
 						>
@@ -385,7 +385,7 @@ export default function LibraryTab() {
 				<input
 					className={cn(
 						"outline-none w-full bg-pink-950/50 border-2 border-pink-300 shadow-[0_0_5px_5px] not-focus:shadow-transparent rounded-lg p-2 pr-8 transition ease-out duration-200",
-						"focus:shadow-pink-400/40",
+						"focus:shadow-pink-400/40"
 					)}
 					autoFocus
 					type="text"
@@ -404,7 +404,8 @@ export default function LibraryTab() {
 			{/* Filter bar */}
 			<div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
 				<button
-					className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
+					className={cn(
+						"flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
 						libraryFilter == "songs" && "brightness-105"
 					)}
 					onClick={() => {
@@ -416,14 +417,13 @@ export default function LibraryTab() {
 					<div
 						className={cn(
 							"absolute w-full h-full rounded-full  top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-							libraryFilter == "songs"
-								? "bg-pink-300 outline-2 outline-pink-300"
-								: "",
+							libraryFilter == "songs" ? "bg-pink-300 outline-2 outline-pink-300" : ""
 						)}
 					/>
 				</button>
 				<button
-					className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
+					className={cn(
+						"flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
 						libraryFilter == "playlists" && "brightness-105"
 					)}
 					onClick={() => {
@@ -437,14 +437,17 @@ export default function LibraryTab() {
 							"absolute w-full h-full rounded-full  top-0 left-0 mix-blend-multiply transition ease-out duration-200",
 							libraryFilter == "playlists"
 								? "bg-pink-300 outline-2 outline-pink-300"
-								: "",
+								: ""
 						)}
 					/>
 				</button>
 				<button
-					className={cn("flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer shadow-purple-400/35 shadow-[0_0_3px_3px]",
+					className={cn(
+						"flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer shadow-purple-400/35 shadow-[0_0_3px_3px]",
 						libraryFilter == "locations" && "brightness-105",
-						libraryLocations.length == 0 && libraryFilter != "locations" && "bg-slate-700 hover:bg-slate-600 brightness-120 contrast-125 shadow-purple-500/25 shadow-[0_0_7px_7px]"
+						libraryLocations.length == 0 &&
+							libraryFilter != "locations" &&
+							"bg-slate-700 hover:bg-slate-600 brightness-120 contrast-125 shadow-purple-500/25 shadow-[0_0_7px_7px]"
 					)}
 					onClick={() => {
 						setLibraryFilter("locations")
@@ -457,23 +460,24 @@ export default function LibraryTab() {
 							"absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
 							libraryFilter == "locations"
 								? "bg-pink-300 outline-2 outline-pink-300"
-								: "",
+								: ""
 						)}
 					/>
 				</button>
-				{libraryFilter != "locations" && !(libraryFilter == "playlists" && selectedPlaylist) && (
-					<>
-						<div className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700">
-							<MdInfoOutline size={16} />
-							<span>
-								{libraryFilter == "songs"
-									? filteredSongs.length
-									: filteredAlbums.length + filteredPlaylists.length}{" "}
-								item(s) found
-							</span>
-						</div>
-					</>
-				)}
+				{libraryFilter != "locations" &&
+					!(libraryFilter == "playlists" && selectedPlaylist) && (
+						<>
+							<div className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700">
+								<MdInfoOutline size={16} />
+								<span>
+									{libraryFilter == "songs"
+										? filteredSongs.length
+										: filteredAlbums.length + filteredPlaylists.length}{" "}
+									item(s) found
+								</span>
+							</div>
+						</>
+					)}
 				{libraryFilter == "playlists" && (
 					<>
 						<button
@@ -483,17 +487,13 @@ export default function LibraryTab() {
 							}}
 						>
 							<MdSettings size={16} />
-							<span>
-								Manage playlists
-							</span>
+							<span>Manage playlists</span>
 						</button>
 					</>
 				)}
 				{libraryFilter == "playlists" && selectedPlaylist && (
 					<>
-						{idInPlaylists(selectedPlaylist) && (
-							<PlaylistExportButton />
-						)}
+						{idInPlaylists(selectedPlaylist) && <PlaylistExportButton />}
 						<DeletePlaylistButton pid={selectedPlaylist} />
 					</>
 				)}
@@ -510,9 +510,7 @@ export default function LibraryTab() {
 							<span className="ml-2 line-clamp-1 text-shadow-lg text-shadow-black/25">
 								{getFolderName(elt)}
 							</span>
-							<span className="ml-2 line-clamp-1 text-xs opacity-75">
-								{elt}
-							</span>
+							<span className="ml-2 line-clamp-1 text-xs opacity-75">{elt}</span>
 							<button
 								onClick={() => {
 									removeLocation(elt)
@@ -528,9 +526,14 @@ export default function LibraryTab() {
 			{libraryFilter == "playlists" && (
 				<>
 					{selectedPlaylist ? (
-						<>	{/* Is a custom playlist ? */}
+						<>
+							{" "}
+							{/* Is a custom playlist ? */}
 							{idInPlaylists(selectedPlaylist) ? (
-								<EditablePlaylistSongList songs={selectedAlbumSongs} filteredSongs={filteredSelectedAlbumSongs} />
+								<EditablePlaylistSongList
+									songs={selectedAlbumSongs}
+									filteredSongs={filteredSelectedAlbumSongs}
+								/>
 							) : (
 								<>
 									<div className="flex flex-col gap-2">
@@ -555,17 +558,24 @@ export default function LibraryTab() {
 												<IoChevronBack size={20} />
 											</motion.div>
 											<div className="w-full flex flex-col pr-12 text-center justify-center">
-												<p className="font-bold text-lg line-clamp-1 translate-y-px">{getFolderName(selectedPlaylist)}</p>
-												<p className="font-bold text-xs line-clamp-1">{selectedAlbumSongs.length > 0 ? selectedAlbumSongs.length : ""}&nbsp;{selectedAlbumSongs.length > 0 ? "item(s)" : ""}</p>
+												<p className="font-bold text-lg line-clamp-1 translate-y-px">
+													{getFolderName(selectedPlaylist)}
+												</p>
+												<p className="font-bold text-xs line-clamp-1">
+													{selectedAlbumSongs.length > 0
+														? selectedAlbumSongs.length
+														: ""}
+													&nbsp;
+													{selectedAlbumSongs.length > 0 ? "item(s)" : ""}
+												</p>
 											</div>
 										</div>
 										<motion.ul className="flex flex-col gap-2">
-											{filteredSelectedAlbumSongs
-												.map((elt) => (
-													<motion.li layout key={elt}>
-														<SongElement song={elt} />
-													</motion.li>
-												))}
+											{filteredSelectedAlbumSongs.map((elt) => (
+												<motion.li layout key={elt}>
+													<SongElement song={elt} />
+												</motion.li>
+											))}
 										</motion.ul>
 									</div>
 								</>
@@ -592,11 +602,16 @@ export default function LibraryTab() {
 								<PiPlaylist size={20} />
 								<span className="line-clamp-1 font-bold">Playlists</span>
 							</motion.li>
-							{!playlistsFolded && filteredPlaylists.map((elt) => (
-								<motion.li layout key={elt.id}>
-									<PlaylistElement playlist={elt.id} count={getPlaylistFromId(elt.id).songs.length} isPlaylist={true} />
-								</motion.li>
-							))}
+							{!playlistsFolded &&
+								filteredPlaylists.map((elt) => (
+									<motion.li layout key={elt.id}>
+										<PlaylistElement
+											playlist={elt.id}
+											count={getPlaylistFromId(elt.id).songs.length}
+											isPlaylist={true}
+										/>
+									</motion.li>
+								))}
 							<motion.li
 								layout
 								key="AlbumFolder"
@@ -616,11 +631,12 @@ export default function LibraryTab() {
 								<GiCompactDisc size={20} />
 								<span className="line-clamp-1 font-bold">Albums</span>
 							</motion.li>
-							{!albumsFolded && filteredAlbums.map((elt) => (
-								<motion.li layout key={elt.path}>
-									<PlaylistElement playlist={elt.path} count={elt.count} />
-								</motion.li>
-							))}
+							{!albumsFolded &&
+								filteredAlbums.map((elt) => (
+									<motion.li layout key={elt.path}>
+										<PlaylistElement playlist={elt.path} count={elt.count} />
+									</motion.li>
+								))}
 						</motion.ul>
 					)}
 				</>
@@ -629,12 +645,8 @@ export default function LibraryTab() {
 				<motion.ul className="flex flex-col gap-2">
 					{filteredSongs
 						.slice(
-							powerSavingMode
-								? (songsScrollPage - 1) * maxLength
-								: 0,
-							powerSavingMode
-								? songsScrollPage * maxLength - 1
-								: songs.length,
+							powerSavingMode ? (songsScrollPage - 1) * maxLength : 0,
+							powerSavingMode ? songsScrollPage * maxLength - 1 : songs.length
 						)
 						.map((elt) => (
 							<motion.li layout key={elt}>
@@ -647,25 +659,19 @@ export default function LibraryTab() {
 								className="flex flex-row gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
 								onClick={scrollSongPageLess}
 							>
-								<span className="cursor-pointer font-bold min-w-16">
-									Previous
-								</span>
+								<span className="cursor-pointer font-bold min-w-16">Previous</span>
 							</button>
 							<button className="flex flex-row gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer">
 								<span>
 									Page {songsScrollPage} of{" "}
-									{Math.ceil(
-										filteredSongs.length / maxLength,
-									)}
+									{Math.ceil(filteredSongs.length / maxLength)}
 								</span>
 							</button>
 							<button
 								className="flex flex-row gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
 								onClick={scrollSongPageMore}
 							>
-								<span className="cursor-pointer font-bold min-w-16">
-									Next
-								</span>
+								<span className="cursor-pointer font-bold min-w-16">Next</span>
 							</button>
 						</div>
 					)}

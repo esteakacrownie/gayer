@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 export const getSongName = (p) => {
 	// console.log(p)
 	if (!p) return ""
-	let splits = p.split((p.includes("/") ? "/" : "\\"))
+	let splits = p.split(p.includes("/") ? "/" : "\\")
 	const filename = splits[splits.length - 1]
 	let res = ""
 	splits = filename.split(".")
@@ -30,11 +30,13 @@ export const getSongName = (p) => {
 
 export const getFolderName = (p, parentLevels = 0) => {
 	if (!p) return
-	let splits = p.split((p.includes("/") ? "/" : "\\"))
+	let splits = p.split(p.includes("/") ? "/" : "\\")
 	if (isMusicFile(p)) {
 		return splits[splits.length - (2 + parentLevels)]
 	} else {
-		return splits[splits.length - (((p.endsWith("/") || p.endsWith("\\")) ? 2 : 1) + parentLevels)]
+		return splits[
+			splits.length - ((p.endsWith("/") || p.endsWith("\\") ? 2 : 1) + parentLevels)
+		]
 	}
 }
 
@@ -84,8 +86,12 @@ export const getSortedFilesAt = async (p, filterMusicFiles = false) => {
 			created: elt[key].mtimeMs
 		}
 	})
-	timed = timed.toSorted((a, b) => a.created - b.created).filter((elt) => filterMusicFiles ? isMusicFile(elt.path) : true)
-	const songs = timed.map((elt) => elt.path).filter((elt) => filterMusicFiles ? isMusicFile(elt) : true)
+	timed = timed
+		.toSorted((a, b) => a.created - b.created)
+		.filter((elt) => (filterMusicFiles ? isMusicFile(elt.path) : true))
+	const songs = timed
+		.map((elt) => elt.path)
+		.filter((elt) => (filterMusicFiles ? isMusicFile(elt) : true))
 
 	return { songs, timed }
 }
@@ -161,14 +167,11 @@ export const uiVolume2Volume = (v) => {
 }
 
 export const downloadTextFile = (file, text) => {
-
 	const element = document.createElement("a")
-	element.setAttribute("href",
-		"data:text/plain;charset=utf-8,"
-		+ encodeURIComponent(text))
+	element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(text))
 	element.setAttribute("download", file)
 	document.body.appendChild(element)
-	element.click();
+	element.click()
 
 	document.body.removeChild(element)
 }
@@ -191,7 +194,10 @@ export const parseM3U8 = (str) => {
 	if (!str || !(typeof str == "string")) return
 	const playlist = { id: "", name: "", songs: [] }
 	const parts = str.split("\n")
-	playlist.name = (parts.filter((e) => e.startsWith("#PLAYLIST:"))[0] || "My Playlist").replace("#PLAYLIST:", "")
+	playlist.name = (parts.filter((e) => e.startsWith("#PLAYLIST:"))[0] || "My Playlist").replace(
+		"#PLAYLIST:",
+		""
+	)
 	playlist.songs = parts.filter((e) => !e.startsWith("#") && isMusicFile(e))
 	return playlist
 }

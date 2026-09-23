@@ -21,7 +21,7 @@ export default function SongFilesList() {
 
 	return (
 		<ul className="flex flex-col gap-2">
-			{files.map((elt, idx) => (
+			{files.map((elt) => (
 				<SongElement key={elt.path} song={elt.path} />
 			))}
 		</ul>

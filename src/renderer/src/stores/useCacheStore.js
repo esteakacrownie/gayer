@@ -13,22 +13,22 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
-import { create } from 'zustic'
+import { create } from "zustic"
 
 const persist = () => (set, get) => (next) => async (partial) => {
-  await next(partial)
-  // doesn't await in order not to slow the process when a lot of cache is to get saved. Rather lose cache than lag.
-  window.electron.ipcRenderer.invoke('writeConfigFile', {
-    path: 'cache.json',
-    content: JSON.stringify(get())
-  })
+	await next(partial)
+	// doesn't await in order not to slow the process when a lot of cache is to get saved. Rather lose cache than lag.
+	window.electron.ipcRenderer.invoke("writeConfigFile", {
+		path: "cache.json",
+		content: JSON.stringify(get())
+	})
 }
 
 export const useCacheStore = create(
-  (set) => ({
-    thumbnailCache: {},
-    setThumbnailCache: (v) => set((state) => ({ thumbnailCache: v })),
-    setCache: (c) => set((state) => c)
-  }),
-  [persist()]
+	(set) => ({
+		thumbnailCache: {},
+		setThumbnailCache: (v) => set((state) => ({ thumbnailCache: v })),
+		setCache: (c) => set((state) => c)
+	}),
+	[persist()]
 )

@@ -13,11 +13,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
-import { useEffect, useMemo, useRef, useCallback, useState } from 'react'
-import { getSongName, toMinsSecs, uiVolume2Volume } from '../utils'
-import { usePlayerStore } from '../stores/usePlayerStore'
-import { cn } from '@sglara/cn'
-import { useSettingsStore } from '../stores/useSettingsStore'
+import { useEffect, useMemo, useRef, useCallback, useState } from "react"
+import { getSongName, toMinsSecs, uiVolume2Volume } from "../utils"
+import { usePlayerStore } from "../stores/usePlayerStore"
+import { cn } from "@sglara/cn"
+import { useSettingsStore } from "../stores/useSettingsStore"
 
 export default function TimeLine() {
 	const {
@@ -32,7 +32,7 @@ export default function TimeLine() {
 		autoplay,
 		setNextAction,
 		currentTrackChangeTracker,
-		setForceRefreshLocationsTracker,
+		setForceRefreshLocationsTracker
 	} = usePlayerStore()
 
 	const { volume, loopMode } = useSettingsStore()
@@ -50,39 +50,48 @@ export default function TimeLine() {
 		if (autoplay) {
 			audioRef.current.currentTime = 0
 			setIsPlaying(true)
-			if ((queue.length == 0 && currentTrack && loopMode != "off") || (loopMode === "current" && currentTrack)) {
+			if (
+				(queue.length == 0 && currentTrack && loopMode != "off") ||
+				(loopMode === "current" && currentTrack)
+			) {
 				// play same track over
 				audioRef.current.play()
 			} else {
 				setNextAction("setNext")
 			}
 		}
-	}, [currentTrack, autoplay, setIsPlaying, loopMode, queue, audioRef, currentTrackChangeTracker])
+	}, [currentTrack, autoplay, setIsPlaying, loopMode, queue, audioRef, setNextAction])
 
-	const updateMediasessionTime = useCallback((d = undefined) => {
-		const currentTime = audioRef.current?.currentTime || 0.0
-		const computedDuration = d === undefined ? (duration || 0.0) : d
-		const posObject = {
-			duration: isNaN(computedDuration) ? 0.0 : computedDuration,
-			position: Math.min(currentTime, computedDuration) || 0.0,
-			playbackRate: 1.0
-		}
-		navigator.mediaSession.setPositionState(posObject)
-	}, [audioRef, duration])
+	const updateMediasessionTime = useCallback(
+		(d = undefined) => {
+			const currentTime = audioRef.current?.currentTime || 0.0
+			const computedDuration = d === undefined ? duration || 0.0 : d
+			const posObject = {
+				duration: isNaN(computedDuration) ? 0.0 : computedDuration,
+				position: Math.min(currentTime, computedDuration) || 0.0,
+				playbackRate: 1.0
+			}
+			navigator.mediaSession.setPositionState(posObject)
+		},
+		[audioRef, duration]
+	)
 
-	const updateProgressVisuals = useCallback((t) => {
-		const p = Math.min(duration, t)
-		if (positionLabel.current) {
-			positionLabel.current.innerText = toMinsSecs(p)
-		}
+	const updateProgressVisuals = useCallback(
+		(t) => {
+			const p = Math.min(duration, t)
+			if (positionLabel.current) {
+				positionLabel.current.innerText = toMinsSecs(p)
+			}
 
-		const maxWidth = progressRef.current?.getBoundingClientRect().width || 0
-		if (progressContentRef.current) {
-			progressContentRef.current.style.width = `${currentTrack ? (parseInt(maxWidth * (p / duration))) : 0}px`
-		}
+			const maxWidth = progressRef.current?.getBoundingClientRect().width || 0
+			if (progressContentRef.current) {
+				progressContentRef.current.style.width = `${currentTrack ? parseInt(maxWidth * (p / duration)) : 0}px`
+			}
 
-		// updateMediasessionTime(audioRef.current?.duration)
-	}, [audioRef, progressRef, progressContentRef, positionLabel, duration, updateMediasessionTime, currentTrack])
+			// updateMediasessionTime(audioRef.current?.duration)
+		},
+		[progressRef, progressContentRef, positionLabel, duration, currentTrack]
+	)
 
 	const updateAudioData = useCallback(() => {
 		setDuration(audioRef.current.duration)
@@ -95,7 +104,7 @@ export default function TimeLine() {
 			audioRef.current.currentTime = t
 			updateProgressVisuals(t)
 		},
-		[audioRef, duration, updateProgressVisuals]
+		[audioRef, updateProgressVisuals]
 	)
 
 	// animation function
@@ -103,21 +112,21 @@ export default function TimeLine() {
 		const currentTime = audioRef.current?.currentTime || 0.0
 		updateProgressVisuals(currentTime)
 
-		navigator.mediaSession.setActionHandler('seekto', (d) => {
+		navigator.mediaSession.setActionHandler("seekto", (d) => {
 			seekPosition(Math.min(Math.max(0, d.seekTime), duration))
 			// console.log(d)
 		})
 
 		playAnimationRef.current = requestAnimationFrame(repeat)
-	}, [audioRef, progressRef, duration, currentTrack, seekPosition, updateProgressVisuals])
+	}, [audioRef, duration, seekPosition, updateProgressVisuals])
 
 	const handleSeeked = useCallback(() => {
-		navigator.mediaSession.setActionHandler('seekto', (d) => {
+		navigator.mediaSession.setActionHandler("seekto", (d) => {
 			seekPosition(Math.min(Math.max(0, d.seekTime), duration))
 			// console.log(d)
 		})
 		updateMediasessionTime(audioRef.current.duration)
-	}, [seekPosition, updateMediasessionTime])
+	}, [seekPosition, updateMediasessionTime, duration])
 
 	// control animation and audio on play / pause
 	useEffect(() => {
@@ -125,7 +134,6 @@ export default function TimeLine() {
 			if (audioRef.current) {
 				audioRef.current.play()
 			}
-
 		} else {
 			audioRef.current?.pause()
 		}
@@ -150,11 +158,13 @@ export default function TimeLine() {
 
 	// media session notification basic controls
 	useEffect(() => {
-		navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'
+		navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused"
 	}, [isPlaying, currentTrackChangeTracker])
 
 	const skipNonExistent = useCallback(async () => {
-		const exists = await window.electron.ipcRenderer.invoke("file_exists", { path: currentTrack })
+		const exists = await window.electron.ipcRenderer.invoke("file_exists", {
+			path: currentTrack
+		})
 		if (!exists) {
 			setNextAction("setNext")
 			setHistory([...history.filter((e) => e != currentTrack)])
@@ -162,7 +172,16 @@ export default function TimeLine() {
 			setCurrentTrack("")
 			setForceRefreshLocationsTracker((p) => p + 1)
 		}
-	}, [queue, history, currentTrack])
+	}, [
+		queue,
+		setQueue,
+		history,
+		setHistory,
+		currentTrack,
+		setCurrentTrack,
+		setForceRefreshLocationsTracker,
+		setNextAction
+	])
 
 	useEffect(() => {
 		if (audioRef.current) {
@@ -173,7 +192,6 @@ export default function TimeLine() {
 		} else {
 			setDuration(0)
 			updateMediasessionTime(0)
-
 		}
 		// console.log(currentTrackChangeTracker)
 	}, [currentTrackChangeTracker, audioRef, currentTrack])
@@ -196,7 +214,8 @@ export default function TimeLine() {
 					ref={progressRef}
 					className="flex flex-row rounded-full overflow-clip bg-pink-950 h-5 outline-2 outline-pink-300 shadow-pink-500/70 shadow-[0_0_5px_5px]"
 				>
-					<div ref={progressContentRef}
+					<div
+						ref={progressContentRef}
 						className="rounded-full from-pink-500 to-pink-700 bg-linear-180 outline-2 outline-pink-500"
 					/>
 				</div>
@@ -213,16 +232,21 @@ export default function TimeLine() {
 				/>
 			</div>
 			<div className="flex flex-row gap-2 justify-between w-full font-bold text-sm relative -my-4 px-2 bottom-0 -translate-y-5 pointer-events-none">
-				<span ref={positionLabel} className={cn('text-center', songName == '' ? 'opacity-70' : '')}>0:00</span>
+				<span
+					ref={positionLabel}
+					className={cn("text-center", songName == "" ? "opacity-70" : "")}
+				>
+					0:00
+				</span>
 				<span
 					className={cn(
-						'text-center overflow-clip line-clamp-1',
-						songName == '' ? 'opacity-70' : ''
+						"text-center overflow-clip line-clamp-1",
+						songName == "" ? "opacity-70" : ""
 					)}
 				>
-					{songName == '' ? '-' : songName}
+					{songName == "" ? "-" : songName}
 				</span>
-				<span className={cn('text-center', songName == '' ? 'opacity-70' : '')}>
+				<span className={cn("text-center", songName == "" ? "opacity-70" : "")}>
 					{toMinsSecs(duration)}
 				</span>
 			</div>

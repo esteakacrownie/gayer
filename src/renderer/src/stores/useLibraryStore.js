@@ -16,6 +16,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 import { create } from "zustic"
 
 export const useLibraryStore = create((set) => ({
-    search: "",
-    setSearch: (v) => set((state) => ({ search: v })),
+	search: "",
+	setSearch: (v) => set((state) => ({ search: v }))
 }))

@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 import { cn } from "@sglara/cn"
 import { FaListUl } from "react-icons/fa"
 import { MdLibraryMusic, MdLibraryAdd } from "react-icons/md"
-import { IoMdCloudDownload } from "react-icons/io";
+import { IoMdCloudDownload } from "react-icons/io"
 import { useSettingsStore } from "../stores/useSettingsStore"
 
 export default function Tabs() {
@@ -27,18 +27,18 @@ export default function Tabs() {
 		switch (t) {
 			case "download":
 				res = <IoMdCloudDownload size={24} />
-				break;
+				break
 			case "library":
 				res = <MdLibraryMusic size={24} />
-				break;
+				break
 			case "queue":
 				res = <FaListUl size={20} />
-				break;
+				break
 			case "filesystem":
 				res = <MdLibraryAdd size={24} />
-				break;
+				break
 			default:
-				break;
+				break
 		}
 		return res
 	}
@@ -63,12 +63,10 @@ function Tab({ tab, tabName, icon }) {
 				"w-full flex flex-col gap-1 border-b-2 border-transparent items-center font-bold text-center select-none cursor-pointer -hue-rotate-15 p-2 transition ease-out duration-350 via-10% bg-linear-0 to-transparent to-110%",
 				tab == tabName
 					? "border-pink-200 from-pink-500/70 via-pink-500/40"
-					: "hover:from-pink-400/15 hover:border-pink-300/15",
+					: "hover:from-pink-400/15 hover:border-pink-300/15"
 			)}
 		>
-			<div className="h-6 flex flex-row justify-center items-center">
-				{icon}
-			</div>
+			<div className="h-6 flex flex-row justify-center items-center">{icon}</div>
 			<span className="w-full text-xs">{tabName[0].toUpperCase() + tabName.slice(1)}</span>
 		</div>
 	)

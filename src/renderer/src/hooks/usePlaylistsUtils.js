@@ -18,30 +18,35 @@ import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { randomStr } from "../utils"
 
 export default function usePlaylistUtils() {
+	const { playlists } = usePlaylistsStore()
 
-    const { playlists } = usePlaylistsStore()
+	const getPlaylistFromId = useCallback(
+		(id) => {
+			return playlists.filter((e) => e.id == id)[0] ?? { id: "id", name: "", songs: [] }
+		},
+		[playlists]
+	)
 
-    const getPlaylistFromId = useCallback((id) => {
-        return playlists.filter((e) => e.id == id)[0] ?? { id: "id", name: "", songs: [] }
-    }, [playlists])
+	const idInPlaylists = useCallback(
+		(id) => {
+			return playlists.map((e) => e.id).includes(id)
+		},
+		[playlists]
+	)
 
-    const idInPlaylists = useCallback((id) => {
-        return playlists.map((e) => e.id).includes(id)
-    }, [playlists])
+	const generateUnusedID = useCallback(() => {
+		const IDs = playlists.map((e) => e.id)
+		const chars = "abcdefghijklmnopqrstuvwxyz".split("")
+		let res = randomStr(16, chars)
+		while (IDs.includes(res)) {
+			res = randomStr(16, chars)
+		}
+		return res
+	}, [playlists])
 
-    const generateUnusedID = useCallback(() => {
-        const IDs = playlists.map((e) => e.id)
-        const chars = "abcdefghijklmnopqrstuvwxyz".split("")
-        let res = randomStr(16, chars)
-        while (IDs.includes(res)) {
-            res = randomStr(16, chars)
-        }
-        return res
-    }, [playlists])
-
-    return {
-        getPlaylistFromId,
-        idInPlaylists,
-        generateUnusedID
-    }
+	return {
+		getPlaylistFromId,
+		idInPlaylists,
+		generateUnusedID
+	}
 }

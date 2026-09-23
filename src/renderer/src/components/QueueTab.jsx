@@ -13,29 +13,21 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
-import usePlayerControls from "../hooks/usePlayerControls"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import { MdPlaylistRemove, MdInfoOutline } from "react-icons/md"
-import { getSongName } from "../utils"
 import { Reorder } from "motion/react"
-import { useMemo } from "react"
 import PowerSavingButton from "./PowerSavingButton"
 import SongElement from "./SongElement"
 
 export default function QueueTab() {
 	const maxLength = 25
 	const { queue, setQueue, currentTrack } = usePlayerStore()
-	const { playFromQueue } = usePlayerControls()
 	const { powerSavingMode, tab, setTab } = useSettingsStore()
 
 	const clearQueue = () => {
 		setQueue([])
 	}
-
-	const currentTrackSongName = useMemo(() => {
-		return getSongName(currentTrack)
-	}, [currentTrack])
 
 	if (tab != "queue") return
 
@@ -61,28 +53,27 @@ export default function QueueTab() {
 				onReorder={setQueue}
 				className="flex flex-col gap-2 relative -mt-2"
 			>
-				{(powerSavingMode
-					? queue.slice(0, Math.min(queue.length, maxLength))
-					: queue
-				).map((elt, idx) => (
-					<Reorder.Item
-						key={elt}
-						value={elt}
-						transition={{
-							duration: 0.2,
-						}}
-					>
-						<SongElement
-							song={elt}
-							fromQueue={true}
-							queueIdx={idx}
-							showAddToQueue={false}
-							showRemoveFromQueue={true}
-							highlightIfPlaying={false}
-							isGrabbable
-						/>
-					</Reorder.Item>
-				))}
+				{(powerSavingMode ? queue.slice(0, Math.min(queue.length, maxLength)) : queue).map(
+					(elt, idx) => (
+						<Reorder.Item
+							key={elt}
+							value={elt}
+							transition={{
+								duration: 0.2
+							}}
+						>
+							<SongElement
+								song={elt}
+								fromQueue={true}
+								queueIdx={idx}
+								showAddToQueue={false}
+								showRemoveFromQueue={true}
+								highlightIfPlaying={false}
+								isGrabbable
+							/>
+						</Reorder.Item>
+					)
+				)}
 			</Reorder.Group>
 			{powerSavingMode && queue.length - maxLength > 0 && (
 				<span className="text-center text-sm font-bold -mt-2 mb-1">

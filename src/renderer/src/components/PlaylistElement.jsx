@@ -36,7 +36,7 @@ export default function PlaylistElement({
 	showPlayNext = true,
 	showAddToQueue = true,
 	showAddToPlaylist = true,
-	showDelete = true,
+	showDelete = true
 }) {
 	const {
 		autoplay,
@@ -58,7 +58,7 @@ export default function PlaylistElement({
 
 	const handleAddToPlaylist = useCallback(() => {
 		setSelectedSongPath(songs)
-	}, [songs])
+	}, [songs, setSelectedSongPath])
 
 	const fetchSongs = useCallback(async () => {
 		const { songs: res } = await getSortedFilesAt(playlist)
@@ -71,7 +71,7 @@ export default function PlaylistElement({
 		} else {
 			fetchSongs()
 		}
-	}, [playlist, playlists, isPlaylist])
+	}, [playlist, playlists, isPlaylist, fetchSongs])
 
 	const [deleting, setDeleting] = useConfirm()
 	const handleRemoveAlbum = useCallback(async () => {
@@ -82,7 +82,7 @@ export default function PlaylistElement({
 		} else {
 			setDeleting(true)
 		}
-	}, [deleting])
+	}, [deleting, playlist, setDeleting, setForceRefreshLocationsTracker])
 
 	const handleRemovePlaylist = useCallback(async () => {
 		if (deleting) {
@@ -91,13 +91,13 @@ export default function PlaylistElement({
 		} else {
 			setDeleting(true)
 		}
-	}, [deleting, playlists])
+	}, [deleting, playlists, playlist, setDeleting, setPlaylists])
 
 	const handleBatchPlay = useCallback(() => {
 		// console.log(p)
 		setAutoplay(true)
 		playSongs(songs)
-	}, [songs])
+	}, [songs, playSongs, setAutoplay])
 
 	const handleBatchPlayNext = useCallback(() => {
 		if (!songs) return
@@ -120,7 +120,7 @@ export default function PlaylistElement({
 		<motion.div
 			className={cn(
 				"relative flex flex-row overflow-clip jutify-start items-center rounded-lg bg-linear-90 font-bold text-white/75 from-slate-800 to-slate-700 transition ease-out duration-200 select-none brightness-110 hover:brightness-150 border-2 border-slate-400/50",
-				isGrabbable ? "cursor-grab" : "cursor-pointer",
+				isGrabbable ? "cursor-grab" : "cursor-pointer"
 			)}
 			onClick={() => setSelectedPlaylist(playlist)}
 		>
@@ -128,11 +128,15 @@ export default function PlaylistElement({
 				className="absolute top-0 right-0 brightness-125 text-pink-400/50 bg-slate-900/75 outline-2 outline-pink-400/50 rounded-bl-lg"
 				title={isPlaylist ? "playlist" : "album"}
 			>
-				{isPlaylist ? <PiPlaylistFill className="m-0.5" size={20} /> : <GiCompactDisc className="m-0.5" size={20} />}
+				{isPlaylist ? (
+					<PiPlaylistFill className="m-0.5" size={20} />
+				) : (
+					<GiCompactDisc className="m-0.5" size={20} />
+				)}
 			</div>
 			<motion.div
 				transition={{
-					duration: 0.2,
+					duration: 0.2
 				}}
 				initial={{
 					width: "40px"
@@ -143,9 +147,7 @@ export default function PlaylistElement({
 				whileHover={{
 					width: "auto"
 				}}
-				className={cn(
-					"flex flex-row bg-slate-600/75 overflow-clip rounded-lg",
-				)}
+				className={cn("flex flex-row bg-slate-600/75 overflow-clip rounded-lg")}
 			>
 				<motion.div
 					title="Play now"
@@ -293,12 +295,14 @@ export default function PlaylistElement({
 			<motion.div
 				layout
 				transition={{
-					duration: 0.2,
+					duration: 0.2
 				}}
 				className="ml-2 pr-6 text-shadow-lg text-shadow-black/75"
 			>
 				<p className="line-clamp-1">
-					{isPlaylist ? playlists.filter((e) => e.id == playlist)[0].name : getFolderName(playlist)}
+					{isPlaylist
+						? playlists.filter((e) => e.id == playlist)[0].name
+						: getFolderName(playlist)}
 				</p>
 				<p className="line-clamp-1 text-xs brightness-90">{`${count} item(s)`}</p>
 			</motion.div>
