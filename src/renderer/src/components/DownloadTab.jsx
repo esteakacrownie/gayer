@@ -456,7 +456,7 @@ export default function DownloadTab() {
 		if (result) {
 			setUrlDownloadStatus("success")
 			if (isPlaylist) {
-				createPlaylist(getFolderName(result[0], 1), result)
+				createPlaylist(getFolderName(result[0], 1), result, search)
 				setUrlDownloadedPlaylists((p) => [...new Set([...p, getFolderName(result[0], 1)])])
 				setUrlDownloadedSongs((p) => [...new Set([...p, ...result])])
 			} else {
@@ -981,14 +981,16 @@ export default function DownloadTab() {
 	}, [])
 
 	const inputField = useRef(null)
-	useHotkeys("ctrl+t", () => {
+	useHotkeys("ctrl+t", (e) => {
+		e.preventDefault()
 		if (inputField.current) {
 			inputField.current.focus()
 		}
 	})
 	useHotkeys(
 		"escape",
-		() => {
+		(e) => {
+			e.preventDefault()
 			if (inputField.current) {
 				inputField.current.blur()
 			}

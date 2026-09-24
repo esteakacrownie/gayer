@@ -43,7 +43,7 @@ Stay tuned and support the project by starring it >:3
 
 ## Hotkeys
 
-- `space` : toggle pause / play
+- `(ctrl+)space` : toggle pause / play (spacebar works on its own, unless you're typing in a searchbar, in which case ctrl+space comes in handy)
 - `ctrl+right/left` | `ctrl+n/p` : next/previous song in queue
 - `ctrl+l` : toggle loop modes
 - `ctrl+s` : toggle shuffling

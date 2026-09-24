@@ -165,7 +165,8 @@ export default function PlaylistDialog() {
 		// console.log(playlists)
 	}, [selectedSongPath])
 
-	useHotkeys("escape", () => {
+	useHotkeys("escape", (e) => {
+		e.preventDefault()
 		if (selectedSongPath) {
 			setSelectedSongPath("")
 		}

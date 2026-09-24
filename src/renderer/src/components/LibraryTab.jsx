@@ -334,14 +334,16 @@ export default function LibraryTab() {
 	}, [songs])
 
 	const inputField = useRef(null)
-	useHotkeys("ctrl+t", () => {
+	useHotkeys("ctrl+t", (e) => {
+		e.preventDefault()
 		if (inputField.current) {
 			inputField.current.focus()
 		}
 	})
 	useHotkeys(
 		"escape",
-		() => {
+		(e) => {
+			e.preventDefault()
 			if (inputField.current) {
 				inputField.current.blur()
 			}

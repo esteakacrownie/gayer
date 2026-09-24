@@ -40,7 +40,8 @@ export default function Tabs() {
 
 	useHotkeys(
 		"ctrl+tab",
-		() => {
+		(e) => {
+			e.preventDefault()
 			setTab(toNextTab(tab))
 		},
 		{ enableOnFormTags: true }

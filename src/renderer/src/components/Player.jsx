@@ -201,6 +201,14 @@ export default function Player() {
 		togglePlay()
 	})
 	useHotkeys(
+		"ctrl+space",
+		(e) => {
+			e.preventDefault()
+			togglePlay()
+		},
+		{ enableOnFormTags: true }
+	)
+	useHotkeys(
 		["ctrl+right", "ctrl+n"],
 		(e) => {
 			e.preventDefault()
