@@ -87,11 +87,12 @@ export default function PlaylistElement({
 	const handleRemovePlaylist = useCallback(async () => {
 		if (deleting) {
 			setPlaylists(playlists.filter((e) => e.id != playlist))
+			setForceRefreshLocationsTracker((p) => p + 1)
 			setDeleting(false)
 		} else {
 			setDeleting(true)
 		}
-	}, [deleting, playlists, playlist, setDeleting, setPlaylists])
+	}, [deleting, playlists, playlist, setDeleting, setPlaylists, setForceRefreshLocationsTracker])
 
 	const handleBatchPlay = useCallback(() => {
 		// console.log(p)

@@ -200,30 +200,54 @@ export default function Player() {
 		e.preventDefault()
 		togglePlay()
 	})
-	useHotkeys(["ctrl+right", "ctrl+n"], (e) => {
-		e.preventDefault()
-		setNextAction("setNext")
-	})
-	useHotkeys(["ctrl+left", "ctrl+p"], (e) => {
-		e.preventDefault()
-		setNextAction("setPrevious")
-	})
-	useHotkeys("ctrl+up", (e) => {
-		e.preventDefault()
-		volumeUp()
-	})
-	useHotkeys("ctrl+down", (e) => {
-		e.preventDefault()
-		volumeDown()
-	})
-	useHotkeys("ctrl+l", (e) => {
-		e.preventDefault()
-		handleLoopMode()
-	})
-	useHotkeys("ctrl+s", (e) => {
-		e.preventDefault()
-		setShufflePlay(!shufflePlay)
-	})
+	useHotkeys(
+		["ctrl+right", "ctrl+n"],
+		(e) => {
+			e.preventDefault()
+			setNextAction("setNext")
+		},
+		{ enableOnFormTags: true }
+	)
+	useHotkeys(
+		["ctrl+left", "ctrl+p"],
+		(e) => {
+			e.preventDefault()
+			setNextAction("setPrevious")
+		},
+		{ enableOnFormTags: true }
+	)
+	useHotkeys(
+		"ctrl+up",
+		(e) => {
+			e.preventDefault()
+			volumeUp()
+		},
+		{ enableOnFormTags: true }
+	)
+	useHotkeys(
+		"ctrl+down",
+		(e) => {
+			e.preventDefault()
+			volumeDown()
+		},
+		{ enableOnFormTags: true }
+	)
+	useHotkeys(
+		"ctrl+l",
+		(e) => {
+			e.preventDefault()
+			handleLoopMode()
+		},
+		{ enableOnFormTags: true }
+	)
+	useHotkeys(
+		"ctrl+s",
+		(e) => {
+			e.preventDefault()
+			setShufflePlay(!shufflePlay)
+		},
+		{ enableOnFormTags: true }
+	)
 
 	return (
 		<div className="flex flex-col justify-center gap-4 fixed z-10 bottom-0 p-4 w-full ">

@@ -18,7 +18,7 @@ import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { randomStr } from "../utils"
 
 export default function usePlaylistUtils() {
-	const { playlists } = usePlaylistsStore()
+	const { playlists, setPlaylists } = usePlaylistsStore()
 
 	const getPlaylistFromId = useCallback(
 		(id) => {
@@ -44,9 +44,24 @@ export default function usePlaylistUtils() {
 		return res
 	}, [playlists])
 
+	const createPlaylist = useCallback(
+		(name = "", songs = [], url) => {
+			if (!name) return
+			const n = name.trim()
+			if (!n) return
+			const p = { id: generateUnusedID(), name: n, songs: songs }
+			if (url) {
+				p.url = url
+			}
+			setPlaylists([...playlists, p])
+		},
+		[generateUnusedID, setPlaylists, playlists]
+	)
+
 	return {
 		getPlaylistFromId,
 		idInPlaylists,
-		generateUnusedID
+		generateUnusedID,
+		createPlaylist
 	}
 }

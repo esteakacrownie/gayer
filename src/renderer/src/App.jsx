@@ -13,7 +13,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import "./App.css"
 import Player from "./components/Player"
 import { usePlayerStore } from "./stores/usePlayerStore"
@@ -29,6 +29,7 @@ import PlaylistDialog from "./components/PlaylistDialog"
 import { usePlaylistsStore } from "./stores/usePlaylistsStore"
 import DownloadTab from "./components/DownloadTab"
 import { useFilesStore } from "./stores/useFilesStore"
+import { useHotkeys } from "react-hotkeys-hook"
 
 function App() {
 	const { setQueue, setAutoplay, setNextAction } = usePlayerStore()
@@ -88,8 +89,20 @@ function App() {
 			.catch((e) => console.log(e))
 	}, [])
 
+	const mainDiv = useRef(null)
+	useHotkeys(
+		"ctrl+t",
+		() => {
+			mainDiv.current.scrollTo({ top: 0, left: 0, behavior: "smooth" })
+		},
+		{ enableOnFormTags: true }
+	)
+
 	return (
-		<main className="text-white from-slate-950 to-pink-950 to-150% via-slate-950 via-30% bg-linear-180 flex flex-col justify-start overflow-y-scroll h-screen gap-4 pt-20 select-none">
+		<main
+			ref={mainDiv}
+			className="text-white from-slate-950 to-pink-950 to-150% via-slate-950 via-30% bg-linear-180 flex flex-col justify-start overflow-y-scroll h-screen gap-4 pt-20 select-none"
+		>
 			<div className="px-8 flex flex-col w-full h-full justify-start gap-4 max-w-200 mx-auto">
 				<DownloadTab />
 				<LibraryTab />

@@ -18,9 +18,33 @@ import { FaListUl } from "react-icons/fa"
 import { MdLibraryMusic, MdLibraryAdd } from "react-icons/md"
 import { IoMdCloudDownload } from "react-icons/io"
 import { useSettingsStore } from "../stores/useSettingsStore"
+import { useHotkeys } from "react-hotkeys-hook"
 
 export default function Tabs() {
 	const { tab, setTab } = useSettingsStore()
+
+	const toNextTab = (t) => {
+		switch (t) {
+			case "download":
+				return "library"
+			case "library":
+				return "queue"
+			case "queue":
+				return "filesystem"
+			case "filesystem":
+				return "download"
+			default:
+				return ""
+		}
+	}
+
+	useHotkeys(
+		"ctrl+tab",
+		() => {
+			setTab(toNextTab(tab))
+		},
+		{ enableOnFormTags: true }
+	)
 
 	const getTabIcon = (t) => {
 		let res = <></>

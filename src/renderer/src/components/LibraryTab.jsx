@@ -51,6 +51,7 @@ import { motion } from "motion/react"
 import { PiPlaylist } from "react-icons/pi"
 import { useFilesStore } from "../stores/useFilesStore"
 import { useCacheStore } from "../stores/useCacheStore"
+import { useHotkeys } from "react-hotkeys-hook"
 
 export default function LibraryTab() {
 	const maxLength = 25
@@ -332,6 +333,31 @@ export default function LibraryTab() {
 		}
 	}, [songs])
 
+	const inputField = useRef(null)
+	useHotkeys("ctrl+t", () => {
+		if (inputField.current) {
+			inputField.current.focus()
+		}
+	})
+	useHotkeys(
+		"escape",
+		() => {
+			if (inputField.current) {
+				inputField.current.blur()
+			}
+		},
+		{ enableOnFormTags: true }
+	)
+	useHotkeys(
+		"ctrl+backspace",
+		() => {
+			if (inputField.current && inputField.current.hasFocus()) {
+				inputField.current.value = ""
+			}
+		},
+		{ enableOnFormTags: true }
+	)
+
 	if (tab != "library") return
 
 	return (
@@ -386,6 +412,7 @@ export default function LibraryTab() {
 			{/* Search bar */}
 			<div className="relative w-full flex flex-row">
 				<input
+					ref={inputField}
 					className={cn(
 						"outline-none w-full bg-pink-950/50 border-2 border-pink-300 shadow-[0_0_5px_5px] not-focus:shadow-transparent rounded-lg p-2 pr-8 transition ease-out duration-200",
 						"focus:shadow-pink-400/40"

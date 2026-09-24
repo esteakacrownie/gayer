@@ -30,6 +30,8 @@ import { toSanitized } from "../sanitize-filename"
 import { FaBrave, FaLink, FaOpera, FaSafari } from "react-icons/fa6"
 import { RiEdgeNewFill } from "react-icons/ri"
 import { SiVivaldi } from "react-icons/si"
+import usePlaylistUtils from "../hooks/usePlaylistsUtils"
+import { useHotkeys } from "react-hotkeys-hook"
 
 export default function DownloadTab() {
 	const {
@@ -52,6 +54,7 @@ export default function DownloadTab() {
 	} = useSettingsStore()
 	const { setSearch: setLibrarySearch } = useLibraryStore()
 	const { currentTrack, setNextAction, setCurrentTrack } = usePlayerStore()
+	const { createPlaylist } = usePlaylistUtils()
 	const searchRequestCount = useRef(0)
 	const [ytdlpReady, setYtdlpReady] = useState(false)
 	const [urlDownloadStatus, setUrlDownloadStatus] = useState("idle") // idle, downloading, success, failed
@@ -95,7 +98,7 @@ export default function DownloadTab() {
 	const showAlbumInLibrary = useCallback(
 		(name) => {
 			setLibraryFilter("playlists")
-			setPlaylistsFolded(true)
+			setPlaylistsFolded(false)
 			setAlbumsFolded(false)
 			setTab("library")
 			setLibrarySearch(name)
@@ -453,7 +456,8 @@ export default function DownloadTab() {
 		if (result) {
 			setUrlDownloadStatus("success")
 			if (isPlaylist) {
-				setUrlDownloadedPlaylists((p) => [...new Set([...p, getFolderName(result[0])])])
+				createPlaylist(getFolderName(result[0], 1), result)
+				setUrlDownloadedPlaylists((p) => [...new Set([...p, getFolderName(result[0], 1)])])
 				setUrlDownloadedSongs((p) => [...new Set([...p, ...result])])
 			} else {
 				setUrlDownloadedSongs((p) => [...new Set([...p, ...result])])
@@ -477,7 +481,8 @@ export default function DownloadTab() {
 		ytCookiesBrowser,
 		ytCookiesEnabled,
 		urlDownloadStatus,
-		setForceRefreshLocationsTracker
+		setForceRefreshLocationsTracker,
+		createPlaylist
 	])
 
 	const SongEntry = useCallback(
@@ -975,6 +980,31 @@ export default function DownloadTab() {
 		}
 	}, [])
 
+	const inputField = useRef(null)
+	useHotkeys("ctrl+t", () => {
+		if (inputField.current) {
+			inputField.current.focus()
+		}
+	})
+	useHotkeys(
+		"escape",
+		() => {
+			if (inputField.current) {
+				inputField.current.blur()
+			}
+		},
+		{ enableOnFormTags: true }
+	)
+	useHotkeys(
+		"ctrl+backspace",
+		() => {
+			if (inputField.current && inputField.current.hasFocus()) {
+				inputField.current.value = ""
+			}
+		},
+		{ enableOnFormTags: true }
+	)
+
 	if (tab != "download") return
 
 	if (!ytdlpReady)
@@ -1091,6 +1121,7 @@ export default function DownloadTab() {
 			<div className="flex flex-row items-center gap-1">
 				<div className="relative w-full flex flex-row">
 					<input
+						ref={inputField}
 						className={cn(
 							"outline-none w-full bg-pink-950/50 border-2 border-pink-300 shadow-[0_0_5px_5px] not-focus:shadow-transparent rounded-lg p-2 pl-9 pr-14 transition ease-out duration-200",
 							"focus:shadow-pink-400/40",
@@ -1236,13 +1267,13 @@ export default function DownloadTab() {
 			</div>
 			{/* Content */}
 			{linkEnabled ? (
-				<div className="flex flex-col gap-2">
+				<div className="flex flex-col gap-4">
 					{/* Url download feedback */}
 					{["songs", "albums"].includes(filter) && (
 						<>
 							<div
 								className={cn(
-									"flex flex-row gap-2 items-center w-full p-2 px-3 rounded-lg border-2 mb-2 transition ease-out duration-200",
+									"flex flex-row gap-2 items-center w-full p-2 px-3 rounded-lg border-2 transition ease-out duration-200",
 									["idle", "downloading"].includes(urlDownloadStatus) &&
 										"bg-slate-800 border-slate-600",
 									urlDownloadStatus == "success" &&

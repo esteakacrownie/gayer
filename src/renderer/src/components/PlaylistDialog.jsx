@@ -69,9 +69,10 @@ export default function PlaylistDialog() {
 		setPlaylists([...playlists, { ...parsed, id: generateUnusedID() }])
 	}, [generateUnusedID, playlists, setPlaylists])
 
+	const { createPlaylist } = usePlaylistUtils()
 	const createNewPlaylist = useCallback(() => {
 		if (!newPlaylistName.trim()) return
-		setPlaylists([...playlists, { id: generateUnusedID(), name: newPlaylistName, songs: [] }])
+		createPlaylist(newPlaylistName)
 		setNewPlaylistName("")
 	}, [generateUnusedID, playlists, setPlaylists, newPlaylistName])
 

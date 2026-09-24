@@ -481,7 +481,10 @@ app.whenReady().then(() => {
 			// args : url, destination, artist
 			const res = await createYTDownloader().downloadAsync(args.url, {
 				format: { filter: "audioonly", quality: "0", type: "mp3" },
-				output: join(args.destination, "%(channel)s/%(title)s - %(channel)s.mp3"),
+				output: join(
+					args.destination,
+					"%(artists.0,channel)s/%(track,title)s - %(artists.0,channel)s.mp3"
+				),
 				rawArgs: args.browserCookies ? ["--cookies-from-browser", args.browserCookies] : [],
 				onProgress: (p) => console.log(`${p.percentage_str}`)
 			})
@@ -501,7 +504,7 @@ app.whenReady().then(() => {
 				format: { filter: "audioonly", quality: "0", type: "mp3" },
 				output: join(
 					args.destination,
-					"%(playlist_title)s - %(channel)s/%(title)s - %(channel)s.mp3"
+					"%(playlist)s%(playlist_channel& - |)s%(playlist_channel|)s/%(album,playlist)s%(album& - |)s%(album_artists.0,artists.0|)s/%(track,title)s - %(artists.0,channel)s.mp3"
 				),
 				rawArgs: args.browserCookies ? ["--cookies-from-browser", args.browserCookies] : [],
 				onProgress: (p) => console.log(`${p.percentage_str}`)
