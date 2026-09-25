@@ -1044,7 +1044,10 @@ export default function DownloadTab() {
 
 	// hide loading request icon after merging
 	useEffect(() => {
-		setIsFetching(false)
+		const action = async () => {
+			setIsFetching(false)
+		}
+		action()
 	}, [hiddenAlbumsResults])
 
 	// disable UI until ytdlp is ready

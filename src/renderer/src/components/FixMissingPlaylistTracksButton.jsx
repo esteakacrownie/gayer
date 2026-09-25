@@ -55,17 +55,22 @@ export default function FixMissingPlaylistTracksButton() {
 	}, [missingTracks, requestedTracksReplacements, setRequestedTracksReplacements])
 
 	useEffect(() => {
-		playlistIdRef.current = selectedPlaylist
-		if (!selectedPlaylist || !idInPlaylists(selectedPlaylist)) {
-			setMissingTracks([])
-		} else {
-			computeMissingTracks(selectedPlaylist)
+		const action = async () => {
+			playlistIdRef.current = selectedPlaylist
+			if (!selectedPlaylist || !idInPlaylists(selectedPlaylist)) {
+				setMissingTracks([])
+			} else {
+				computeMissingTracks(selectedPlaylist)
+			}
 		}
+		action()
 	}, [selectedPlaylist, requestedTracksReplacements])
 
 	if (missingTracks.length == 0) {
 		return <></>
 	}
+
+	console.log(missingTracks)
 
 	return (
 		<button

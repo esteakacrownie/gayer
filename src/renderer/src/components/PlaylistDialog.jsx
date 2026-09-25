@@ -161,8 +161,11 @@ export default function PlaylistDialog() {
 	}, [selectedSongPath])
 
 	useEffect(() => {
-		setNewPlaylistName("")
-		// console.log(playlists)
+		const action = async () => {
+			setNewPlaylistName("")
+			// console.log(playlists)
+		}
+		action()
 	}, [selectedSongPath])
 
 	useHotkeys("escape", (e) => {

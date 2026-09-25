@@ -305,11 +305,14 @@ export default function LibraryTab() {
 
 	// fetch album or playlist songs upon browsing
 	useEffect(() => {
-		if (selectedPlaylist) {
-			fetchSelectedAlbumSongs()
-		} else {
-			setSelectedAlbumSongs([])
+		const action = async () => {
+			if (selectedPlaylist) {
+				fetchSelectedAlbumSongs()
+			} else {
+				setSelectedAlbumSongs([])
+			}
 		}
+		action()
 	}, [selectedPlaylist, songs, playlists])
 
 	// refresh content on disk update
@@ -319,10 +322,13 @@ export default function LibraryTab() {
 
 	// reset scroll page on search filter update
 	useEffect(() => {
-		setSongsScrollPage(
-			Math.max(Math.min(songsScrollPage, Math.ceil(filteredSongs.length / maxLength)), 1)
-		)
-		setSongsScrollPage(1)
+		const action = async () => {
+			// setSongsScrollPage(
+			// 	Math.max(Math.min(songsScrollPage, Math.ceil(filteredSongs.length / maxLength)), 1)
+			// )
+			setSongsScrollPage(1)
+		}
+		action()
 	}, [filteredSongs])
 
 	// remove non-existent media from queue and history

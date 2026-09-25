@@ -115,26 +115,29 @@ export default function Player() {
 
 	// dynamic cover art
 	useEffect(() => {
-		if (!currentTrack) {
-			setCoverArt("#")
-		} else {
-			if (Object.keys(thumbnailCache).includes(currentTrack)) {
-				setCoverArt(thumbnailCache[currentTrack])
-			} else {
+		const action = async () => {
+			if (!currentTrack) {
 				setCoverArt("#")
-				// albumArtQueryForPath(currentTrack)
-				// 	.then((i) => {
-				// 		setCoverArt(i)
-				// 		const updated = { ...thumbnailCache }
-				// 		updated[currentTrack] = i
-				// 		setThumbnailCache(updated)
-				// 		// console.log(i)
-				// 	})
-				// 	.catch(() => {
-				// 		setCoverArt("#")
-				// 	})
+			} else {
+				if (Object.keys(thumbnailCache).includes(currentTrack)) {
+					setCoverArt(thumbnailCache[currentTrack])
+				} else {
+					setCoverArt("#")
+					// albumArtQueryForPath(currentTrack)
+					// 	.then((i) => {
+					// 		setCoverArt(i)
+					// 		const updated = { ...thumbnailCache }
+					// 		updated[currentTrack] = i
+					// 		setThumbnailCache(updated)
+					// 		// console.log(i)
+					// 	})
+					// 	.catch(() => {
+					// 		setCoverArt("#")
+					// 	})
+				}
 			}
 		}
+		action()
 	}, [currentTrack, thumbnailCache])
 
 	// action manager

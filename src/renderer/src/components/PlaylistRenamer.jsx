@@ -28,18 +28,24 @@ export default function PlaylistRenamer() {
 	const [editingSelectedPlaylistName, setEditingSelectedPlaylistName] = useState(false)
 
 	useEffect(() => {
-		setEditingSelectedPlaylistName(false)
-		if (selectedPlaylist && idInPlaylists(selectedPlaylist)) {
-			setSelectedPlaylistRename(getPlaylistFromId(selectedPlaylist).name)
-		} else {
-			setSelectedPlaylistRename("")
+		const action = async () => {
+			setEditingSelectedPlaylistName(false)
+			if (selectedPlaylist && idInPlaylists(selectedPlaylist)) {
+				setSelectedPlaylistRename(getPlaylistFromId(selectedPlaylist).name)
+			} else {
+				setSelectedPlaylistRename("")
+			}
 		}
+		action()
 	}, [selectedPlaylist])
 
 	useEffect(() => {
-		if (!editingSelectedPlaylistName) {
-			setSelectedPlaylistRename(getPlaylistFromId(selectedPlaylist).name)
+		const action = async () => {
+			if (!editingSelectedPlaylistName) {
+				setSelectedPlaylistRename(getPlaylistFromId(selectedPlaylist).name)
+			}
 		}
+		action()
 	}, [editingSelectedPlaylistName])
 
 	const renameSelectedPlaylist = useCallback(() => {

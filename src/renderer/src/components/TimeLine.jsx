@@ -184,16 +184,19 @@ export default function TimeLine() {
 	])
 
 	useEffect(() => {
-		if (audioRef.current) {
-			audioRef.current.currentTime = 0
+		const action = async () => {
+			if (audioRef.current) {
+				audioRef.current.currentTime = 0
+			}
+			if (currentTrack) {
+				skipNonExistent()
+			} else {
+				setDuration(0)
+				updateMediasessionTime(0)
+			}
+			// console.log(currentTrackChangeTracker)
 		}
-		if (currentTrack) {
-			skipNonExistent()
-		} else {
-			setDuration(0)
-			updateMediasessionTime(0)
-		}
-		// console.log(currentTrackChangeTracker)
+		action()
 	}, [currentTrackChangeTracker, audioRef, currentTrack])
 
 	const songName = useMemo(() => getSongName(currentTrack), [currentTrack])

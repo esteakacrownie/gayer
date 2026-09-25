@@ -60,7 +60,10 @@ export default function EditablePlaylistSongList() {
 	}, [playlists, setPlaylists, selectedPlaylist, selectedPlaylistReorderSongs, getPlaylistFromId])
 
 	useEffect(() => {
-		setSelectedPlaylistReorderSongs(getPlaylistFromId(selectedPlaylist).songs)
+		const action = async () => {
+			setSelectedPlaylistReorderSongs(getPlaylistFromId(selectedPlaylist).songs)
+		}
+		action()
 	}, [selectedPlaylist, playlists])
 
 	return (
