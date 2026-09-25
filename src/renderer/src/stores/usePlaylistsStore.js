@@ -27,12 +27,14 @@ const persist = () => (set, get) => (next) => async (partial) => {
 export const usePlaylistsStore = create(
 	(set) => ({
 		selectedSongPath: "", // songs / songs to be added to playlists in dialog
-		playlists: [], //[ { id, name, songs: ["path/to/song1"] } ]
+		playlists: [], //[ { id, name, songs: ["path/to/song1"], url? } ]
+		requestedTracksReplacements: [],
 		setSelectedSongPath: (v) => set((state) => ({ selectedSongPath: v })),
 		setPlaylists: (v) =>
 			set((state) => ({
 				playlists: v.map((e) => ({ ...e, name: toAllowedPlaylistName(e.name) }))
-			}))
+			})),
+		setRequestedTracksReplacements: (v) => set((state) => ({ requestedTracksReplacements: v }))
 	}),
 	[persist()]
 )

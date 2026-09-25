@@ -43,7 +43,7 @@ export default function PlaylistRenamer() {
 	}, [editingSelectedPlaylistName])
 
 	const renameSelectedPlaylist = useCallback(() => {
-		if (!idInPlaylists(selectedPlaylist)) return
+		if (!idInPlaylists(selectedPlaylist) || !selectedPlaylistRename.trim()) return
 		let index = 0
 		for (let i of playlists) {
 			if (i.id == selectedPlaylist) {

@@ -256,6 +256,14 @@ export default function Player() {
 		},
 		{ enableOnFormTags: true }
 	)
+	useHotkeys(
+		"ctrl+p",
+		(e) => {
+			e.preventDefault()
+			handleAddToPlaylist()
+		},
+		{ enableOnFormTags: true }
+	)
 
 	return (
 		<div className="flex flex-col justify-center gap-4 fixed z-10 bottom-0 p-4 w-full ">

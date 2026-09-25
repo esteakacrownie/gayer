@@ -52,6 +52,8 @@ import { PiPlaylist } from "react-icons/pi"
 import { useFilesStore } from "../stores/useFilesStore"
 import { useCacheStore } from "../stores/useCacheStore"
 import { useHotkeys } from "react-hotkeys-hook"
+import FixMissingPlaylistTracksButton from "./FixMissingPlaylistTracksButton"
+import FixMissingPlaylistTracksIndicator from "./FixMissingPlaylistTracksIndicator"
 
 export default function LibraryTab() {
 	const maxLength = 25
@@ -350,15 +352,6 @@ export default function LibraryTab() {
 		},
 		{ enableOnFormTags: true }
 	)
-	useHotkeys(
-		"ctrl+backspace",
-		() => {
-			if (inputField.current && inputField.current.hasFocus()) {
-				inputField.current.value = ""
-			}
-		},
-		{ enableOnFormTags: true }
-	)
 
 	if (tab != "library") return
 
@@ -525,7 +518,13 @@ export default function LibraryTab() {
 				)}
 				{libraryFilter == "playlists" && selectedPlaylist && (
 					<>
-						{idInPlaylists(selectedPlaylist) && <PlaylistExportButton />}
+						{idInPlaylists(selectedPlaylist) && (
+							<>
+								<PlaylistExportButton />
+								<FixMissingPlaylistTracksButton />
+								<FixMissingPlaylistTracksIndicator />
+							</>
+						)}
 						<DeletePlaylistButton pid={selectedPlaylist} />
 					</>
 				)}
@@ -559,7 +558,6 @@ export default function LibraryTab() {
 				<>
 					{selectedPlaylist ? (
 						<>
-							{" "}
 							{/* Is a custom playlist ? */}
 							{idInPlaylists(selectedPlaylist) ? (
 								<EditablePlaylistSongList

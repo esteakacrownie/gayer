@@ -68,7 +68,7 @@ export default function DeletePlaylistButton({ pid }) {
 
 	return (
 		<button
-			className="-my-1 flex flex-row relative outline-none min-w-max gap-1 text-sm justify-center items-center text-red-300 bg-red-950 rounded-full border border-red-300 py-1 px-2 transition ease-out duration-200 hover:bg-red-900 cursor-pointer"
+			className="flex flex-row relative outline-none min-w-max gap-1 text-sm justify-center items-center text-red-300 bg-red-950 rounded-full border border-red-300 py-1 px-2 transition ease-out duration-200 hover:bg-red-900 cursor-pointer"
 			onClick={() => (idInPlaylists(pid) ? removeSelectedPlaylist() : removeSelectedAlbum())}
 		>
 			<MdDelete size={16} />

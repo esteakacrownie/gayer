@@ -76,7 +76,7 @@ export const pathToCoverArtQuery = (p) => {
 		album,
 		track
 	}
-	console.log(res)
+	// console.log(res)
 	return res
 }
 

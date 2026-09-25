@@ -33,6 +33,8 @@ let YTDLP_READY = false
 let ytdlpBinaryPath = ""
 let ffmpegBinaryName = "ffmpeg"
 const ytmusic = new YTMusic()
+const maxYtdlpInstances = 4
+let YtdlpInstancesCount = 0
 
 const initYTModules = async () => {
 	let ytdlp = new YtDlp()
@@ -73,7 +75,22 @@ const initYTModules = async () => {
 	}
 }
 
+const delay = (t) => {
+	return new Promise((res) => setTimeout(res, t))
+}
+
+const YtdlpAwaiter = async () => {
+	while (YtdlpInstancesCount >= maxYtdlpInstances) {
+		await delay(500)
+	}
+}
+
+const removeYTDownloader = () => {
+	YtdlpInstancesCount = Math.max(0, YtdlpInstancesCount - 1)
+}
+
 const createYTDownloader = () => {
+	YtdlpInstancesCount += 1
 	return new YtDlp({
 		binaryPath: ytdlpBinaryPath,
 		ffmpegPath: join(dirs.data, "modules", "ffmpeg", ffmpegBinaryName)
@@ -410,7 +427,7 @@ app.whenReady().then(() => {
 			return results
 		} catch (error) {
 			console.log(error)
-			return error
+			return []
 		}
 	})
 	ipcMain.handle("ytm_songs", async (event, args) => {
@@ -422,7 +439,7 @@ app.whenReady().then(() => {
 			return results
 		} catch (error) {
 			console.log(error)
-			return error
+			return []
 		}
 	})
 	ipcMain.handle("ytm_albums", async (event, args) => {
@@ -434,7 +451,7 @@ app.whenReady().then(() => {
 			return results
 		} catch (error) {
 			console.log(error)
-			return error
+			return []
 		}
 	})
 	ipcMain.handle("get_album", async (event, args) => {
@@ -446,7 +463,7 @@ app.whenReady().then(() => {
 			return result
 		} catch (error) {
 			console.log(error)
-			return error
+			return {}
 		}
 	})
 	ipcMain.handle("get_album_songs", async (event, args) => {
@@ -458,7 +475,7 @@ app.whenReady().then(() => {
 			return result.songs || []
 		} catch (error) {
 			console.log(error)
-			return error
+			return []
 		}
 	})
 	ipcMain.handle("ytm_artists", async (event, args) => {
@@ -470,7 +487,7 @@ app.whenReady().then(() => {
 			return results
 		} catch (error) {
 			console.log(error)
-			return error
+			return []
 		}
 	})
 	ipcMain.handle("download_from_url", async (event, args) => {
@@ -478,6 +495,7 @@ app.whenReady().then(() => {
 			if (!YTDLP_READY) {
 				return false
 			}
+			await YtdlpAwaiter()
 			// args : url, destination, artist
 			const res = await createYTDownloader().downloadAsync(args.url, {
 				format: { filter: "audioonly", quality: "0", type: "mp3" },
@@ -488,9 +506,11 @@ app.whenReady().then(() => {
 				rawArgs: args.browserCookies ? ["--cookies-from-browser", args.browserCookies] : [],
 				onProgress: (p) => console.log(`${p.percentage_str}`)
 			})
+			removeYTDownloader()
 			return res.filePaths
 		} catch (error) {
 			console.log(error)
+			removeYTDownloader()
 			return false
 		}
 	})
@@ -499,6 +519,7 @@ app.whenReady().then(() => {
 			if (!YTDLP_READY) {
 				return false
 			}
+			await YtdlpAwaiter()
 			// args : url, destination, artist
 			const res = await createYTDownloader().downloadAsync(args.url, {
 				format: { filter: "audioonly", quality: "0", type: "mp3" },
@@ -509,9 +530,11 @@ app.whenReady().then(() => {
 				rawArgs: args.browserCookies ? ["--cookies-from-browser", args.browserCookies] : [],
 				onProgress: (p) => console.log(`${p.percentage_str}`)
 			})
+			removeYTDownloader()
 			return res.filePaths
 		} catch (error) {
 			console.log(error)
+			removeYTDownloader()
 			return false
 		}
 	})
@@ -520,6 +543,7 @@ app.whenReady().then(() => {
 			if (!YTDLP_READY) {
 				return false
 			}
+			await YtdlpAwaiter()
 			// args : url, path
 			await createYTDownloader().downloadAsync("https://youtube.com/watch?v=" + args.url, {
 				format: { filter: "audioonly", quality: "0", type: "mp3" },
@@ -527,10 +551,12 @@ app.whenReady().then(() => {
 				rawArgs: args.browserCookies ? ["--cookies-from-browser", args.browserCookies] : [],
 				onProgress: (p) => console.log(`${p.percentage_str}`)
 			})
+			removeYTDownloader()
 			return true
 		} catch (error) {
 			console.log(error)
 			console.log("https://youtube.com/watch?v=" + args.url)
+			removeYTDownloader()
 			return false
 		}
 	})

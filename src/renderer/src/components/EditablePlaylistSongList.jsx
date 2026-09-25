@@ -61,7 +61,7 @@ export default function EditablePlaylistSongList() {
 
 	useEffect(() => {
 		setSelectedPlaylistReorderSongs(getPlaylistFromId(selectedPlaylist).songs)
-	}, [selectedPlaylist])
+	}, [selectedPlaylist, playlists])
 
 	return (
 		<>
@@ -99,7 +99,7 @@ export default function EditablePlaylistSongList() {
 				{search ? (
 					<div className="flex flex-col gap-2 relative">
 						{filteredSelectedPlaylistsSongs.map((elt) => (
-							<SongElement key={elt} song={elt} />
+							<SongElement key={elt} song={elt} showDelete={false} />
 						))}
 					</div>
 				) : (
@@ -117,7 +117,12 @@ export default function EditablePlaylistSongList() {
 									duration: 0.2
 								}}
 							>
-								<SongElement key={elt} song={elt} isGrabbable={true} />
+								<SongElement
+									key={elt}
+									song={elt}
+									isGrabbable={true}
+									showDelete={false}
+								/>
 							</Reorder.Item>
 						))}
 					</Reorder.Group>

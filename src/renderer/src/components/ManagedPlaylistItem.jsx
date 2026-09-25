@@ -20,7 +20,9 @@ export default function ManagedPlaylistItem({ pid, pname, plength = 0 }) {
 		<div className="relative p-2 gap-2 w-full flex flex-row overflow-clip jutify-start items-center rounded-lg font-bold text-white transition ease-out duration-200 select-none brightness-110 bg-pink-500/10 hover:bg-pink-500/25 border-2 border-transparent">
 			<p className="line-clamp-1">{pname}</p>
 			<p className="min-w-max text-xs opacity-75 brightness-90">{`${plength} item(s)`}</p>
-			<DeletePlaylistButton pid={pid} />
+			<div className="-my-1">
+				<DeletePlaylistButton pid={pid} />
+			</div>
 		</div>
 	)
 }

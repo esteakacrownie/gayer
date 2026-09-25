@@ -17,13 +17,14 @@ Local music player and downloader :3
 ## Features
 
 - Play local audio in different ways
-    - Drag and drop multiple files and folders from your file manager onto the app to add them to the queue
-    - Build and search your own custom audio library in app, by registering locations from your computer
-    - Manually select a folder to open
+  - Drag and drop multiple files and folders from your file manager onto the app to add them to the queue
+  - Build and search your own custom audio library in app, by registering locations from your computer
+  - Manually select a folder to open
 - Reorder and shuffle queue
 - Loop current or whole queue
 - Create your own playlists
 - Import and export your playlists to .M3U format
+- Automatically download missing playlist tracks
 - Search and download songs and albums directly from the internet, using yt-dlp
 - Allow downloading songs and playlists using direct url
 - Power saving / appearance toggle, if your machine struggles with pretty blurs and overly long queues :p
@@ -33,7 +34,6 @@ Local music player and downloader :3
 
 ### Planned
 
-- Import m3u8 playlist and automatically download tracks
 - Fix incorrect cover art manually when it fails to find your music, or allow disabling cover art auto fetching
 - Audio visualizer
 - Lyrics support
@@ -47,8 +47,8 @@ Stay tuned and support the project by starring it >:3
 - `ctrl+right/left` | `ctrl+n/p` : next/previous song in queue
 - `ctrl+l` : toggle loop modes
 - `ctrl+s` : toggle shuffling
+- `ctrl+p` : add current track to playlist
 - `ctrl+t` : scroll to top and focus search bar
-- `ctrl+backspace` : clear search
 - `ctrl+tab` : switch tab
 - `ctrl+up/down` : increase / decrease volume
 

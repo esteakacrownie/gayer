@@ -32,6 +32,7 @@ import { RiEdgeNewFill } from "react-icons/ri"
 import { SiVivaldi } from "react-icons/si"
 import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 import { useHotkeys } from "react-hotkeys-hook"
+import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 
 export default function DownloadTab() {
 	const {
@@ -53,8 +54,12 @@ export default function DownloadTab() {
 		setShowYtCookiesHint
 	} = useSettingsStore()
 	const { setSearch: setLibrarySearch } = useLibraryStore()
+	const [search, setSearch] = useState("")
+	const [filter, setFilter] = useState("songs")
 	const { currentTrack, setNextAction, setCurrentTrack } = usePlayerStore()
-	const { createPlaylist } = usePlaylistUtils()
+	const { playlists, setPlaylists, requestedTracksReplacements, setRequestedTracksReplacements } =
+		usePlaylistsStore()
+	const { createPlaylist, getPlaylistFromId } = usePlaylistUtils()
 	const searchRequestCount = useRef(0)
 	const [ytdlpReady, setYtdlpReady] = useState(false)
 	const [urlDownloadStatus, setUrlDownloadStatus] = useState("idle") // idle, downloading, success, failed
@@ -62,13 +67,11 @@ export default function DownloadTab() {
 	const [urlDownloadedPlaylists, setUrlDownloadedPlaylists] = useState([])
 	const [urlSongExistsDb, setUrlSongExistsDb] = useState({})
 	const [urlPlaylistExistsDb, setUrlPlaylistExistsDb] = useState({})
-	const [search, setSearch] = useState("")
 	const [isFetching, setIsFetching] = useState(false)
 	const [searchSongsResults, setSearchSongsResults] = useState([])
 	const [searchAlbumsResults, setSearchAlbumsResults] = useState([])
 	const [hiddenAlbumsResults, setHiddenAlbumsResults] = useState([])
 	const [mergedAlbumsResults, setMergedAlbumsResults] = useState([])
-	// const [searchArtistsResults, setSearchArtistsResults] = useState([])
 	const [queuedSongsDownload, setQueuedSongsDownload] = useState([])
 	const [queuedSongsFailed, setQueuedSongsFailed] = useState([])
 	const [queuedSongsComplete, setQueuedSongsComplete] = useState([])
@@ -80,7 +83,6 @@ export default function DownloadTab() {
 	const [songExistsDb, setSongExistsDb] = useState({})
 	const [albumExistsDb, setAlbumExistsDb] = useState({})
 	const [linkEnabled, setLinkEnabled] = useState(false)
-	const [filter, setFilter] = useState("songs")
 
 	const clearSearch = () => {
 		setSearch("")
@@ -912,7 +914,7 @@ export default function DownloadTab() {
 		refreshUrlPlaylistExistsDb(urlDownloadedPlaylists)
 	}, [libraryLocations, forceRefreshLocationsTracker])
 
-	// requests
+	// YTM requests on search changes
 	useEffect(() => {
 		searchRequestCount.current += 1
 		if (!search || search.length < 3 || linkEnabled) {
@@ -964,7 +966,83 @@ export default function DownloadTab() {
 		setMergedAlbumsResults(result)
 	}, [hiddenAlbumsResults, searchAlbumsResults])
 
-	// disable loading request icon after merging
+	/* 
+	when requestedTracksReplacements changes, for every track that doesn't have a match in [...queuedSongsComplete, ...queuedSongsDownload] :
+		fetch songElt on ytm
+		download track
+	when queuedSongsComplete, requestedTracksReplacements or playlists change:
+		we patch existing playlists
+	*/
+
+	const requestedTracksReplacementsDownload = useRef([])
+
+	const downloadMissingTrack = useCallback(
+		async (songName) => {
+			const results = await window.electron.ipcRenderer.invoke("ytm_songs", {
+				query: songName
+			})
+			if (results.length > 0) {
+				downloadSong(results[0])
+			}
+		},
+		[downloadSong]
+	)
+
+	// launch downloads of requested missing tracks from playlists
+	useEffect(() => {
+		if (!ytdlpReady || requestedTracksReplacements.length == 0) return
+		// console.log(queuedSongsDownload)
+		const ignore = [
+			...queuedSongsComplete.map((e) => getSongName(computedSongPath(e))),
+			...requestedTracksReplacementsDownload.current
+		]
+		const s = requestedTracksReplacements
+			.map((e) => getSongName(e))
+			.filter((e) => !ignore.includes(e))
+		requestedTracksReplacementsDownload.current = [
+			...new Set([...requestedTracksReplacementsDownload.current, ...s])
+		]
+		s.map((e) => downloadMissingTrack(e))
+	}, [ytdlpReady, requestedTracksReplacements, playlists])
+
+	// replace requested missing tracks in playlists when getting new downloads completed
+	useEffect(() => {
+		const completedSongNames = queuedSongsComplete.map((e) => getSongName(computedSongPath(e)))
+		requestedTracksReplacementsDownload.current =
+			requestedTracksReplacementsDownload.current.filter(
+				(e) => !completedSongNames.includes(e)
+			)
+		const db = {}
+		for (let e of queuedSongsComplete) {
+			db[getSongName(computedSongPath(e))] = computedSongPath(e)
+		}
+		const dbkeys = Object.keys(db)
+		const result = []
+		for (let p of playlists) {
+			const s = p.songs.map((e) => {
+				if (dbkeys.includes(getSongName(e))) {
+					return db[getSongName(e)]
+				} else {
+					return e
+				}
+			})
+			let updatedp = { ...p, songs: s }
+			result.push(updatedp)
+		}
+		setRequestedTracksReplacements(
+			requestedTracksReplacements.filter((e) => !dbkeys.includes(getSongName(e)))
+		)
+		// console.log(result)
+		setPlaylists(result)
+	}, [queuedSongsComplete])
+
+	useEffect(() => {
+		const failedSongNames = queuedSongsComplete.map((e) => getSongName(computedSongPath(e)))
+		requestedTracksReplacementsDownload.current =
+			requestedTracksReplacementsDownload.current.filter((e) => !failedSongNames.includes(e))
+	}, [queuedSongsFailed])
+
+	// hide loading request icon after merging
 	useEffect(() => {
 		setIsFetching(false)
 	}, [hiddenAlbumsResults])
@@ -993,15 +1071,6 @@ export default function DownloadTab() {
 			e.preventDefault()
 			if (inputField.current) {
 				inputField.current.blur()
-			}
-		},
-		{ enableOnFormTags: true }
-	)
-	useHotkeys(
-		"ctrl+backspace",
-		() => {
-			if (inputField.current && inputField.current.hasFocus()) {
-				inputField.current.value = ""
 			}
 		},
 		{ enableOnFormTags: true }
