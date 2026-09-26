@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 import { cn } from "@sglara/cn"
 import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 import { usePlayerStore } from "../stores/usePlayerStore"
-import { useMemo } from "react"
+import { useEffect, useState } from "react"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { TbLoader2 } from "react-icons/tb"
 
@@ -24,21 +24,36 @@ export default function FixMissingPlaylistTracksIndicator() {
 	const { selectedPlaylist } = usePlayerStore()
 	const { getPlaylistFromId } = usePlaylistUtils()
 	const { requestedTracksReplacements } = usePlaylistsStore()
+	const [requestedTracks, setRequestedTracks] = useState([])
 
-	const requestedTracks = useMemo(() => {
-		const res = []
-		const psongs = getPlaylistFromId(selectedPlaylist).songs
-		requestedTracksReplacements.map((e) => {
-			if (psongs.includes(e)) {
-				res.push(e)
+	useEffect(() => {
+		const action = async () => {
+			let res = []
+			const psongs = getPlaylistFromId(selectedPlaylist).songs
+			requestedTracksReplacements.map((e) => {
+				if (psongs.includes(e)) {
+					res.push(e)
+				}
+			})
+			res = await window.electron.ipcRenderer.invoke("get_files_exist", {
+				paths: res
+			})
+			let missing = []
+			for (let s of Object.keys(res)) {
+				if (res[s] === false) {
+					missing = [...new Set([...missing, s])]
+				}
 			}
-		})
-		return res
+			setRequestedTracks(missing)
+		}
+		action()
 	}, [requestedTracksReplacements, selectedPlaylist, getPlaylistFromId])
 
 	if (requestedTracks.length == 0) {
 		return <></>
 	}
+
+	// console.log(requestedTracksReplacements)
 
 	return (
 		<button

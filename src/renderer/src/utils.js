@@ -30,6 +30,10 @@ export const getSongName = (p) => {
 	return res
 }
 
+export const delay = (t) => {
+	return new Promise((res) => setTimeout(res, t))
+}
+
 export const getFolderName = (p, parentLevels = 0) => {
 	if (!p) return
 	let splits = p.split(p.includes("/") ? "/" : "\\")

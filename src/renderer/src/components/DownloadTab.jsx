@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { IoMdCheckmark, IoMdClose, IoMdDownload } from "react-icons/io"
 import { TbLoader2, TbNetwork, TbNetworkOff } from "react-icons/tb"
 import PowerSavingButton from "./PowerSavingButton"
-import { getFolderName, getSongName, ytLogin } from "../utils"
+import { delay, getFolderName, getSongName, ytLogin } from "../utils"
 import { motion } from "motion/react"
 import { IoLogoChrome, IoLogoFirefox, IoMusicalNotes, IoWarningOutline } from "react-icons/io5"
 import { GiCompactDisc, GiSpermWhale } from "react-icons/gi"
@@ -952,18 +952,21 @@ export default function DownloadTab() {
 
 	// merge unlisted albums with regular albums list
 	useEffect(() => {
-		const result = [...hiddenAlbumsResults]
-		const IDs = result.map((e) => e.albumId)
-		// console.log(IDs)
-		for (let elt of searchAlbumsResults) {
-			if (!IDs.includes(elt.albumId)) {
-				IDs.push(elt.albumId)
-				result.push(elt)
+		const action = async () => {
+			const result = [...hiddenAlbumsResults]
+			const IDs = result.map((e) => e.albumId)
+			// console.log(IDs)
+			for (let elt of searchAlbumsResults) {
+				if (!IDs.includes(elt.albumId)) {
+					IDs.push(elt.albumId)
+					result.push(elt)
+				}
 			}
+			// console.log(result)
+			refreshAlbumExistsDb(result)
+			setMergedAlbumsResults(result)
 		}
-		// console.log(result)
-		refreshAlbumExistsDb(result)
-		setMergedAlbumsResults(result)
+		action()
 	}, [hiddenAlbumsResults, searchAlbumsResults])
 
 	/* 
@@ -974,72 +977,104 @@ export default function DownloadTab() {
 		we patch existing playlists
 	*/
 
-	const requestedTracksReplacementsDownload = useRef([])
+	const requestedSongElementsDb = useRef({}) // db {missingPath: SongElt}
+	const replacementTracksDb = useRef({}) // db {missingPath: newPath}
+	const handledRequestedDownloads = useRef([]) // requested paths that are currently being downloaded (intersection of replacementTracksDb.current[missingPath], this array, and queuedSongsComplete gives the available replacements)
+	const handledRequestedSongElements = useRef([]) // paths whose songElts have already being fetched or are being fetched
 
-	const downloadMissingTrack = useCallback(
-		async (songName) => {
-			const results = await window.electron.ipcRenderer.invoke("ytm_songs", {
-				query: songName
-			})
-			if (results.length > 0) {
-				downloadSong(results[0])
+	const getMissingPathForReplacement = (p) => {
+		for (let i of Object.keys(replacementTracksDb.current)) {
+			if (replacementTracksDb.current[i] == p) {
+				return i
 			}
-		},
-		[downloadSong]
-	)
+		}
+		return ""
+	}
+
+	const downloadSongElements = async (requests) => {
+		const paths = requests.filter((e) => !handledRequestedSongElements.current.includes(e))
+		handledRequestedSongElements.current = [
+			...new Set([...handledRequestedSongElements.current, ...requests])
+		]
+		for (let p of paths) {
+			const f = async (p) => {
+				return await window.electron.ipcRenderer.invoke("ytm_songs", {
+					query: getSongName(p)
+				})
+			}
+			let results = await f(p)
+			while (!(Array.isArray(results) && results.length > 0)) {
+				console.log("failed")
+				results = await f(p)
+				await delay(1500)
+			}
+			// console.log("songElt found")
+			replacementTracksDb.current[p] = computedSongPath(results[0])
+			requestedSongElementsDb.current[p] = results[0]
+			if (!handledRequestedDownloads.current.includes(p)) {
+				// console.log("downloading " + p)
+				downloadSong(results[0])
+				handledRequestedDownloads.current = [
+					...new Set([...handledRequestedDownloads.current, p])
+				]
+			}
+			// console.log(p)
+			await delay(1000)
+		}
+		// console.log(handledRequestedSongElements.current)
+	}
 
 	// launch downloads of requested missing tracks from playlists
 	useEffect(() => {
 		if (!ytdlpReady || requestedTracksReplacements.length == 0) return
-		// console.log(queuedSongsDownload)
-		const ignore = [
-			...queuedSongsComplete.map((e) => getSongName(computedSongPath(e))),
-			...requestedTracksReplacementsDownload.current
-		]
-		const s = requestedTracksReplacements
-			.map((e) => getSongName(e))
-			.filter((e) => !ignore.includes(e))
-		requestedTracksReplacementsDownload.current = [
-			...new Set([...requestedTracksReplacementsDownload.current, ...s])
-		]
-		s.map((e) => downloadMissingTrack(e))
-	}, [ytdlpReady, requestedTracksReplacements, playlists])
+		downloadSongElements(requestedTracksReplacements)
+	}, [ytdlpReady, requestedTracksReplacements])
 
-	// replace requested missing tracks in playlists when getting new downloads completed
 	useEffect(() => {
-		const completedSongNames = queuedSongsComplete.map((e) => getSongName(computedSongPath(e)))
-		requestedTracksReplacementsDownload.current =
-			requestedTracksReplacementsDownload.current.filter(
-				(e) => !completedSongNames.includes(e)
-			)
-		const db = {}
-		for (let e of queuedSongsComplete) {
-			db[getSongName(computedSongPath(e))] = computedSongPath(e)
+		// compute missing paths whose replacement has been downloaded
+		const completedPaths = queuedSongsComplete.map((e) => computedSongPath(e))
+		const pathsCompletedDb = {}
+		for (let elt of Object.keys(replacementTracksDb.current)) {
+			if (completedPaths.includes(replacementTracksDb.current[elt])) {
+				pathsCompletedDb[elt] = replacementTracksDb.current[elt]
+			}
 		}
-		const dbkeys = Object.keys(db)
-		const result = []
-		for (let p of playlists) {
-			const s = p.songs.map((e) => {
-				if (dbkeys.includes(getSongName(e))) {
-					return db[getSongName(e)]
-				} else {
-					return e
-				}
-			})
-			let updatedp = { ...p, songs: s }
-			result.push(updatedp)
-		}
+		// remove completed replacements from the requested replacements list
 		setRequestedTracksReplacements(
-			requestedTracksReplacements.filter((e) => !dbkeys.includes(getSongName(e)))
+			requestedTracksReplacements.filter((e) => !Object.keys(pathsCompletedDb).includes(e))
 		)
-		// console.log(result)
-		setPlaylists(result)
+		// fix playlists using completed replacements
+		const pl = []
+		for (let p of playlists) {
+			const sg = []
+			for (let s of p.songs) {
+				if (Object.keys(pathsCompletedDb).includes(s)) {
+					console.log("replaced " + s)
+					sg.push(pathsCompletedDb[s])
+				} else {
+					sg.push(s)
+				}
+			}
+			const elt = { ...p, songs: sg }
+			pl.push(elt)
+		}
+		setPlaylists(pl)
 	}, [queuedSongsComplete])
 
+	// remove failed songs from handled downloads to allow them being downloaded again
 	useEffect(() => {
-		const failedSongNames = queuedSongsComplete.map((e) => getSongName(computedSongPath(e)))
-		requestedTracksReplacementsDownload.current =
-			requestedTracksReplacementsDownload.current.filter((e) => !failedSongNames.includes(e))
+		// collect failed replacement paths
+		const failedPaths = queuedSongsFailed.map((e) => computedSongPath(e))
+		// compute original missing paths for failed replacements
+		const failedMissing = []
+		for (let elt of Object.keys(replacementTracksDb.current)) {
+			if (failedPaths.includes(replacementTracksDb.current[elt])) {
+				failedMissing.push(elt)
+			}
+		}
+		handledRequestedDownloads.current = handledRequestedDownloads.current.filter(
+			(e) => !failedMissing.includes(e)
+		)
 	}, [queuedSongsFailed])
 
 	// hide loading request icon after merging

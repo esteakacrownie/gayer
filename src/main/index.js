@@ -81,16 +81,19 @@ const delay = (t) => {
 
 const YtdlpAwaiter = async () => {
 	while (YtdlpInstancesCount >= maxYtdlpInstances) {
-		await delay(500)
+		console.log("yt-dlp instances: " + YtdlpInstancesCount)
+		await delay(1500)
 	}
 }
 
 const removeYTDownloader = () => {
+	// YtdlpInstancesCount -= 1
 	YtdlpInstancesCount = Math.max(0, YtdlpInstancesCount - 1)
 }
 
 const createYTDownloader = () => {
 	YtdlpInstancesCount += 1
+	// console.log(YtdlpInstancesCount)
 	return new YtDlp({
 		binaryPath: ytdlpBinaryPath,
 		ffmpegPath: join(dirs.data, "modules", "ffmpeg", ffmpegBinaryName)
