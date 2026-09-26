@@ -56,7 +56,8 @@ export default function DownloadTab() {
 	const { setSearch: setLibrarySearch } = useLibraryStore()
 	const [search, setSearch] = useState("")
 	const [filter, setFilter] = useState("songs")
-	const { currentTrack, setNextAction, setCurrentTrack } = usePlayerStore()
+	const { currentTrack, setNextAction, queue, setQueue, history, setHistory, setCurrentTrack } =
+		usePlayerStore()
 	const { playlists, setPlaylists, requestedTracksReplacements, setRequestedTracksReplacements } =
 		usePlaylistsStore()
 	const { createPlaylist } = usePlaylistUtils()
@@ -1031,34 +1032,55 @@ export default function DownloadTab() {
 	}, [ytdlpReady, requestedTracksReplacements])
 
 	useEffect(() => {
-		// compute missing paths whose replacement has been downloaded
-		const completedPaths = queuedSongsComplete.map((e) => computedSongPath(e))
-		const pathsCompletedDb = {}
-		for (let elt of Object.keys(replacementTracksDb.current)) {
-			if (completedPaths.includes(replacementTracksDb.current[elt])) {
-				pathsCompletedDb[elt] = replacementTracksDb.current[elt]
-			}
-		}
-		// remove completed replacements from the requested replacements list
-		setRequestedTracksReplacements(
-			requestedTracksReplacements.filter((e) => !Object.keys(pathsCompletedDb).includes(e))
-		)
-		// fix playlists using completed replacements
-		const pl = []
-		for (let p of playlists) {
-			const sg = []
-			for (let s of p.songs) {
-				if (Object.keys(pathsCompletedDb).includes(s)) {
-					console.log("replaced " + s)
-					sg.push(pathsCompletedDb[s])
-				} else {
-					sg.push(s)
+		const action = async () => {
+			// compute missing paths whose replacement has been downloaded
+			const completedPaths = queuedSongsComplete.map((e) => computedSongPath(e))
+			const pathsCompletedDb = {}
+			for (let elt of Object.keys(replacementTracksDb.current)) {
+				if (completedPaths.includes(replacementTracksDb.current[elt])) {
+					pathsCompletedDb[elt] = replacementTracksDb.current[elt]
 				}
 			}
-			const elt = { ...p, songs: sg }
-			pl.push(elt)
+			const dbkeys = Object.keys(pathsCompletedDb)
+			// remove completed replacements from the requested replacements list
+			setRequestedTracksReplacements(
+				requestedTracksReplacements.filter((e) => !dbkeys.includes(e))
+			)
+			// fix playlists using completed replacements
+			const pl = []
+			for (let p of playlists) {
+				const sg = []
+				for (let s of p.songs) {
+					if (dbkeys.includes(s)) {
+						console.log("replaced " + s)
+						sg.push(pathsCompletedDb[s])
+					} else {
+						sg.push(s)
+					}
+				}
+				const elt = { ...p, songs: sg }
+				pl.push(elt)
+			}
+			setPlaylists(pl)
+			// replace missing songs in queue, history, and currentTrack
+			const fixedHistory = history.map((e) => {
+				if (dbkeys.includes(e)) {
+					return pathsCompletedDb[e]
+				} else {
+					return e
+				}
+			})
+			setHistory(fixedHistory)
+			const fixedQueue = queue.map((e) => {
+				if (dbkeys.includes(e)) {
+					return pathsCompletedDb[e]
+				} else {
+					return e
+				}
+			})
+			setQueue(fixedQueue)
 		}
-		setPlaylists(pl)
+		action()
 	}, [queuedSongsComplete])
 
 	// remove failed songs from handled downloads to allow them being downloaded again

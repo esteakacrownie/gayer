@@ -24,7 +24,7 @@ import {
 } from "react-icons/io"
 import { MdLoop } from "react-icons/md"
 import { AnimatePresence, motion } from "motion/react"
-import { albumArtQueryForPath, getSongName } from "../utils"
+import { getSongName } from "../utils"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import usePlayerControls from "../hooks/usePlayerControls"
 import { cn } from "@sglara/cn"
@@ -47,7 +47,7 @@ export default function Player() {
 		setLoopMode
 	} = useSettingsStore()
 
-	const { thumbnailCache, setThumbnailCache } = useCacheStore()
+	const { thumbnailCache } = useCacheStore()
 
 	const { setSelectedSongPath } = usePlaylistsStore()
 
@@ -260,7 +260,7 @@ export default function Player() {
 		{ enableOnFormTags: true }
 	)
 	useHotkeys(
-		"ctrl+m",
+		"ctrl+k",
 		(e) => {
 			e.preventDefault()
 			handleAddToPlaylist()
