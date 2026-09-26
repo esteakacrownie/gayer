@@ -47,7 +47,7 @@ Stay tuned and support the project by starring it >:3
 - `ctrl+right/left` | `ctrl+n/p` : next/previous song in queue
 - `ctrl+l` : toggle loop modes
 - `ctrl+s` : toggle shuffling
-- `ctrl+p` : add current track to playlist
+- `ctrl+m` : add current track to playlist
 - `ctrl+t` : scroll to top and focus search bar
 - `ctrl+tab` : switch tab
 - `ctrl+up/down` : increase / decrease volume

@@ -60,12 +60,12 @@ const initYTModules = async () => {
 		if (!has_ffmpeg || !has_ffprobe) {
 			missing_ffmpeg = true
 		}
-	} catch (error) {
+	} catch {
 		missing_ffmpeg = true
 	}
 
 	if (missing_ffmpeg) {
-		const test = await helpers.downloadFFmpeg(join(dirs.data, "modules", "ffmpeg"))
+		await helpers.downloadFFmpeg(join(dirs.data, "modules", "ffmpeg"))
 	}
 
 	for (let f of await readdir(join(dirs.data, "modules", "ffmpeg"))) {
@@ -211,7 +211,7 @@ app.whenReady().then(() => {
 	})
 
 	// main process calls from renderer
-	ipcMain.handle("version", async (event, args) => {
+	ipcMain.handle("version", async () => {
 		try {
 			return process.env.npm_package_version
 		} catch (error) {
@@ -302,7 +302,7 @@ app.whenReady().then(() => {
 			return error
 		}
 	})
-	ipcMain.handle("open_folder", async (event, args) => {
+	ipcMain.handle("open_folder", async () => {
 		try {
 			const folder = await dialog.showOpenDialog({
 				title: "Select a directory",
@@ -314,7 +314,7 @@ app.whenReady().then(() => {
 			return error
 		}
 	})
-	ipcMain.handle("open_file", async (event, args) => {
+	ipcMain.handle("open_file", async () => {
 		try {
 			const file = await dialog.showOpenDialog({
 				title: "Select a file",
@@ -413,7 +413,7 @@ app.whenReady().then(() => {
 			return false
 		}
 	})
-	ipcMain.handle("get_args", async (event, args) => {
+	ipcMain.handle("get_args", async () => {
 		try {
 			return process.argv
 		} catch (error) {
@@ -563,7 +563,7 @@ app.whenReady().then(() => {
 			return false
 		}
 	})
-	ipcMain.handle("open_yt_login", async (event, args) => {
+	ipcMain.handle("open_yt_login", async () => {
 		try {
 			return shell.openExternal(
 				"https://accounts.google.com/ServiceLogin?service=youtube&uilel=3&passive=true&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue"
@@ -573,7 +573,7 @@ app.whenReady().then(() => {
 			return error
 		}
 	})
-	ipcMain.handle("is_ytdlp_ready", async (event, args) => {
+	ipcMain.handle("is_ytdlp_ready", async () => {
 		return YTDLP_READY
 	})
 

@@ -260,7 +260,7 @@ export default function Player() {
 		{ enableOnFormTags: true }
 	)
 	useHotkeys(
-		"ctrl+p",
+		"ctrl+m",
 		(e) => {
 			e.preventDefault()
 			handleAddToPlaylist()

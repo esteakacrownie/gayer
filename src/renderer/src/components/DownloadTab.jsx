@@ -59,7 +59,7 @@ export default function DownloadTab() {
 	const { currentTrack, setNextAction, setCurrentTrack } = usePlayerStore()
 	const { playlists, setPlaylists, requestedTracksReplacements, setRequestedTracksReplacements } =
 		usePlaylistsStore()
-	const { createPlaylist, getPlaylistFromId } = usePlaylistUtils()
+	const { createPlaylist } = usePlaylistUtils()
 	const searchRequestCount = useRef(0)
 	const [ytdlpReady, setYtdlpReady] = useState(false)
 	const [urlDownloadStatus, setUrlDownloadStatus] = useState("idle") // idle, downloading, success, failed
@@ -904,45 +904,54 @@ export default function DownloadTab() {
 
 	// refresh locations when new items get downloaded or removed
 	useEffect(() => {
-		refreshSongExistsDb(
-			searchSongsResults.concat(queuedSongsComplete).concat(queuedSongsFailed)
-		)
-		refreshAlbumExistsDb(
-			mergedAlbumsResults.concat(queuedAlbumsComplete).concat(queuedAlbumsFailed)
-		)
-		refreshUrlSongExistsDb(urlDownloadedSongs)
-		refreshUrlPlaylistExistsDb(urlDownloadedPlaylists)
+		const action = async () => {
+			refreshSongExistsDb(
+				searchSongsResults.concat(queuedSongsComplete).concat(queuedSongsFailed)
+			)
+			refreshAlbumExistsDb(
+				mergedAlbumsResults.concat(queuedAlbumsComplete).concat(queuedAlbumsFailed)
+			)
+			refreshUrlSongExistsDb(urlDownloadedSongs)
+			refreshUrlPlaylistExistsDb(urlDownloadedPlaylists)
+		}
+		action()
 	}, [libraryLocations, forceRefreshLocationsTracker])
 
 	// YTM requests on search changes
 	useEffect(() => {
-		searchRequestCount.current += 1
-		if (!search || search.length < 3 || linkEnabled) {
-			setIsFetching(false)
-			setSearchSongsResults([])
-			setSearchAlbumsResults([])
-			setHiddenAlbumsResults([])
-			// setSearchArtistsResults([])
-		} else {
-			const update = (search) => {
-				setIsFetching(true)
-				fetchSongsResults(search, searchRequestCount.current)
-				fetchAlbumsResults(search, searchRequestCount.current)
-			}
-			const t = setTimeout(() => {
-				update(search)
-			}, 500)
-			return () => {
-				clearTimeout(t)
+		const action = async () => {
+			searchRequestCount.current += 1
+			if (!search || search.length < 3 || linkEnabled) {
+				setIsFetching(false)
+				setSearchSongsResults([])
+				setSearchAlbumsResults([])
+				setHiddenAlbumsResults([])
+				// setSearchArtistsResults([])
+			} else {
+				const update = (search) => {
+					setIsFetching(true)
+					fetchSongsResults(search, searchRequestCount.current)
+					fetchAlbumsResults(search, searchRequestCount.current)
+				}
+				const t = setTimeout(() => {
+					update(search)
+				}, 500)
+				return () => {
+					clearTimeout(t)
+				}
 			}
 		}
+		action()
 	}, [search, linkEnabled])
 
 	// auto switch to link mode
 	useEffect(() => {
-		if (search.startsWith("https://")) {
-			setLinkEnabled(true)
+		const action = async () => {
+			if (search.startsWith("https://")) {
+				setLinkEnabled(true)
+			}
 		}
+		action()
 	}, [search])
 
 	// process unlisted albums
@@ -981,15 +990,6 @@ export default function DownloadTab() {
 	const replacementTracksDb = useRef({}) // db {missingPath: newPath}
 	const handledRequestedDownloads = useRef([]) // requested paths that are currently being downloaded (intersection of replacementTracksDb.current[missingPath], this array, and queuedSongsComplete gives the available replacements)
 	const handledRequestedSongElements = useRef([]) // paths whose songElts have already being fetched or are being fetched
-
-	const getMissingPathForReplacement = (p) => {
-		for (let i of Object.keys(replacementTracksDb.current)) {
-			if (replacementTracksDb.current[i] == p) {
-				return i
-			}
-		}
-		return ""
-	}
 
 	const downloadSongElements = async (requests) => {
 		const paths = requests.filter((e) => !handledRequestedSongElements.current.includes(e))
@@ -1555,7 +1555,7 @@ export default function DownloadTab() {
 													</span>
 												</p>
 											</div>
-											<p className="py-4">You're all set !</p>
+											<p className="py-4">You&apos;re all set !</p>
 											<div className="font-bold flex flex-row items-center pb-2 gap-2">
 												<div className="rounded-lg p-1 bg-amber-900 border-2 border-amber-300">
 													<IoWarningOutline size={20} />
