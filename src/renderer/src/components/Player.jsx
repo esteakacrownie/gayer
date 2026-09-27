@@ -13,7 +13,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
-import { useEffect, useMemo, useState, useCallback } from "react"
+import { useEffect, useMemo, useState, useCallback, useRef } from "react"
 import { FaPlay, FaPause, FaStepForward, FaStepBackward } from "react-icons/fa"
 import {
 	IoMdVolumeHigh,
@@ -199,6 +199,25 @@ export default function Player() {
 		})
 	}, [currentTrack, thumbnailCache])
 
+	const volumeWheelHandler = useCallback(
+		(event) => {
+			if (volumeSliderRef.current && volumeSliderRef.current.contains(event.target)) {
+				event.preventDefault()
+				// console.log(event)
+				setVolumeClamped(uiVolume + 0.05 * -Math.sign(event.deltaY))
+			}
+		},
+		[uiVolume, setVolumeClamped]
+	)
+
+	const volumeSliderRef = useRef(null)
+	useEffect(() => {
+		document.addEventListener("wheel", volumeWheelHandler, { passive: false })
+		return () => {
+			document.removeEventListener("wheel", volumeWheelHandler, { passive: false })
+		}
+	}, [volumeSliderRef, volumeWheelHandler])
+
 	useHotkeys("space", (e) => {
 		e.preventDefault()
 		togglePlay()
@@ -299,6 +318,7 @@ export default function Player() {
 					<div className="flex flex-row justify-center gap-4 relative">
 						<div className="flex flex-row justify-center gap-2">
 							<motion.button
+								title="Previous song [Ctrl+Left/P]"
 								className="hover:bg-pink-400/30 outline-none p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
 								onClick={() => setNextAction("setPrevious")}
 								initial={{
@@ -318,6 +338,7 @@ export default function Player() {
 								<FaStepBackward size={20} />
 							</motion.button>
 							<motion.button
+								title="Toggle play/pause [(Ctrl+)Spacebar]"
 								className="hover:bg-pink-400/30 outline-none p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
 								onClick={togglePlay}
 								initial={{
@@ -337,6 +358,7 @@ export default function Player() {
 								{!isPlaying ? <FaPlay size={20} /> : <FaPause size={20} />}
 							</motion.button>
 							<motion.button
+								title="Next song [Ctrl+Right/N]"
 								className="hover:bg-pink-400/30 outline-none p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
 								onClick={() => setNextAction("setNext")}
 								initial={{
@@ -358,6 +380,7 @@ export default function Player() {
 						</div>
 						<div className="flex flex-row gap-2 justify-start items-center absolute w-full left-0 top-0 pointer-events-none">
 							<motion.button
+								title="Toggle shuffling [Ctrl+S]"
 								className={cn(
 									"hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
 									shufflePlay && "bg-pink-400/50 outline-2 outline-pink-300"
@@ -380,6 +403,7 @@ export default function Player() {
 								<IoMdShuffle size={20} />
 							</motion.button>
 							<motion.button
+								title="Toggle loop modes [Ctrl+L]"
 								className={cn(
 									"relative hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
 									loopMode != "off" && "bg-pink-400/50 outline-2 outline-pink-300"
@@ -407,6 +431,7 @@ export default function Player() {
 								)}
 							</motion.button>
 							<motion.button
+								title="Add to playlist [Ctrl+K]"
 								className="hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
 								onClick={handleAddToPlaylist}
 								initial={{
@@ -430,6 +455,8 @@ export default function Player() {
 							{volumeIcon}
 							<div className="bg-pink-800/10 flex flex-row outline-2 outline-pink-300 shadow-pink-500/70 shadow-[0_0_5px_5px] justify-center items-center px-1 rounded-2xl min-w-16 w-[16%] max-w-50">
 								<input
+									title="Manage volume [Scroll/Ctrl+Up/Down]"
+									ref={volumeSliderRef}
 									className="accent-pink-500 w-full outline-none pointer-events-auto cursor-pointer"
 									type="range"
 									min={0}
