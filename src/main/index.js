@@ -33,45 +33,77 @@ let YTDLP_READY = false
 let ytdlpBinaryPath = ""
 let ffmpegBinaryName = "ffmpeg"
 const ytmusic = new YTMusic()
-const maxYtdlpInstances = 4
-let YtdlpInstancesCount = 0
+const MAX_YTDLP_INSTANCES = 4
+let ytdlpInstancesCount = 0
 
-const initYTModules = async () => {
-	let ytdlp = new YtDlp()
-
-	// update binary
-	const result = await ytdlp.updateYtDlpAsync({ outDir: join(dirs.data, "modules", "ytdlp") })
-	ytdlpBinaryPath = result.binaryPath
-	let missing_ffmpeg = false
-
+const tryYTDLPInit = async () => {
 	try {
-		const ffmpeg_modules_contents = await readdir(join(dirs.data, "modules", "ffmpeg"))
-		// console.log(ffmpeg_modules_contents)
-		let has_ffmpeg = false
-		let has_ffprobe = false
-		for (let f of ffmpeg_modules_contents) {
-			if (f.toLocaleLowerCase().includes("ffmpeg")) {
-				has_ffmpeg = true
+		let ytdlp = new YtDlp()
+
+		// update binary
+		const result = await ytdlp.updateYtDlpAsync({ outDir: join(dirs.data, "modules", "ytdlp") })
+		ytdlpBinaryPath = result.binaryPath
+		let missing_ffmpeg = false
+
+		try {
+			const ffmpeg_modules_contents = await readdir(join(dirs.data, "modules", "ffmpeg"))
+			// console.log(ffmpeg_modules_contents)
+			let has_ffmpeg = false
+			let has_ffprobe = false
+			for (let f of ffmpeg_modules_contents) {
+				if (f.toLocaleLowerCase().includes("ffmpeg")) {
+					has_ffmpeg = true
+				}
+				if (f.toLocaleLowerCase().includes("ffprobe")) {
+					has_ffprobe = true
+				}
 			}
-			if (f.toLocaleLowerCase().includes("ffprobe")) {
-				has_ffprobe = true
+			if (!has_ffmpeg || !has_ffprobe) {
+				missing_ffmpeg = true
 			}
-		}
-		if (!has_ffmpeg || !has_ffprobe) {
+		} catch {
 			missing_ffmpeg = true
 		}
-	} catch {
-		missing_ffmpeg = true
-	}
 
-	if (missing_ffmpeg) {
-		await helpers.downloadFFmpeg(join(dirs.data, "modules", "ffmpeg"))
-	}
-
-	for (let f of await readdir(join(dirs.data, "modules", "ffmpeg"))) {
-		if (f.toLocaleLowerCase().includes("ffmpeg")) {
-			ffmpegBinaryName = f
+		if (missing_ffmpeg) {
+			await helpers.downloadFFmpeg(join(dirs.data, "modules", "ffmpeg"))
 		}
+
+		for (let f of await readdir(join(dirs.data, "modules", "ffmpeg"))) {
+			if (f.toLocaleLowerCase().includes("ffmpeg")) {
+				ffmpegBinaryName = f
+			}
+		}
+		return true
+	} catch {
+		return false
+	}
+}
+
+const initYTModules = async () => {
+	let attempt = await tryYTDLPInit()
+	while (!attempt) {
+		console.log("Couldn't init yt-dlp modules. Retrying...")
+		await delay(2000)
+		attempt = await tryYTDLPInit()
+	}
+}
+
+const tryYTMInit = async () => {
+	try {
+		let attempt = await ytmusic.initialize()
+		return attempt
+	} catch {
+		return false
+	}
+}
+
+const initYTMusic = async () => {
+	let attempt = await tryYTMInit()
+	while (!attempt) {
+		console.log("Couldn't init YTMusic API. Retrying...")
+		await delay(2000)
+		attempt = await tryYTMInit()
 	}
 }
 
@@ -80,20 +112,20 @@ const delay = (t) => {
 }
 
 const YtdlpAwaiter = async () => {
-	while (YtdlpInstancesCount >= maxYtdlpInstances) {
-		console.log("yt-dlp instances: " + YtdlpInstancesCount)
+	while (ytdlpInstancesCount >= MAX_YTDLP_INSTANCES) {
+		console.log("yt-dlp instances: " + ytdlpInstancesCount)
 		await delay(1500)
 	}
 }
 
 const removeYTDownloader = () => {
-	// YtdlpInstancesCount -= 1
-	YtdlpInstancesCount = Math.max(0, YtdlpInstancesCount - 1)
+	// ytdlpInstancesCount -= 1
+	ytdlpInstancesCount = Math.max(0, ytdlpInstancesCount - 1)
 }
 
 const createYTDownloader = () => {
-	YtdlpInstancesCount += 1
-	// console.log(YtdlpInstancesCount)
+	ytdlpInstancesCount += 1
+	// console.log(ytdlpInstancesCount)
 	return new YtDlp({
 		binaryPath: ytdlpBinaryPath,
 		ffmpegPath: join(dirs.data, "modules", "ffmpeg", ffmpegBinaryName)
@@ -168,8 +200,7 @@ async function createWindow() {
 	initYTModules()
 		.then(() => (YTDLP_READY = true))
 		.then(() => mainWindow.webContents.send("ytdlp_ready", true))
-	ytmusic
-		.initialize()
+	initYTMusic()
 		.then(() => (YTM_INITIALIZED = true))
 		.then(() => mainWindow.webContents.send("ytm_initialized", true))
 
