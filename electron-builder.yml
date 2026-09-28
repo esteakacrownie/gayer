@@ -2,43 +2,45 @@ appId: com.integraxseras.Gayer
 productName: gayer
 electronLanguages: ["en-US"]
 directories:
-  buildResources: build
+    buildResources: build
 files:
-  - '!**/.vscode/*'
-  - '!src/*'
-  - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
-  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
-  - '!**/ytdlp-nodejs/bin/*'
+    - "!**/.vscode/*"
+    - "!src/*"
+    - "!electron.vite.config.{js,ts,mjs,cjs}"
+    - "!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}"
+    - "!{.env,.env.*,.npmrc,pnpm-lock.yaml}"
+    - "!**/ytdlp-nodejs/bin/*"
+extraResources:
+    - "updates/TOKEN"
 asarUnpack:
-  - resources/**
+    - resources/**
 win:
-  executableName: gayer
+    executableName: gayer
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
-  shortcutName: ${productName}
-  uninstallDisplayName: ${productName}
-  createDesktopShortcut: always
+    artifactName: ${name}-${version}-setup.${ext}
+    shortcutName: ${productName}
+    uninstallDisplayName: ${productName}
+    createDesktopShortcut: always
 mac:
-  entitlementsInherit: build/entitlements.mac.plist
-  extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-  notarize: false
+    entitlementsInherit: build/entitlements.mac.plist
+    extendInfo:
+        - NSCameraUsageDescription: Application requests access to the device's camera.
+        - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
+        - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
+        - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+    notarize: false
 dmg:
-  artifactName: ${name}-${version}.${ext}
+    artifactName: ${name}-${version}.${ext}
 linux:
-  target:
-    - AppImage
-    # - snap
-    - deb
-    # - flatpak
-  maintainer: https://github.com/esteakacrownie
-  category: Audio
+    target:
+        - AppImage
+        # - snap
+        - deb
+        # - flatpak
+    maintainer: https://github.com/esteakacrownie
+    category: Audio
 appImage:
-  artifactName: ${name}-${version}.${ext}
+    artifactName: ${name}-${version}.${ext}
 # flatpak:
 #   runtime: org.freedesktop.Platform
 #   sdk: org.freedesktop.Sdk

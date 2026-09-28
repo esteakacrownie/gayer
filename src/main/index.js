@@ -18,14 +18,24 @@ import { app, shell, BrowserWindow, ipcMain, protocol, dialog } from "electron"
 import { join } from "path"
 import { electronApp, optimizer, is } from "@electron-toolkit/utils"
 import { readFile, writeFile, stat, readdir, mkdir, unlink, rm } from "fs/promises"
-import { existsSync } from "fs"
+import { existsSync, readFileSync } from "fs"
 import { windowStateKeeper } from "./stateKeeper"
 import YTMusic from "ytmusic-api"
 import { YtDlp, helpers } from "ytdlp-nodejs"
 
+let token = ""
+if (existsSync(join(process.resourcesPath, "updates/TOKEN"))) {
+	token = readFileSync(join(process.resourcesPath, "updates/TOKEN"), { encoding: "utf8" })
+} else {
+	if (existsSync("updates/TOKEN")) {
+		token = readFileSync("updates/TOKEN", { encoding: "utf8" })
+	}
+}
+
+const bearer = "Bearer " + token
+
 // global references
 const appName = "com.integraxseras.Gayer"
-
 const dirs = appDirs({ appName })
 
 let YTM_INITIALIZED = false
@@ -37,23 +47,38 @@ let latestFetchedRemoteNotes = ""
 const ytmusic = new YTMusic()
 const MAX_YTDLP_INSTANCES = 4
 let ytdlpInstancesCount = 0
-// https://api.github.com/repos/esteakacrownie/gayer/releases/latest
+
 // utils
 const getRemoteInfo = async () => {
 	try {
 		const res = await (
-			await fetch("https://api.github.com/repos/esteakacrownie/gayer/releases/latest")
+			await fetch("https://api.github.com/repos/esteakacrownie/gayer/releases/latest", {
+				method: "GET",
+				withCredentials: true,
+				credentials: "include",
+				headers: {
+					Authorization: bearer,
+					"Content-Type": "application/json"
+				}
+			})
 		).json()
 		return res
-	} catch {
+	} catch (err) {
+		console.log(err)
 		return false
 	}
 }
 
+const getVersion = () => {
+	return process.env.npm_package_version || app.getVersion()
+}
+
 const isVersionNewer = (codeNameString) => {
 	try {
-		const current = parseInt((process.env.npm_package_version || "0.0.0").replaceAll(".", ""))
-		const remote = parseInt((codeNameString || "0.0.0").replaceAll(/[a-zA-Z.]*/g, ""))
+		const current = parseInt((getVersion() || "0.0.0").replaceAll(".", ""))
+		const remote = parseInt((codeNameString || "-1").replaceAll(/[a-zA-Z.]*/g, ""))
+		// console.log(current)
+		// console.log(remote)
 		// only return true once per new verion detected
 		if (remote > current && remote > latestFetchedRemoteVersion) {
 			return true
@@ -67,6 +92,7 @@ const isVersionNewer = (codeNameString) => {
 const checkForUpdates = async (window) => {
 	console.log("checking for gayer updates...")
 	const info = await getRemoteInfo()
+	// console.log(info)
 	if (info && isVersionNewer(info.name)) {
 		latestFetchedRemoteVersion = info.name
 		latestFetchedRemoteNotes = info.body
@@ -289,7 +315,7 @@ app.whenReady().then(() => {
 	// main process calls from renderer
 	ipcMain.handle("version", async () => {
 		try {
-			return process.env.npm_package_version
+			return getVersion()
 		} catch (error) {
 			console.log(error)
 			return error
@@ -300,6 +326,7 @@ app.whenReady().then(() => {
 			if (latestFetchedRemoteVersion != -1) {
 				return { version: latestFetchedRemoteVersion, notes: latestFetchedRemoteNotes }
 			}
+			return false
 		} catch (error) {
 			console.log(error)
 			return false
@@ -688,6 +715,3 @@ app.on("window-all-closed", () => {
 		app.quit()
 	}
 })
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.

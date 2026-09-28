@@ -17,9 +17,9 @@ Local music player and downloader :3
 ## Features
 
 - Play local audio in different ways
-  - Drag and drop multiple files and folders from your file manager onto the app to add them to the queue
-  - Build and search your own custom audio library in app, by registering locations from your computer
-  - Manually select a folder to open
+- Drag and drop multiple files and folders from your file manager onto the app to add them to the queue
+- Build and search your own custom audio library in app, by registering locations from your computer
+- Manually select a folder to open
 - Reorder and shuffle queue
 - Loop current or whole queue
 - Create your own playlists
@@ -69,6 +69,11 @@ npm install
 ```
 
 ### Development
+
+#### Updates
+
+1. Create a GitHub access token, fine grained to only access read-only repository content metadata
+2. Create a file `updates/TOKEN` and paste the created token
 
 ```bash
 npm run dev

@@ -2,7 +2,6 @@
 // Posted by David Dehghan, modified by community. See post 'Timeline' for change history
 // Retrieved 2026-09-08, License - CC BY-SA 4.0
 
-import { screen } from "electron"
 import settings from "electron-settings"
 
 export const windowStateKeeper = async (windowName) => {
@@ -14,8 +13,6 @@ export const windowStateKeeper = async (windowName) => {
 			windowState = await settings.get(`windowState.${windowName}`)
 			return
 		}
-
-		// const size = screen.getPrimaryDisplay().workAreaSize;
 
 		// Default
 		windowState = {
