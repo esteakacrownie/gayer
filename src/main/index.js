@@ -75,8 +75,8 @@ const getVersion = () => {
 
 const isVersionNewer = (codeNameString) => {
 	try {
-		const current = parseInt((getVersion() || "0.0.0").replaceAll(".", ""))
-		const remote = parseInt((codeNameString || "-1").replaceAll(/[a-zA-Z.]*/g, ""))
+		const current = parseInt((getVersion() || "0.0.0").replaceAll(/[a-zA-Z-.]*/g, ""))
+		const remote = parseInt((codeNameString || "-1").replaceAll(/[a-zA-Z-.]*/g, ""))
 		// console.log(current)
 		// console.log(remote)
 		// only return true once per new verion detected
@@ -103,7 +103,7 @@ const checkForUpdates = async (window) => {
 
 const startUpdatePolling = (window) => {
 	checkForUpdates(window)
-	setInterval(checkForUpdates, 30000)
+	setInterval(() => checkForUpdates(window), 30000)
 }
 
 const tryYTDLPInit = async () => {
