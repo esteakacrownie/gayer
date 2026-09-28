@@ -35,15 +35,17 @@ export default function UpdatesDialog() {
 	}
 
 	const handleUpdate = (c) => {
-		// console.log(c)
+		console.log(c)
 		if (!c) return
 		setOpen(true)
 		setContent({ version: c.version || "-1", notes: c.notes || "No notes" })
 	}
 
 	useEffect(() => {
-		window.electron.ipcRenderer.invoke("update_available", {}).then((e) => handleUpdate(e))
-		const unsub = window.electron.ipcRenderer.on("update_available", (v) => handleUpdate(v))
+		window.electron.ipcRenderer.invoke("update_available", {}).then((v) => handleUpdate(v))
+		const unsub = window.electron.ipcRenderer.on("update_available", (event, v) =>
+			handleUpdate(v)
+		)
 		return () => {
 			unsub()
 		}
