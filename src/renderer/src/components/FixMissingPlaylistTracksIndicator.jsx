@@ -59,7 +59,7 @@ export default function FixMissingPlaylistTracksIndicator() {
 			className="flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer overflow-clip relative"
 		>
 			<TbLoader2 className="animate-spin" size={16} />
-			<span>Fixing {requestedTracks.length} tracks</span>
+			<span>Fixing {requestedTracks.length} track(s)</span>
 			<div
 				className={cn(
 					"absolute w-full h-full top-0 left-0 mix-blend-multiply transition ease-out duration-200 bg-amber-200"
