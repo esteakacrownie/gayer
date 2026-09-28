@@ -920,29 +920,28 @@ export default function DownloadTab() {
 
 	// YTM requests on search changes
 	useEffect(() => {
-		const action = async () => {
-			searchRequestCount.current += 1
-			if (!search || search.length < 3 || linkEnabled) {
-				setIsFetching(false)
-				setSearchSongsResults([])
-				setSearchAlbumsResults([])
-				setHiddenAlbumsResults([])
-				// setSearchArtistsResults([])
-			} else {
-				const update = (search) => {
-					setIsFetching(true)
-					fetchSongsResults(search, searchRequestCount.current)
-					fetchAlbumsResults(search, searchRequestCount.current)
-				}
-				const t = setTimeout(() => {
-					update(search)
-				}, 500)
-				return () => {
-					clearTimeout(t)
-				}
+		const clearRequestsArrays = async () => {
+			setIsFetching(false)
+			setSearchSongsResults([])
+			setSearchAlbumsResults([])
+			setHiddenAlbumsResults([])
+		}
+		searchRequestCount.current += 1
+		if (!search || search.length < 3 || linkEnabled) {
+			clearRequestsArrays()
+		} else {
+			const update = (search) => {
+				setIsFetching(true)
+				fetchSongsResults(search, searchRequestCount.current)
+				fetchAlbumsResults(search, searchRequestCount.current)
+			}
+			const t = setTimeout(() => {
+				update(search)
+			}, 500)
+			return () => {
+				clearTimeout(t)
 			}
 		}
-		action()
 	}, [search, linkEnabled])
 
 	// auto switch to link mode
@@ -1113,7 +1112,9 @@ export default function DownloadTab() {
 			setYtdlpReady(v)
 		}
 		window.electron.ipcRenderer.invoke("is_ytdlp_ready", {}).then((e) => setYtdlpReady(e))
-		const unsub = window.electron.ipcRenderer.on("ytdlp_ready", handler)
+		const unsub = window.electron.ipcRenderer.on("ytdlp_ready", (event, v) => {
+			handler(v)
+		})
 		return () => {
 			unsub()
 		}

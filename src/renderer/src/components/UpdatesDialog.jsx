@@ -35,7 +35,7 @@ export default function UpdatesDialog() {
 	}
 
 	const handleUpdate = (c) => {
-		console.log(c)
+		// console.log(c)
 		if (!c) return
 		setOpen(true)
 		setContent({ version: c.version || "-1", notes: c.notes || "No notes" })
