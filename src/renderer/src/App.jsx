@@ -30,6 +30,7 @@ import { usePlaylistsStore } from "./stores/usePlaylistsStore"
 import DownloadTab from "./components/DownloadTab"
 import { useFilesStore } from "./stores/useFilesStore"
 import { useHotkeys } from "react-hotkeys-hook"
+import UpdatesDialog from "./components/UpdatesDialog"
 
 function App() {
 	const { setQueue, setAutoplay, setNextAction } = usePlayerStore()
@@ -38,6 +39,7 @@ function App() {
 	const { setPlaylists } = usePlaylistsStore()
 	const { setFilesIgnoreExistenceCheck } = useFilesStore()
 
+	// startup settings loading and arguments processing
 	useEffect(() => {
 		// load settings
 		let shufflePlayOnStart = false
@@ -55,7 +57,7 @@ function App() {
 			.invoke("read_configfile", { path: "cache.json" })
 			.then((d) => {
 				const res = JSON.parse(d)
-				if ((res?.version || 0) >= 2) {
+				if ((res?.version || 0) >= 3) {
 					setCache(res)
 				}
 			})
@@ -108,6 +110,8 @@ function App() {
 				<LibraryTab />
 				<QueueTab />
 				<FileSystemTab />
+				<UpdatesDialog />
+				{/* scroll padding to compensate player height's offset */}
 				<div className="my-24">&nbsp;</div>
 			</div>
 			<Tabs />

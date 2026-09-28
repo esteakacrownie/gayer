@@ -49,9 +49,7 @@ export default function FixMissingPlaylistTracksIndicator() {
 		action()
 	}, [requestedTracksReplacements, selectedPlaylist, getPlaylistFromId])
 
-	if (requestedTracks.length == 0) {
-		return <></>
-	}
+	if (requestedTracks.length == 0) return
 
 	// console.log(requestedTracksReplacements)
 

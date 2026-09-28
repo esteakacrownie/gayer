@@ -88,7 +88,7 @@ export const albumArtQueryForPath = (p) => {
 	const query = pathToCoverArtQuery(p)
 	return albumArt(query.artist, {
 		album: `${query.album} ${query.track}`.trim(),
-		size: "medium"
+		size: "large"
 	})
 }
 
@@ -245,6 +245,10 @@ export const downloadTextFile = (file, text) => {
 
 export const ytLogin = () => {
 	return window.electron.ipcRenderer.invoke("open_yt_login", {})
+}
+
+export const updatesDetails = () => {
+	return window.electron.ipcRenderer.invoke("open_updates_page", {})
 }
 
 export const generateM3U8 = (playlist) => {

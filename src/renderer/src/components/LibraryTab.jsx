@@ -791,5 +791,5 @@ const CoverArtUpdater = ({ songs = [] }) => {
 		}
 	}, [thumbnailCacheRef, thumbnailCache])
 
-	return <></>
+	return
 }

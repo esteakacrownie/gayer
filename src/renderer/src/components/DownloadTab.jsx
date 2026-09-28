@@ -1109,12 +1109,13 @@ export default function DownloadTab() {
 
 	// disable UI until ytdlp is ready
 	useEffect(() => {
-		window.electron.ipcRenderer.invoke("is_ytdlp_ready", {}).then((e) => setYtdlpReady(e))
-		window.electron.ipcRenderer.on("ytdlp_ready", (v) => {
+		const handler = async (v) => {
 			setYtdlpReady(v)
-		})
+		}
+		window.electron.ipcRenderer.invoke("is_ytdlp_ready", {}).then((e) => setYtdlpReady(e))
+		const unsub = window.electron.ipcRenderer.on("ytdlp_ready", handler)
 		return () => {
-			window.electron.ipcRenderer.on("ytdlp_ready", () => {})
+			unsub()
 		}
 	}, [])
 

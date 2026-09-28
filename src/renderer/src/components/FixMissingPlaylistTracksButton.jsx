@@ -66,9 +66,7 @@ export default function FixMissingPlaylistTracksButton() {
 		action()
 	}, [selectedPlaylist, requestedTracksReplacements])
 
-	if (missingTracks.length == 0) {
-		return <></>
-	}
+	if (missingTracks.length == 0) return
 
 	// console.log(missingTracks)
 

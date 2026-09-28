@@ -32,9 +32,53 @@ let YTM_INITIALIZED = false
 let YTDLP_READY = false
 let ytdlpBinaryPath = ""
 let ffmpegBinaryName = "ffmpeg"
+let latestFetchedRemoteVersion = -1
+let latestFetchedRemoteNotes = ""
 const ytmusic = new YTMusic()
 const MAX_YTDLP_INSTANCES = 4
 let ytdlpInstancesCount = 0
+// https://api.github.com/repos/esteakacrownie/gayer/releases/latest
+// utils
+const getRemoteInfo = async () => {
+	try {
+		const res = await (
+			await fetch("https://api.github.com/repos/esteakacrownie/gayer/releases/latest")
+		).json()
+		return res
+	} catch {
+		return false
+	}
+}
+
+const isVersionNewer = (codeNameString) => {
+	try {
+		const current = parseInt((process.env.npm_package_version || "0.0.0").replaceAll(".", ""))
+		const remote = parseInt((codeNameString || "0.0.0").replaceAll(/[a-zA-Z.]*/g, ""))
+		// only return true once per new verion detected
+		if (remote > current && remote > latestFetchedRemoteVersion) {
+			return true
+		}
+		return false
+	} catch {
+		return false
+	}
+}
+
+const checkForUpdates = async (window) => {
+	console.log("checking for gayer updates...")
+	const info = await getRemoteInfo()
+	if (info && isVersionNewer(info.name)) {
+		latestFetchedRemoteVersion = info.name
+		latestFetchedRemoteNotes = info.body
+		console.log("gayer update available : " + info.name)
+		window.webContents.send("update_available", { version: info.name, notes: info.body })
+	}
+}
+
+const startUpdatePolling = (window) => {
+	checkForUpdates(window)
+	setInterval(checkForUpdates, 30000)
+}
 
 const tryYTDLPInit = async () => {
 	try {
@@ -132,7 +176,6 @@ const createYTDownloader = () => {
 	})
 }
 
-// utils
 const sortedFileList = async (files, base) => {
 	const res = []
 	for (let file of files) {
@@ -196,6 +239,8 @@ async function createWindow() {
 		}
 	})
 
+	// updates
+	startUpdatePolling(mainWindow)
 	// requirements for youtube features
 	initYTModules()
 		.then(() => (YTDLP_READY = true))
@@ -248,6 +293,16 @@ app.whenReady().then(() => {
 		} catch (error) {
 			console.log(error)
 			return error
+		}
+	})
+	ipcMain.handle("update_available", async () => {
+		try {
+			if (latestFetchedRemoteVersion != -1) {
+				return { version: latestFetchedRemoteVersion, notes: latestFetchedRemoteNotes }
+			}
+		} catch (error) {
+			console.log(error)
+			return false
 		}
 	})
 	ipcMain.handle("read_configfile", async (event, args) => {
@@ -599,6 +654,14 @@ app.whenReady().then(() => {
 			return shell.openExternal(
 				"https://accounts.google.com/ServiceLogin?service=youtube&uilel=3&passive=true&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue"
 			)
+		} catch (error) {
+			console.log(error)
+			return error
+		}
+	})
+	ipcMain.handle("open_updates_page", async () => {
+		try {
+			return shell.openExternal("https://github.com/esteakacrownie/gayer/releases/latest")
 		} catch (error) {
 			console.log(error)
 			return error
