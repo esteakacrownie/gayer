@@ -19,7 +19,10 @@ import { MdNotificationImportant } from "react-icons/md"
 
 export default function UpdatesDialog() {
 	const [open, setOpen] = useState(false)
-	const [content, setContent] = useState({ version: "-1", notes: "No notes" })
+	const [content, setContent] = useState({
+		version: "-1",
+		notes: "No notes"
+	})
 
 	const handleShow = () => {
 		setOpen(true)
@@ -71,11 +74,13 @@ export default function UpdatesDialog() {
 		<div className="fixed z-20 top-0 left-0 w-screen h-screen mx-auto p-8 backdrop-blur-sm backdrop-brightness-75 flex flex-col justify-center items-center">
 			<div className="px-8 max-h-fit flex flex-col w-full h-full justify-start gap-4 max-w-200 mx-auto">
 				<div className="p-4 flex flex-col gap-2 justify-start items-center w-full  h-full from-slate-950 to-pink-700 from-[-25%] to-150% bg-linear-180 rounded-2xl border-2 border-pink-300 shadow-pink-400/40 shadow-[0_0_7px_7px]">
-					<div className="relative w-full flex flex-col items-center gap-4">
+					<div className="relative w-full flex flex-col items-center gap-4 overflow-y-scroll">
 						<h1 className="w-full text-center font-bold text-lg">
 							Update Available : {content.version}
 						</h1>
-						<p className="whitespace-pre-wrap">{content.notes}</p>
+						<div className="h-full w-full flex flex-col justify-start items-center overflow-y-scroll">
+							<p className="whitespace-pre-wrap">{content.notes}</p>
+						</div>
 						<div className="w-full max-w-80 flex flex-row gap-2 justify-between">
 							<button
 								onClick={handleClose}
