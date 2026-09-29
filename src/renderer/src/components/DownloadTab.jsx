@@ -63,10 +63,13 @@ export default function DownloadTab() {
 	const { createPlaylist } = usePlaylistUtils()
 	const searchRequestCount = useRef(0)
 	const [ytdlpReady, setYtdlpReady] = useState(false)
+	const urlPlaylistsSongsDb = useRef({})
+	const urlPlaylistsLocalIdsDb = useRef({}) // db of local user playlist ID associated with the remote playlist ID
 	const [urlDownloadStatus, setUrlDownloadStatus] = useState("idle") // idle, downloading, success, failed
+	const [urlDownloadingSongs, setUrlDownloadingSongs] = useState([])
 	const [urlDownloadedSongs, setUrlDownloadedSongs] = useState([])
 	const [urlDownloadedPlaylists, setUrlDownloadedPlaylists] = useState([])
-	const [urlSongExistsDb, setUrlSongExistsDb] = useState({})
+	const [urlSongExistsDb, setUrlSongExistsDb] = useState({}) // db on whether a filepath downloaded from url exists on disk or not
 	const [urlPlaylistExistsDb, setUrlPlaylistExistsDb] = useState({})
 	const [isFetching, setIsFetching] = useState(false)
 	const [searchSongsResults, setSearchSongsResults] = useState([])
@@ -435,11 +438,41 @@ export default function DownloadTab() {
 		]
 	)
 
+	const videoIdFromUrl = (url) => {
+		if (url.includes("youtu.be")) {
+			return url.replace("https://", "").split("/")[1].split("&")[0]
+		} else if (url.includes("youtube.com/shorts")) {
+			return url
+				.replace("https://", "")
+				.replace("youtube.com/shorts", "")
+				.split("/")[1]
+				.split("&")[0]
+		} else if (url.includes("youtube.com/embed")) {
+			return url
+				.replace("https://", "")
+				.replace("youtube.com/embed", "")
+				.split("/")[1]
+				.split("&")[0]
+		} else if (url.includes("youtube.com/live")) {
+			return url
+				.replace("https://", "")
+				.replace("youtube.com/live", "")
+				.split("/")[1]
+				.split("&")[0]
+		} else {
+			return url.split("v=")[1].split("&")[0]
+		}
+	}
+
 	const handleDownloadFromLink = useCallback(async () => {
 		if (!downloadLocation || urlDownloadStatus == "downloading" || search.length < 8) return
 
 		setUrlDownloadStatus("downloading")
 		const isPlaylist = search.includes("?list=") || search.includes("&list=")
+		const playlistId = isPlaylist ? search.split("list=")[1].split("&")[0] : ""
+		const songId = isPlaylist ? "" : videoIdFromUrl(search)
+
+		// console.log(playlistId)
 		let result = false
 
 		if (isPlaylist) {
@@ -459,7 +492,6 @@ export default function DownloadTab() {
 		if (result) {
 			setUrlDownloadStatus("success")
 			if (isPlaylist) {
-				createPlaylist(getFolderName(result[0], 1), result, search)
 				setUrlDownloadedPlaylists((p) => [...new Set([...p, getFolderName(result[0], 1)])])
 				setUrlDownloadedSongs((p) => [...new Set([...p, ...result])])
 			} else {
@@ -475,7 +507,13 @@ export default function DownloadTab() {
 		} else {
 			setUrlDownloadStatus("failed")
 		}
-
+		if (isPlaylist) {
+			setUrlDownloadingSongs((p) =>
+				p.filter((e) => !urlPlaylistsSongsDb.current[playlistId].includes(e))
+			)
+		} else {
+			setUrlDownloadingSongs((p) => p.filter((e) => e != songId))
+		}
 		setForceRefreshLocationsTracker((p) => p + 1)
 	}, [
 		search,
@@ -484,9 +522,79 @@ export default function DownloadTab() {
 		ytCookiesBrowser,
 		ytCookiesEnabled,
 		urlDownloadStatus,
-		setForceRefreshLocationsTracker,
-		createPlaylist
+		setForceRefreshLocationsTracker
 	])
+
+	// url download event from main process
+	useEffect(() => {
+		// const example = {
+		// 	id: "Oce3DFa6AXY",
+		// 	title: "Papercut",
+		// 	fulltitle: "Papercut",
+		// 	uploader: "Linkin Park",
+		// 	uploader_id: null,
+		// 	uploader_url: null,
+		// 	license: null,
+		// 	creators: ["Linkin Park"] | null,
+		// 	creator: "Linkin Park" | null,
+		// 	release_year: 2000,
+		// 	channel: "Linkin Park",
+		// 	channel_id: "UCxgN32UVVztKAQd2HkXzBtw",
+		// 	channel_url: "https://www.youtube.com/channel/UCxgN32UVVztKAQd2HkXzBtw",
+		// 	playlist_id: "OLAK5uy_ncbxWnjKunOOgJ7N1XELrneNgiaMMPXxA",
+		// 	playlist_title: "Album - Hybrid Theory",
+		// 	playlist: "Album - Hybrid Theory",
+		// 	playlist_count: 12,
+		// 	playlist_index: 1,
+		// 	playlist_uploader: null,
+		// 	playlist_uploader_id: null,
+		// 	playlist_channel: null,
+		// 	playlist_channel_id: null,
+		// 	playlist_webpage_url:
+		// 		"https://www.youtube.com/playlist?list=OLAK5uy_ncbxWnjKunOOgJ7N1XELrneNgiaMMPXxA",
+		// 	webpage_url: "https://www.youtube.com/watch?v=Oce3DFa6AXY",
+		// 	original_url: "https://music.youtube.com/watch?v=Oce3DFa6AXY",
+		// 	categories: ["Music"],
+		// 	filepath: null
+		// }
+		const unsubStarted = window.electron.ipcRenderer.on("url_audio_started", (e, v) => {
+			if (v.playlist_id) {
+				const db = { ...urlPlaylistsSongsDb.current }
+				db[v.playlist_id] = [...new Set([...(db[v.playlist_id] || []), v.id])]
+				urlPlaylistsSongsDb.current = db
+			}
+			setUrlDownloadingSongs((p) => [...new Set([...p, v.filepath])])
+		})
+		const unsubFinished = window.electron.ipcRenderer.on("url_audio_complete", (e, v) => {
+			if (v.playlist_id) {
+				if (!urlPlaylistsLocalIdsDb.current[v.playlist_id]) {
+					urlPlaylistsLocalIdsDb.current[v.playlist_id] = createPlaylist(
+						getFolderName(v.filepath, 1),
+						[v.filepath],
+						v.playlist_url
+					)
+				} else {
+					const pl = []
+					for (let p of playlists) {
+						const temp = { ...p }
+						if (p.id == urlPlaylistsLocalIdsDb.current[v.playlist_id]) {
+							temp.songs = [...p.songs, v.filepath]
+						}
+						pl.push(temp)
+					}
+					setPlaylists(pl)
+				}
+			}
+
+			setUrlDownloadingSongs((p) => p.filter((e) => e != v.filepath))
+			setUrlDownloadedSongs((p) => [...new Set([...p, v.filepath])])
+			setForceRefreshLocationsTracker((p) => p + 1)
+		})
+		return () => {
+			unsubStarted()
+			unsubFinished()
+		}
+	}, [setForceRefreshLocationsTracker, playlists, createPlaylist, setPlaylists])
 
 	const SongEntry = useCallback(
 		(e) => {
@@ -748,6 +856,17 @@ export default function DownloadTab() {
 		]
 	)
 
+	// array of songs on disk
+	const urlSongsOnDisk = useMemo(() => {
+		const res = []
+		Object.keys(urlSongExistsDb).map((e) => {
+			if (urlSongExistsDb[e] === true) {
+				res.push(e)
+			}
+		})
+		return res
+	}, [urlSongExistsDb])
+
 	const URLSongEntry = useCallback(
 		(e) => {
 			return (
@@ -755,16 +874,39 @@ export default function DownloadTab() {
 					title={getSongName(e)}
 					onClick={() => showSongInLibrary(getSongName(e))}
 					className={cn(
-						"flex flex-row items-center justify-between w-full h-10 px-3 rounded-lg overflow-clip bg-pink-600/25 hover:bg-pink-500/25 relative gap-2 transition ease-out duration-200 cursor-pointer hover:bg-pink-600/35"
+						"flex flex-row items-center justify-between w-full h-10 rounded-lg overflow-clip bg-pink-600/25 hover:bg-pink-500/25 relative gap-2 transition ease-out duration-200 cursor-pointer hover:bg-pink-600/35"
 					)}
 				>
 					<div className="flex flex-row items-center gap-2">
-						<span className="line-clamp-1">{getSongName(e)}</span>
+						<span className="line-clamp-1 pl-3">{getSongName(e)}</span>
 					</div>
+					{urlDownloadingSongs.includes(e) ? (
+						<>
+							<div
+								title="Downloading..."
+								className="h-10 aspect-square flex flex-col justify-center items-center transition ease-out duration-200"
+							>
+								<TbLoader2 className="animate-spin" size={20} />
+							</div>
+						</>
+					) : (
+						<>
+							{urlSongsOnDisk.includes(e) ? (
+								<div
+									title="Downloaded. Click to remove song"
+									className="bg-green-900 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-green-300 text-green-300 transition ease-out duration-200"
+								>
+									<IoMdCheckmark size={20} />
+								</div>
+							) : (
+								<></>
+							)}
+						</>
+					)}
 				</div>
 			)
 		},
-		[showSongInLibrary]
+		[showSongInLibrary, urlDownloadingSongs, urlSongsOnDisk]
 	)
 
 	const URLAlbumEntry = useCallback(
@@ -788,18 +930,19 @@ export default function DownloadTab() {
 
 	const downloadingLabel = useMemo(() => {
 		if (queuedSongsDownload.length > 0) {
-			return `Downloading ${queuedSongsDownload.length} song(s)`
+			return `Downloading ${queuedSongsDownload.length + urlDownloadingSongs.length} song(s)`
 		}
 		return ""
-	}, [queuedSongsDownload])
+	}, [queuedSongsDownload, urlDownloadingSongs])
 
 	const failedLabel = useMemo(() => {
-		if (queuedSongsFailed.length > 0 && !(queuedAlbumsFailed.length > 0)) {
-			return `${queuedSongsFailed.length} song(s) failed`
-		} else if (!(queuedSongsFailed.length > 0) && queuedAlbumsFailed.length > 0) {
+		const s = queuedSongsFailed.length
+		if (s > 0 && !(queuedAlbumsFailed.length > 0)) {
+			return `${s} song(s) failed`
+		} else if (!(s > 0) && queuedAlbumsFailed.length > 0) {
 			return `${queuedAlbumsFailed.length} album(s) failed`
-		} else if (queuedSongsFailed.length > 0 && queuedAlbumsFailed.length > 0) {
-			return `${queuedSongsFailed.length} song(s), ${queuedAlbumsFailed.length} album(s) failed`
+		} else if (s > 0 && queuedAlbumsFailed.length > 0) {
+			return `${s} song(s), ${queuedAlbumsFailed.length} album(s) failed`
 		}
 		return ""
 	}, [queuedSongsFailed, queuedAlbumsFailed])
@@ -882,16 +1025,6 @@ export default function DownloadTab() {
 			</button>
 		)
 	}, [browserCookiesIcon, ytCookiesBrowser, setYtCookiesBrowser])
-
-	const urlSongsOnDisk = useMemo(() => {
-		const res = []
-		Object.keys(urlSongExistsDb).map((e) => {
-			if (urlSongExistsDb[e] === true) {
-				res.push(e)
-			}
-		})
-		return res
-	}, [urlSongExistsDb])
 
 	const urlPlaylistsOnDisk = useMemo(() => {
 		const res = []
@@ -991,6 +1124,7 @@ export default function DownloadTab() {
 	const handledRequestedDownloads = useRef([]) // requested paths that are currently being downloaded (intersection of replacementTracksDb.current[missingPath], this array, and queuedSongsComplete gives the available replacements)
 	const handledRequestedSongElements = useRef([]) // paths whose songElts have already being fetched or are being fetched
 
+	// download missing songs from playlists
 	const downloadSongElements = async (requests) => {
 		const paths = requests.filter((e) => !handledRequestedSongElements.current.includes(e))
 		handledRequestedSongElements.current = [
@@ -1438,7 +1572,22 @@ export default function DownloadTab() {
 							))}
 						</motion.ul>
 					)}
-					{["songs", "downloaded"].includes(filter) && urlSongsOnDisk.length > 0 && (
+					{filter == "songs" &&
+						urlDownloadedSongs.length + urlDownloadingSongs.length > 0 && (
+							<motion.ul className="flex flex-col gap-2">
+								<motion.li layout key="?urlSongsLabel" className="font-bold">
+									Audio downloaded from link
+								</motion.li>
+								{[...new Set([...urlDownloadedSongs, ...urlDownloadingSongs])].map(
+									(e) => (
+										<motion.li layout key={e}>
+											{URLSongEntry(e)}
+										</motion.li>
+									)
+								)}
+							</motion.ul>
+						)}
+					{filter == "downloaded" && urlSongsOnDisk.length > 0 && (
 						<motion.ul className="flex flex-col gap-2">
 							<motion.li layout key="?urlDownloadedSongsLabel" className="font-bold">
 								Audio downloaded from link

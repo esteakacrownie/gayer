@@ -85,11 +85,19 @@ export const pathToCoverArtQuery = (p) => {
 }
 
 export const albumArtQueryForPath = (p) => {
-	const query = pathToCoverArtQuery(p)
-	return albumArt(query.artist, {
-		album: `${query.album} ${query.track}`.trim(),
-		size: "large"
-	})
+	let failed = true
+	while (failed) {
+		try {
+			const query = pathToCoverArtQuery(p)
+			failed = false
+			return albumArt(query.artist, {
+				album: `${query.album} ${query.track}`.trim(),
+				size: "large"
+			})
+		} catch {
+			delay(5000)
+		}
+	}
 }
 
 export const batchAlbumArtQueriesForPaths = async (files) => {

@@ -49,11 +49,13 @@ export default function usePlaylistUtils() {
 			if (!name) return
 			const n = name.trim()
 			if (!n) return
-			const p = { id: generateUnusedID(), name: n, songs: songs }
+			const id = generateUnusedID()
+			const p = { id, name: n, songs: songs }
 			if (url) {
 				p.url = url
 			}
 			setPlaylists([...playlists, p])
+			return id
 		},
 		[generateUnusedID, setPlaylists, playlists]
 	)

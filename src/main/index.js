@@ -23,6 +23,9 @@ import { windowStateKeeper } from "./stateKeeper"
 import YTMusic from "ytmusic-api"
 import { YtDlp, helpers } from "ytdlp-nodejs"
 
+// global references
+const appName = "com.integraxseras.Gayer"
+const dirs = appDirs({ appName })
 let token = ""
 if (existsSync(join(process.resourcesPath, "updates/TOKEN"))) {
 	token = readFileSync(join(process.resourcesPath, "updates/TOKEN"), { encoding: "utf8" })
@@ -31,13 +34,8 @@ if (existsSync(join(process.resourcesPath, "updates/TOKEN"))) {
 		token = readFileSync("updates/TOKEN", { encoding: "utf8" })
 	}
 }
-
 const bearer = "Bearer " + token
-
-// global references
-const appName = "com.integraxseras.Gayer"
-const dirs = appDirs({ appName })
-
+let appWindow = null
 let YTM_INITIALIZED = false
 let YTDLP_READY = false
 let ytdlpBinaryPath = ""
@@ -93,11 +91,14 @@ const checkForUpdates = async (window) => {
 	console.log("checking for gayer updates...")
 	const info = await getRemoteInfo()
 	// console.log(info)
-	if (info && isVersionNewer(info.name)) {
+	const newer = isVersionNewer(info.name)
+	if (info && newer) {
 		latestFetchedRemoteVersion = info.name
 		latestFetchedRemoteNotes = info.body
 		console.log("gayer update available : " + info.name)
 		window.webContents.send("update_available", { version: info.name, notes: info.body })
+	} else if (info && !newer) {
+		console.log("gayer is up to date : " + getVersion())
 	}
 }
 
@@ -296,6 +297,8 @@ async function createWindow() {
 	} else {
 		mainWindow.loadFile(join(__dirname, "../renderer/index.html"))
 	}
+
+	return mainWindow
 }
 
 // This method will be called when Electron has finished
@@ -612,6 +615,7 @@ app.whenReady().then(() => {
 				return false
 			}
 			await YtdlpAwaiter()
+			let processingElt = {}
 			// args : url, destination, artist
 			const res = await createYTDownloader().downloadAsync(args.url, {
 				format: { filter: "audioonly", quality: "0", type: "mp3" },
@@ -620,7 +624,22 @@ app.whenReady().then(() => {
 					"%(artists.0,channel)s/%(track,title)s - %(artists.0,channel)s.mp3"
 				),
 				rawArgs: args.browserCookies ? ["--cookies-from-browser", args.browserCookies] : [],
-				onProgress: (p) => console.log(`${p.percentage_str}`)
+				onProgress: (p) => {
+					if (appWindow) {
+						if (p.status === "finished") {
+							appWindow.webContents.send("url_audio_complete", processingElt)
+						} else if (p.status === "downloading") {
+							if (processingElt.filepath != p.filename.replace("webm", "mp3")) {
+								processingElt.filepath = p.filename.replace("webm", "mp3")
+								appWindow.webContents.send("url_audio_started", processingElt)
+							}
+						}
+					}
+					console.log(`${p.percentage_str}`)
+				},
+				beforeDownload: (info) => {
+					processingElt = info
+				}
 			})
 			removeYTDownloader()
 			return res.filePaths
@@ -636,6 +655,7 @@ app.whenReady().then(() => {
 				return false
 			}
 			await YtdlpAwaiter()
+			let processingElt = {}
 			// args : url, destination, artist
 			const res = await createYTDownloader().downloadAsync(args.url, {
 				format: { filter: "audioonly", quality: "0", type: "mp3" },
@@ -644,10 +664,26 @@ app.whenReady().then(() => {
 					"%(playlist)s%(playlist_channel& - |)s%(playlist_channel|)s/%(album,playlist)s%(album& - |)s%(album_artists.0,artists.0|)s/%(track,title)s - %(artists.0,channel)s.mp3"
 				),
 				rawArgs: args.browserCookies ? ["--cookies-from-browser", args.browserCookies] : [],
-				onProgress: (p) => console.log(`${p.percentage_str}`)
+				onProgress: (p) => {
+					if (appWindow) {
+						if (p.status === "finished") {
+							appWindow.webContents.send("url_audio_complete", processingElt)
+						} else if (p.status === "downloading") {
+							if (processingElt.filepath != p.filename.replace("webm", "mp3")) {
+								processingElt.filepath = p.filename.replace("webm", "mp3")
+								appWindow.webContents.send("url_audio_started", processingElt)
+							}
+						}
+					}
+					console.log(`${p.percentage_str}`)
+				},
+				beforeDownload: (info) => {
+					processingElt = info
+				}
 			})
 			removeYTDownloader()
 			return res.filePaths
+			// return res.filePaths
 		} catch (error) {
 			console.log(error)
 			removeYTDownloader()
@@ -698,7 +734,7 @@ app.whenReady().then(() => {
 		return YTDLP_READY
 	})
 
-	createWindow()
+	createWindow().then((w) => (appWindow = w))
 
 	app.on("activate", function () {
 		// On macOS it's common to re-create a window in the app when the
