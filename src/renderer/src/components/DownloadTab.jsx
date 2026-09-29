@@ -61,9 +61,9 @@ export default function DownloadTab() {
 	const { playlists, setPlaylists, requestedTracksReplacements, setRequestedTracksReplacements } =
 		usePlaylistsStore()
 	const { createPlaylist } = usePlaylistUtils()
-	const searchRequestCount = useRef(0)
+	const searchRequestCount = useRef(0) // discarding old async requests by tracking the lastest search request modification
 	const [ytdlpReady, setYtdlpReady] = useState(false)
-	const urlPlaylistsSongsDb = useRef({})
+	const urlPlaylistsSongsDb = useRef({}) // db of song paths belonging to a url playlist
 	const urlPlaylistsLocalIdsDb = useRef({}) // db of local user playlist ID associated with the remote playlist ID
 	const [urlDownloadStatus, setUrlDownloadStatus] = useState("idle") // idle, downloading, success, failed
 	const [urlDownloadingSongs, setUrlDownloadingSongs] = useState([])
