@@ -20,13 +20,20 @@ import usePlayerControls from "../hooks/usePlayerControls"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import { getFolderName, getSortedFilesAt, shuffleArray } from "../utils"
 import { FaPlay, FaStepForward } from "react-icons/fa"
-import { MdAddCircleOutline, MdDelete, MdPlaylistAdd } from "react-icons/md"
+import {
+	MdAddCircleOutline,
+	MdDelete,
+	MdImage,
+	MdImageNotSupported,
+	MdPlaylistAdd
+} from "react-icons/md"
 import CoverImage from "./CoverImage"
 import { motion } from "motion/react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import useConfirm from "../hooks/useConfirmationButton"
+import { useCacheStore } from "../stores/useCacheStore"
 
 export default function PlaylistElement({
 	playlist,
@@ -36,6 +43,7 @@ export default function PlaylistElement({
 	showPlayNext = true,
 	showAddToQueue = true,
 	showAddToPlaylist = true,
+	showThumbnailToggle = true,
 	showDelete = true
 }) {
 	const {
@@ -50,6 +58,8 @@ export default function PlaylistElement({
 
 	const { shufflePlay, setForceRefreshLocationsTracker } = useSettingsStore()
 
+	const { thumbnailCache, setThumbnailCache } = useCacheStore()
+
 	const { playSongs, playBatchNext } = usePlayerControls()
 
 	const { playlists, setPlaylists, setSelectedSongPath } = usePlaylistsStore()
@@ -60,17 +70,58 @@ export default function PlaylistElement({
 		setSelectedSongPath(songs)
 	}, [songs, setSelectedSongPath])
 
+	const playlistThumbnail = useMemo(() => {
+		for (let s of songs) {
+			if (thumbnailCache[s] && thumbnailCache[s] != "#") {
+				return s
+			}
+		}
+		return null
+	}, [songs, thumbnailCache])
+
+	const songThumbEnabled = useMemo(() => {
+		for (let s of songs) {
+			if (thumbnailCache[s] != "#") {
+				return true
+			}
+		}
+		return false
+	}, [songs, thumbnailCache])
+
+	const handleToggleThumbnail = useCallback(() => {
+		if (songThumbEnabled) {
+			const updated = {}
+			for (let s of songs) {
+				updated[s] = "#"
+			}
+			// console.log(updated)
+			setThumbnailCache({ ...thumbnailCache, ...updated })
+		} else {
+			const updated = { ...thumbnailCache }
+			for (let s of songs) {
+				if (updated[s]) {
+					delete updated[s]
+				}
+			}
+			// console.log(updated)
+			setThumbnailCache(updated)
+		}
+	}, [thumbnailCache, setThumbnailCache, songs, songThumbEnabled])
+
 	const fetchSongs = useCallback(async () => {
 		const { songs: res } = await getSortedFilesAt(playlist)
 		if (res) setSongs(res)
 	}, [playlist])
 
 	useEffect(() => {
-		if (isPlaylist) {
-			setSongs(playlists.filter((e) => e.id == playlist)[0].songs)
-		} else {
-			fetchSongs()
+		const action = async () => {
+			if (isPlaylist) {
+				setSongs(playlists.filter((e) => e.id == playlist)[0].songs)
+			} else {
+				fetchSongs()
+			}
 		}
+		action()
 	}, [playlist, playlists, isPlaylist, fetchSongs])
 
 	const [deleting, setDeleting] = useConfirm()
@@ -248,6 +299,39 @@ export default function PlaylistElement({
 						<MdAddCircleOutline size={20} />
 					</motion.div>
 				)}
+				{showThumbnailToggle && (
+					<motion.div
+						title={
+							songThumbEnabled
+								? `Disable cover art fetching for this ${isPlaylist ? "playlist" : "album"}`
+								: `Enable cover art fetching for this playlist ${isPlaylist ? "playlist" : "album"}`
+						}
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						onClick={(e) => {
+							e.stopPropagation()
+							handleToggleThumbnail()
+						}}
+						initial={{
+							scale: 1.0
+						}}
+						animate={{
+							scale: 1.0
+						}}
+						whileTap={{
+							scale: 0.8
+						}}
+						transition={{
+							duration: 0.025,
+							ease: "easeOut"
+						}}
+					>
+						{songThumbEnabled ? (
+							<MdImageNotSupported size={20} />
+						) : (
+							<MdImage size={20} />
+						)}
+					</motion.div>
+				)}
 				{showDelete && (
 					<motion.div
 						title={`Delete ${isPlaylist ? "Playlist" : "Album"}`}
@@ -292,7 +376,7 @@ export default function PlaylistElement({
 					</motion.div>
 				)}
 			</motion.div>
-			<CoverImage song={songs[0] ?? null} />
+			<CoverImage song={playlistThumbnail} />
 			<motion.div
 				layout
 				transition={{

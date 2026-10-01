@@ -880,28 +880,28 @@ export default function DownloadTab() {
 					<div className="flex flex-row items-center gap-2">
 						<span className="line-clamp-1 pl-3">{getSongName(e)}</span>
 					</div>
-					{urlDownloadingSongs.includes(e) ? (
-						<>
-							<div
-								title="Downloading..."
-								className="h-10 aspect-square flex flex-col justify-center items-center transition ease-out duration-200"
-							>
-								<TbLoader2 className="animate-spin" size={20} />
-							</div>
-						</>
-					) : (
+					{urlDownloadingSongs.includes(e) || urlDownloadedSongs.includes(e) ? (
 						<>
 							{urlSongsOnDisk.includes(e) ? (
 								<div
-									title="Downloaded. Click to remove song"
+									title="Downloaded"
 									className="bg-green-900 rounded-lg h-10 aspect-square flex flex-col justify-center items-center border border-green-300 text-green-300 transition ease-out duration-200"
 								>
 									<IoMdCheckmark size={20} />
 								</div>
 							) : (
-								<></>
+								<>
+									<div
+										title="Downloading..."
+										className="h-10 aspect-square flex flex-col justify-center items-center transition ease-out duration-200"
+									>
+										<TbLoader2 className="animate-spin" size={20} />
+									</div>
+								</>
 							)}
 						</>
+					) : (
+						<></>
 					)}
 				</div>
 			)

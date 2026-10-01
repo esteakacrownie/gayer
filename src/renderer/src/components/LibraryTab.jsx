@@ -359,7 +359,12 @@ export default function LibraryTab() {
 		{ enableOnFormTags: true }
 	)
 
-	if (tab != "library") return
+	if (tab != "library")
+		return (
+			<>
+				<CoverArtUpdater songs={songs} />
+			</>
+		)
 
 	return (
 		<>
@@ -720,6 +725,7 @@ export default function LibraryTab() {
 const CoverArtUpdater = ({ songs = [] }) => {
 	const { thumbnailCache, setThumbnailCache } = useCacheStore()
 	const { files } = useFilesStore()
+	const { queue } = usePlayerStore()
 
 	const alreadyFetchedArtPaths = useRef([])
 	const processingArtPaths = useRef([])
@@ -762,15 +768,39 @@ const CoverArtUpdater = ({ songs = [] }) => {
 			thumbnailCacheRef.current = { ...thumbnailCache }
 		}
 
+		// set explicitly disabled paths
+		const paths = Object.keys(thumbnailCache)
+		for (let p of paths) {
+			if (thumbnailCache[p] == "#") {
+				thumbnailCacheRef.current[p] = "#"
+			}
+		}
+		const missing = []
+		for (let p of Object.keys(thumbnailCacheRef.current)) {
+			if (thumbnailCacheRef.current[p] == "#" && !thumbnailCache[p]) {
+				delete thumbnailCacheRef.current[p]
+				alreadyFetchedArtPaths.current = alreadyFetchedArtPaths.current.filter(
+					(e) => e != p
+				)
+				missing.push(p)
+			}
+		}
+
 		const ignore = [
 			...new Set([...processingArtPaths.current, ...alreadyFetchedArtPaths.current])
 		]
-		const f = [...new Set([...songs, ...files.map((e) => e.path)])].filter(
-			(e) => !ignore.includes(e)
-		)
-		processingArtPaths.current = [...new Set([...processingArtPaths.current, ...f])]
-		fetchCoverArts(f)
-	}, [songs, files])
+		const f = [
+			...new Set(
+				[...songs, ...queue, ...files.map((e) => e.path)]
+					.filter((e) => !ignore.includes(e))
+					.concat(missing)
+			)
+		]
+		if (f.length > 0) {
+			processingArtPaths.current = [...new Set([...processingArtPaths.current, ...f])]
+			fetchCoverArts(f)
+		}
+	}, [songs, files, queue, fetchCoverArts, thumbnailCache])
 
 	// cache auto refresh
 	useEffect(() => {
@@ -789,7 +819,7 @@ const CoverArtUpdater = ({ songs = [] }) => {
 		return () => {
 			clearInterval(cacheUpdate)
 		}
-	}, [thumbnailCacheRef, thumbnailCache])
+	}, [thumbnailCacheRef, thumbnailCache, queue, setThumbnailCache, fetchCoverArts])
 
 	return
 }

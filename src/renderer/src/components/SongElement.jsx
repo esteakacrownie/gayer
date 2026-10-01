@@ -18,14 +18,22 @@ import usePlayerControls from "../hooks/usePlayerControls"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import { getSongName } from "../utils"
 import { FaPlay, FaStepForward } from "react-icons/fa"
-import { MdAddCircleOutline, MdDelete, MdPlaylistAdd, MdPlaylistRemove } from "react-icons/md"
+import {
+	MdAddCircleOutline,
+	MdDelete,
+	MdImage,
+	MdImageNotSupported,
+	MdPlaylistAdd,
+	MdPlaylistRemove
+} from "react-icons/md"
 import { IoMusicalNotes } from "react-icons/io5"
 import CoverImage from "./CoverImage"
 import { motion } from "motion/react"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import useConfirm from "../hooks/useConfirmationButton"
-import { useCallback } from "react"
+import { useCallback, useMemo } from "react"
+import { useCacheStore } from "../stores/useCacheStore"
 
 export default function SongElement({
 	song,
@@ -37,6 +45,7 @@ export default function SongElement({
 	showAddToQueue = true,
 	showRemoveFromQueue = false,
 	showAddToPlaylist = true,
+	showThumbnailToggle = true,
 	showDelete = true,
 	highlightIfPlaying = true
 }) {
@@ -46,12 +55,30 @@ export default function SongElement({
 
 	const { setForceRefreshLocationsTracker } = useSettingsStore()
 
+	const { thumbnailCache, setThumbnailCache } = useCacheStore()
+
 	const { handlePlayNext, handleAddToQueue, handleRemoveFromQueue, playFromQueue, setMusic } =
 		usePlayerControls()
 
 	const handleAddToPlaylist = () => {
 		setSelectedSongPath(song)
 	}
+
+	const songThumbEnabled = useMemo(() => {
+		return !(thumbnailCache[song] == "#")
+	}, [song, thumbnailCache])
+
+	const handleToggleThumbnail = useCallback(() => {
+		if (songThumbEnabled) {
+			const updated = {}
+			updated[song] = "#"
+			setThumbnailCache({ ...thumbnailCache, ...updated })
+		} else {
+			const updated = { ...thumbnailCache }
+			delete updated[song]
+			setThumbnailCache(updated)
+		}
+	}, [thumbnailCache, setThumbnailCache, song, songThumbEnabled])
 
 	const [deleting, setDeleting] = useConfirm()
 	const handleRemoveTrack = useCallback(async () => {
@@ -219,6 +246,39 @@ export default function SongElement({
 						}}
 					>
 						<MdAddCircleOutline size={20} />
+					</motion.div>
+				)}
+				{showThumbnailToggle && (
+					<motion.div
+						title={
+							songThumbEnabled
+								? "Disable cover art fetching for this song"
+								: "Enable cover art fetching for this song"
+						}
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						onClick={(e) => {
+							e.stopPropagation()
+							handleToggleThumbnail()
+						}}
+						initial={{
+							scale: 1.0
+						}}
+						animate={{
+							scale: 1.0
+						}}
+						whileTap={{
+							scale: 0.8
+						}}
+						transition={{
+							duration: 0.025,
+							ease: "easeOut"
+						}}
+					>
+						{songThumbEnabled ? (
+							<MdImageNotSupported size={20} />
+						) : (
+							<MdImage size={20} />
+						)}
 					</motion.div>
 				)}
 				{showDelete && (
