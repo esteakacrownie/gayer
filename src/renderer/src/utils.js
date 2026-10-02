@@ -15,6 +15,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import albumArt from "album-art"
 
+export const delay = (t) => {
+	return new Promise((res) => setTimeout(res, t))
+}
+
+const toKeywords = (expr) => {
+	return expr
+		.split(" ")
+		.filter((e) => e.trim() != "")
+		.map((e) => e.toLowerCase())
+}
+
+export const hasSearchKeywords = (expr, search) => {
+	const splitexp = toKeywords(expr)
+	const splitsearch = toKeywords(search)
+	const matches = []
+	let res = false
+	for (let s1 of splitsearch) {
+		let skip = false
+		for (let s2 of splitexp) {
+			if (s2.includes(s1)) {
+				matches.push(s2)
+				skip = true
+			}
+			if (skip) break
+		}
+		if (skip) continue
+	}
+	if (matches.length == splitsearch.length) {
+		res = true
+		// console.log(matches)
+	}
+	return res
+}
+
 export const getSongName = (p) => {
 	// console.log(p)
 	if (!p) return ""
@@ -28,10 +62,6 @@ export const getSongName = (p) => {
 		}
 	})
 	return res
-}
-
-export const delay = (t) => {
-	return new Promise((res) => setTimeout(res, t))
 }
 
 export const getFolderName = (p, parentLevels = 0) => {

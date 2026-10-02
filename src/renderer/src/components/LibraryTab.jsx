@@ -36,7 +36,8 @@ import {
 	isMusicFile,
 	shuffleArray,
 	toSearchString,
-	albumArtQueryForPath
+	albumArtQueryForPath,
+	hasSearchKeywords
 } from "../utils"
 import SongElement from "./SongElement"
 import { usePlayerStore } from "../stores/usePlayerStore"
@@ -158,26 +159,29 @@ export default function LibraryTab() {
 		setSongsScrollPage(page)
 	}
 
-	const filteredSongs = useMemo(() => {
-		const res = songs.filter((n) =>
-			toSearchString(`${getFolderName(n)} - ${getSongName(n)}`).includes(
-				toSearchString(search)
-			)
-		)
-		return res
+	const [filteredSongs, setFilteredSongs] = useState([])
+	useEffect(() => {
+		const action = async () => {
+			const res = songs.filter((n) => {
+				const songName = `${getFolderName(n)} - ${getSongName(n)}`
+				return (
+					toSearchString(songName).includes(toSearchString(search)) ||
+					hasSearchKeywords(songName, search)
+				)
+			})
+			setFilteredSongs(res)
+		}
+		action()
 	}, [songs, search])
 
-	const hasAlbumFilteredSong = useCallback(
-		(elt) => {
-			for (let s of filteredSongs) {
-				if (s.includes(elt)) {
-					return true
-				}
+	const hasAlbumFilteredSong = (elt, filteredSongs) => {
+		for (let s of filteredSongs) {
+			if (s.includes(elt)) {
+				return true
 			}
-			return false
-		},
-		[filteredSongs]
-	)
+		}
+		return false
+	}
 
 	const fetchSongs = useCallback(async () => {
 		let allSongs = []
@@ -280,27 +284,38 @@ export default function LibraryTab() {
 		return albumSongsCount.filter(
 			(elt) =>
 				toSearchString(getFolderName(elt.path)).includes(toSearchString(search)) ||
-				hasAlbumFilteredSong(elt.path)
+				hasAlbumFilteredSong(elt.path, filteredSongs)
 		)
-	}, [albumSongsCount, search, hasAlbumFilteredSong])
+	}, [albumSongsCount, search, filteredSongs])
 
-	const filteredAlbumsSongs = useMemo(() => {
-		let list = []
-		filteredAlbums.map((elt) => {
-			list = list.concat(songs.filter((s) => s.includes(elt.path)))
-		})
-		filteredPlaylists.map((e) => {
-			list = list.concat(getPlaylistFromId(e.id).songs)
-		})
-		return [...new Set(list)]
+	const [filteredAlbumsSongs, setFilteredAlbumsSongs] = useState([])
+	useEffect(() => {
+		const action = async () => {
+			let list = []
+			filteredAlbums.map((elt) => {
+				list = list.concat(songs.filter((s) => s.includes(elt.path)))
+			})
+			filteredPlaylists.map((e) => {
+				list = list.concat(getPlaylistFromId(e.id).songs)
+			})
+			setFilteredAlbumsSongs([...new Set(list)])
+		}
+		action()
 	}, [filteredAlbums, filteredPlaylists, getPlaylistFromId, songs])
 
-	const filteredSelectedAlbumSongs = useMemo(() => {
-		return selectedAlbumSongs.filter((n) =>
-			toSearchString(`${getFolderName(n)} - ${getSongName(n)}`).includes(
-				toSearchString(search)
-			)
-		)
+	const [filteredSelectedAlbumSongs, setFilteredSelectedAlbumSongs] = useState([])
+	useEffect(() => {
+		const action = async () => {
+			const res = selectedAlbumSongs.filter((n) => {
+				const songName = `${getFolderName(n)} - ${getSongName(n)}`
+				return (
+					toSearchString(songName).includes(toSearchString(search)) ||
+					hasSearchKeywords(songName, search)
+				)
+			})
+			setFilteredSelectedAlbumSongs(res)
+		}
+		action()
 	}, [selectedAlbumSongs, search])
 
 	// fetch album or playlist songs upon browsing

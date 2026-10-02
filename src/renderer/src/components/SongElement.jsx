@@ -126,7 +126,7 @@ export default function SongElement({
 				{showPlayNow && (
 					<motion.div
 						title="Play now"
-						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col outline-none justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation()
 							fromQueue && queueIdx >= 0 ? playFromQueue(queueIdx) : setMusic(song)
@@ -151,7 +151,7 @@ export default function SongElement({
 				{showPlayNext && (
 					<motion.div
 						title="Play next"
-						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col outline-none justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation()
 							handlePlayNext(song)
@@ -176,7 +176,7 @@ export default function SongElement({
 				{showAddToQueue && (
 					<motion.div
 						title="Add to queue"
-						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col outline-none justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation()
 							handleAddToQueue(song)
@@ -201,7 +201,7 @@ export default function SongElement({
 				{showRemoveFromQueue && (
 					<motion.div
 						title="Remove from queue"
-						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col outline-none justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation()
 							handleRemoveFromQueue(song)
@@ -226,7 +226,7 @@ export default function SongElement({
 				{showAddToPlaylist && (
 					<motion.div
 						title="Add to playlist"
-						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col outline-none justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation()
 							handleAddToPlaylist(song)
@@ -255,7 +255,7 @@ export default function SongElement({
 								? "Disable cover art fetching for this song"
 								: "Enable cover art fetching for this song"
 						}
-						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col outline-none justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation()
 							handleToggleThumbnail()
@@ -285,7 +285,7 @@ export default function SongElement({
 					<motion.div
 						title="Delete Track"
 						className={cn(
-							"hover:bg-red-600/50 text-red-700 bg-red-200/70 hover:text-white rounded-lg flex flex-row gap-4 justify-start items-center h-10 transition ease-out duration-200 cursor-pointer overflow-clip",
+							"hover:bg-red-600/50 text-red-700 bg-red-200/70 hover:text-white rounded-lg flex flex-row outline-none gap-4 justify-start items-center h-10 transition ease-out duration-200 cursor-pointer overflow-clip",
 							deleting && "pr-2 gap-0"
 						)}
 						onClick={(e) => {

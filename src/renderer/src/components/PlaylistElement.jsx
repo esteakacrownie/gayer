@@ -203,7 +203,7 @@ export default function PlaylistElement({
 			>
 				<motion.div
 					title="Play now"
-					className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+					className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col outline-none justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 					onClick={(e) => {
 						e.stopPropagation()
 						handleBatchPlay()
@@ -227,7 +227,7 @@ export default function PlaylistElement({
 				{showPlayNext && (
 					<motion.div
 						title="Play next"
-						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col outline-none justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation()
 							handleBatchPlayNext()
@@ -252,7 +252,7 @@ export default function PlaylistElement({
 				{showAddToQueue && (
 					<motion.div
 						title="Add to queue"
-						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col outline-none justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation()
 							handleBatchAddToQueue()
@@ -277,7 +277,7 @@ export default function PlaylistElement({
 				{showAddToPlaylist && songs.length > 0 && (
 					<motion.div
 						title="Add to playlist"
-						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col outline-none justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation()
 							handleAddToPlaylist()
@@ -306,7 +306,7 @@ export default function PlaylistElement({
 								? `Disable cover art fetching for this ${isPlaylist ? "playlist" : "album"}`
 								: `Enable cover art fetching for this playlist ${isPlaylist ? "playlist" : "album"}`
 						}
-						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
+						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col outline-none justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation()
 							handleToggleThumbnail()
@@ -336,7 +336,7 @@ export default function PlaylistElement({
 					<motion.div
 						title={`Delete ${isPlaylist ? "Playlist" : "Album"}`}
 						className={cn(
-							"hover:bg-red-600/50 text-red-700 bg-red-200/70 hover:text-white rounded-lg flex flex-row gap-4 justify-start items-center h-10 transition ease-out duration-200 cursor-pointer overflow-clip",
+							"hover:bg-red-600/50 text-red-700 bg-red-200/70 hover:text-white rounded-lg flex flex-row outline-none gap-4 justify-start items-center h-10 transition ease-out duration-200 cursor-pointer overflow-clip",
 							deleting && "pr-2 gap-0"
 						)}
 						onClick={(e) => {
