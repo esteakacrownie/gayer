@@ -1078,14 +1078,9 @@ export default function DownloadTab() {
 	}, [search, linkEnabled])
 
 	// auto switch to link mode
-	useEffect(() => {
-		const action = async () => {
-			if (search.startsWith("https://")) {
-				setLinkEnabled(true)
-			}
-		}
-		action()
-	}, [search])
+	if (search.startsWith("https://")) {
+		setLinkEnabled(true)
+	}
 
 	// process unlisted albums
 	useEffect(() => {

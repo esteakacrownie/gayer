@@ -19,8 +19,9 @@ export const delay = (t) => {
 	return new Promise((res) => setTimeout(res, t))
 }
 
-const toKeywords = (expr) => {
+export const toKeywords = (expr) => {
 	return expr
+		.replaceAll(/[:_-]*/g, " ")
 		.split(" ")
 		.filter((e) => e.trim() != "")
 		.map((e) => e.toLowerCase())

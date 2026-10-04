@@ -37,7 +37,8 @@ import {
 	shuffleArray,
 	toSearchString,
 	albumArtQueryForPath,
-	hasSearchKeywords
+	hasSearchKeywords,
+	toKeywords
 } from "../utils"
 import SongElement from "./SongElement"
 import { usePlayerStore } from "../stores/usePlayerStore"
@@ -55,6 +56,7 @@ import { useCacheStore } from "../stores/useCacheStore"
 import { useHotkeys } from "react-hotkeys-hook"
 import FixMissingPlaylistTracksButton from "./FixMissingPlaylistTracksButton"
 import FixMissingPlaylistTracksIndicator from "./FixMissingPlaylistTracksIndicator"
+import Fuse from "fuse.js"
 
 export default function LibraryTab() {
 	const maxLength = 25
@@ -162,13 +164,20 @@ export default function LibraryTab() {
 	const [filteredSongs, setFilteredSongs] = useState([])
 	useEffect(() => {
 		const action = async () => {
-			const res = songs.filter((n) => {
-				const songName = `${getFolderName(n)} - ${getSongName(n)}`
-				return (
-					toSearchString(songName).includes(toSearchString(search)) ||
-					hasSearchKeywords(songName, search)
-				)
+			if (toKeywords(search).length < 1) {
+				return setFilteredSongs(songs)
+			}
+			const fuse = new Fuse(songs, {
+				useTokenSearch: true,
+				includeScore: true,
+				shouldSort: true,
+				ignoreLocation: true
 			})
+			const res = fuse
+				.search(search)
+				.filter((e) => e.score < 0.75)
+				.map((e) => e.item)
+				.slice(0, 25)
 			setFilteredSongs(res)
 		}
 		action()
@@ -306,13 +315,20 @@ export default function LibraryTab() {
 	const [filteredSelectedAlbumSongs, setFilteredSelectedAlbumSongs] = useState([])
 	useEffect(() => {
 		const action = async () => {
-			const res = selectedAlbumSongs.filter((n) => {
-				const songName = `${getFolderName(n)} - ${getSongName(n)}`
-				return (
-					toSearchString(songName).includes(toSearchString(search)) ||
-					hasSearchKeywords(songName, search)
-				)
+			if (toKeywords(search).length < 1) {
+				return setFilteredSelectedAlbumSongs(selectedAlbumSongs)
+			}
+			const fuse = new Fuse(selectedAlbumSongs, {
+				useTokenSearch: true,
+				includeScore: true,
+				shouldSort: true,
+				ignoreLocation: true
 			})
+			const res = fuse
+				.search(search)
+				.filter((e) => e.score < 0.75)
+				.map((e) => e.item)
+				.slice(0, 25)
 			setFilteredSelectedAlbumSongs(res)
 		}
 		action()
