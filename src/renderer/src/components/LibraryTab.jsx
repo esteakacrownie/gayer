@@ -168,7 +168,7 @@ export default function LibraryTab() {
 				ignoreLocation: true,
 				threshold: 1
 			},
-			{ workerUrl: "/fuse.worker.mjs" }
+			{ workerUrl: import.meta.env.DEV ? "/fuse.worker.mjs" : "" }
 		)
 		const action = async () => {
 			if (toKeywords(search).length < 1) {
@@ -287,14 +287,6 @@ export default function LibraryTab() {
 		})
 	}, [playlists, search, getPlaylistFromId, hasPlaylistFilteredSong])
 
-	// const filteredAlbums = useMemo(() => {
-	// 	return albumSongsCount.filter(
-	// 		(elt) =>
-	// 			toSearchString(getFolderName(elt.path)).includes(toSearchString(search)) ||
-	// 			hasAlbumFilteredSong(elt.path, filteredSongs)
-	// 	)
-	// }, [albumSongsCount, search, filteredSongs])
-
 	const [filteredAlbums, setFilteredAlbums] = useState([])
 	useEffect(() => {
 		const action = async () => {
@@ -345,7 +337,7 @@ export default function LibraryTab() {
 				ignoreLocation: true,
 				threshold: 1
 			},
-			{ workerUrl: "/fuse.worker.mjs" }
+			{ workerUrl: import.meta.env.DEV ? "/fuse.worker.mjs" : "" }
 		)
 		const action = async () => {
 			if (toKeywords(search).length < 1) {
@@ -657,10 +649,7 @@ export default function LibraryTab() {
 						<>
 							{/* Is a custom playlist ? */}
 							{idInPlaylists(selectedPlaylist) ? (
-								<EditablePlaylistSongList
-									songs={selectedAlbumSongs}
-									filteredSongs={filteredSelectedAlbumSongs}
-								/>
+								<EditablePlaylistSongList />
 							) : (
 								<>
 									<div className="flex flex-col gap-2">

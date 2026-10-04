@@ -13,7 +13,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import PlaylistRenamer from "./PlaylistRenamer"
@@ -22,8 +22,9 @@ import { Reorder } from "motion/react"
 import { IoChevronBack } from "react-icons/io5"
 import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 import { useLibraryStore } from "../stores/useLibraryStore"
-import { getFolderName, getSongName, toSearchString } from "../utils"
+import { toKeywords } from "../utils"
 import { motion } from "motion/react"
+import { FuseWorker } from "fuse.js/worker"
 
 export default function EditablePlaylistSongList() {
 	const { playlists, setPlaylists } = usePlaylistsStore()
@@ -36,12 +37,35 @@ export default function EditablePlaylistSongList() {
 
 	const [selectedPlaylistReorderSongs, setSelectedPlaylistReorderSongs] = useState([]) // only for temp reordering
 
-	const filteredSelectedPlaylistsSongs = useMemo(() => {
-		return selectedPlaylistReorderSongs.filter((n) =>
-			toSearchString(`${getFolderName(n)} - ${getSongName(n)}`).includes(
-				toSearchString(search)
-			)
+	const [filteredSelectedPlaylistsSongs, setFilteredSelectedPlaylistsSongs] = useState([])
+	useEffect(() => {
+		const fuse = new FuseWorker(
+			selectedPlaylistReorderSongs,
+			{
+				includeScore: true,
+				ignoreLocation: true,
+				threshold: 1
+			},
+			{ workerUrl: import.meta.env.DEV ? "/fuse.worker.mjs" : "" }
 		)
+		const action = async () => {
+			if (toKeywords(search).length < 1) {
+				return setFilteredSelectedPlaylistsSongs(selectedPlaylistReorderSongs)
+			}
+			try {
+				const result = await fuse.search(search)
+				const res = result.filter((e) => e.score < 0.75).map((e) => e.item)
+				// .slice(0, 25)
+				// console.log(result)
+				setFilteredSelectedPlaylistsSongs(res)
+			} catch {
+				console.log("fuzzy search aborted")
+			}
+		}
+		action()
+		return () => {
+			fuse.terminate()
+		}
 	}, [selectedPlaylistReorderSongs, search])
 
 	const updateSelectedPlaylistSongsOrder = useCallback(() => {
