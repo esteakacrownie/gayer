@@ -31,13 +31,11 @@ import {
 } from "react-icons/md"
 import {
 	getFolderName,
-	getSongName,
 	getSortedFilesAt,
 	isMusicFile,
 	shuffleArray,
 	toSearchString,
 	albumArtQueryForPath,
-	hasSearchKeywords,
 	toKeywords
 } from "../utils"
 import SongElement from "./SongElement"
@@ -56,7 +54,7 @@ import { useCacheStore } from "../stores/useCacheStore"
 import { useHotkeys } from "react-hotkeys-hook"
 import FixMissingPlaylistTracksButton from "./FixMissingPlaylistTracksButton"
 import FixMissingPlaylistTracksIndicator from "./FixMissingPlaylistTracksIndicator"
-import Fuse from "fuse.js"
+import { FuseWorker } from "fuse.js/worker"
 
 export default function LibraryTab() {
 	const maxLength = 25
@@ -163,34 +161,34 @@ export default function LibraryTab() {
 
 	const [filteredSongs, setFilteredSongs] = useState([])
 	useEffect(() => {
+		const fuse = new FuseWorker(
+			songs,
+			{
+				includeScore: true,
+				ignoreLocation: true,
+				threshold: 1
+			},
+			{ workerUrl: "/fuse.worker.mjs" }
+		)
 		const action = async () => {
 			if (toKeywords(search).length < 1) {
 				return setFilteredSongs(songs)
 			}
-			const fuse = new Fuse(songs, {
-				useTokenSearch: true,
-				includeScore: true,
-				shouldSort: true,
-				ignoreLocation: true
-			})
-			const res = fuse
-				.search(search)
-				.filter((e) => e.score < 0.75)
-				.map((e) => e.item)
-				.slice(0, 25)
-			setFilteredSongs(res)
-		}
-		action()
-	}, [songs, search])
-
-	const hasAlbumFilteredSong = (elt, filteredSongs) => {
-		for (let s of filteredSongs) {
-			if (s.includes(elt)) {
-				return true
+			try {
+				const result = await fuse.search(search)
+				const res = result.filter((e) => e.score < 0.75).map((e) => e.item)
+				// .slice(0, 25)
+				// console.log(result)
+				setFilteredSongs(res)
+			} catch {
+				console.log("fuzzy search aborted")
 			}
 		}
-		return false
-	}
+		action()
+		return () => {
+			fuse.terminate()
+		}
+	}, [songs, search])
 
 	const fetchSongs = useCallback(async () => {
 		let allSongs = []
@@ -289,13 +287,39 @@ export default function LibraryTab() {
 		})
 	}, [playlists, search, getPlaylistFromId, hasPlaylistFilteredSong])
 
-	const filteredAlbums = useMemo(() => {
-		return albumSongsCount.filter(
-			(elt) =>
-				toSearchString(getFolderName(elt.path)).includes(toSearchString(search)) ||
-				hasAlbumFilteredSong(elt.path, filteredSongs)
-		)
-	}, [albumSongsCount, search, filteredSongs])
+	// const filteredAlbums = useMemo(() => {
+	// 	return albumSongsCount.filter(
+	// 		(elt) =>
+	// 			toSearchString(getFolderName(elt.path)).includes(toSearchString(search)) ||
+	// 			hasAlbumFilteredSong(elt.path, filteredSongs)
+	// 	)
+	// }, [albumSongsCount, search, filteredSongs])
+
+	const [filteredAlbums, setFilteredAlbums] = useState([])
+	useEffect(() => {
+		const action = async () => {
+			if (toKeywords(search).length < 1) {
+				return setFilteredAlbums(albumSongsCount)
+			}
+			try {
+				// const contains = albumSongsCount.filter((elt) =>
+				// 	hasAlbumFilteredSong(elt.path, filteredSongs)
+				// )
+				const contains = []
+				for (let s of filteredSongs) {
+					for (let a of albumSongsCount) {
+						if (s.includes(a.path) && !contains.map((e) => e.path).includes(a.path)) {
+							contains.push(a)
+						}
+					}
+				}
+				setFilteredAlbums(contains)
+			} catch {
+				console.log("fuzzy search aborted")
+			}
+		}
+		action()
+	}, [albumSongsCount, filteredSongs, search])
 
 	const [filteredAlbumsSongs, setFilteredAlbumsSongs] = useState([])
 	useEffect(() => {
@@ -314,24 +338,33 @@ export default function LibraryTab() {
 
 	const [filteredSelectedAlbumSongs, setFilteredSelectedAlbumSongs] = useState([])
 	useEffect(() => {
+		const fuse = new FuseWorker(
+			selectedAlbumSongs,
+			{
+				includeScore: true,
+				ignoreLocation: true,
+				threshold: 1
+			},
+			{ workerUrl: "/fuse.worker.mjs" }
+		)
 		const action = async () => {
 			if (toKeywords(search).length < 1) {
 				return setFilteredSelectedAlbumSongs(selectedAlbumSongs)
 			}
-			const fuse = new Fuse(selectedAlbumSongs, {
-				useTokenSearch: true,
-				includeScore: true,
-				shouldSort: true,
-				ignoreLocation: true
-			})
-			const res = fuse
-				.search(search)
-				.filter((e) => e.score < 0.75)
-				.map((e) => e.item)
-				.slice(0, 25)
-			setFilteredSelectedAlbumSongs(res)
+			try {
+				const result = await fuse.search(search)
+				const res = result.filter((e) => e.score < 0.75).map((e) => e.item)
+				// .slice(0, 25)
+				// console.log(result)
+				setFilteredSelectedAlbumSongs(res)
+			} catch {
+				console.log("fuzzy search aborted")
+			}
 		}
 		action()
+		return () => {
+			fuse.terminate()
+		}
 	}, [selectedAlbumSongs, search])
 
 	// fetch album or playlist songs upon browsing
@@ -373,7 +406,7 @@ export default function LibraryTab() {
 	}, [songs])
 
 	const inputField = useRef(null)
-	useHotkeys("ctrl+t", (e) => {
+	useHotkeys(["ctrl+t", "ctrl+f"], (e) => {
 		e.preventDefault()
 		if (inputField.current) {
 			inputField.current.focus()
@@ -385,6 +418,28 @@ export default function LibraryTab() {
 			e.preventDefault()
 			if (inputField.current) {
 				inputField.current.blur()
+			}
+		},
+		{ enableOnFormTags: true }
+	)
+	const toNextFilter = (f) => {
+		switch (f) {
+			case "songs":
+				return "playlists"
+			case "playlists":
+				return "locations"
+			case "locations":
+				return "songs"
+			default:
+				return ""
+		}
+	}
+	useHotkeys(
+		"ctrl+j",
+		(e) => {
+			e.preventDefault()
+			if (tab == "library") {
+				setLibraryFilter(toNextFilter(libraryFilter))
 			}
 		},
 		{ enableOnFormTags: true }

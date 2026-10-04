@@ -98,7 +98,7 @@ function App() {
 
 	const mainDiv = useRef(null)
 	useHotkeys(
-		"ctrl+t",
+		["ctrl+t", "ctrl+f"],
 		() => {
 			mainDiv.current.scrollTo({ top: 0, left: 0, behavior: "smooth" })
 		},

@@ -49,8 +49,9 @@ Stay tuned and support the project by starring it >:3
 - `ctrl+l` : toggle loop modes
 - `ctrl+s` : toggle shuffling
 - `ctrl+k` : add current track to playlist
-- `ctrl+t` : scroll to top and focus search bar
+- `ctrl+t/f` : scroll to top and focus search bar
 - `ctrl+tab` : switch tab
+- `ctrl+j` : switch filter (subtabs/categories)
 - `ctrl+up/down` : increase / decrease volume
 
 ## Recommended IDE Setup

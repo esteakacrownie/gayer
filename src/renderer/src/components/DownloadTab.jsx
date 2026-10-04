@@ -1250,7 +1250,7 @@ export default function DownloadTab() {
 	}, [])
 
 	const inputField = useRef(null)
-	useHotkeys("ctrl+t", (e) => {
+	useHotkeys(["ctrl+t", "ctrl+f"], (e) => {
 		e.preventDefault()
 		if (inputField.current) {
 			inputField.current.focus()
@@ -1262,6 +1262,30 @@ export default function DownloadTab() {
 			e.preventDefault()
 			if (inputField.current) {
 				inputField.current.blur()
+			}
+		},
+		{ enableOnFormTags: true }
+	)
+	const toNextFilter = (f) => {
+		switch (f) {
+			case "songs":
+				return "albums"
+			case "albums":
+				return "downloaded"
+			case "downloaded":
+				return "failed"
+			case "failed":
+				return "songs"
+			default:
+				return ""
+		}
+	}
+	useHotkeys(
+		"ctrl+j",
+		(e) => {
+			e.preventDefault()
+			if (tab == "download") {
+				setFilter(toNextFilter(filter))
 			}
 		},
 		{ enableOnFormTags: true }
