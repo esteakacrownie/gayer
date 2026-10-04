@@ -185,7 +185,9 @@ export default function usePlayerControls() {
 			setIsPlaying,
 			autoplay,
 			shufflePlay,
-			loopMode
+			loopMode,
+			queue,
+			setQueue
 		]
 	)
 
@@ -326,17 +328,16 @@ export default function usePlayerControls() {
 			}
 		},
 		[
-			[
-				currentTrack,
-				setCurrentTrack,
-				queue,
-				setQueue,
-				history,
-				setHistory,
-				autoplay,
-				shufflePlay,
-				loopMode
-			]
+			currentTrack,
+			setCurrentTrack,
+			queue,
+			setQueue,
+			history,
+			setHistory,
+			autoplay,
+			shufflePlay,
+			loopMode,
+			setNextAction
 		]
 	)
 
