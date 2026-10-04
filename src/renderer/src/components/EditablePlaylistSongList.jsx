@@ -124,11 +124,13 @@ export default function EditablePlaylistSongList() {
 					</div>
 				</div>
 				{search ? (
-					<div className="flex flex-col gap-2 relative">
+					<motion.ul className="flex flex-col gap-2 relative">
 						{filteredSelectedPlaylistsSongs.map((elt) => (
-							<SongElement key={elt} song={elt} showDelete={false} />
+							<motion.li key={elt} layout>
+								<SongElement song={elt} showDelete={false} />
+							</motion.li>
 						))}
-					</div>
+					</motion.ul>
 				) : (
 					<Reorder.Group
 						values={selectedPlaylistReorderSongs}

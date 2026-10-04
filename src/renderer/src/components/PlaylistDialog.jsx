@@ -22,7 +22,7 @@ import { IoIosFolderOpen, IoMdClose } from "react-icons/io"
 import { PiPlaylist } from "react-icons/pi"
 import ManagedPlaylistItem from "./ManagedPlaylistItem"
 import usePlaylistUtils from "../hooks/usePlaylistsUtils"
-import { motion } from "motion/react"
+import { motion, Reorder } from "motion/react"
 import { useClickOutside } from "../hooks/useClickOutside"
 import { useHotkeys } from "react-hotkeys-hook"
 
@@ -37,13 +37,13 @@ export default function PlaylistDialog() {
 		// console.log(playlists)
 		if (Array.isArray(selectedSongPath)) {
 			const res = playlists.filter((e) => {
-				for (let elt of e.songs) {
+				for (let elt of selectedSongPath) {
 					// console.log(elt)
-					if (selectedSongPath.includes(elt)) {
-						return true
+					if (!e.songs.includes(elt)) {
+						return false
 					}
 				}
-				return false
+				return true
 			})
 			return res.map((e) => e.id)
 		} else {
@@ -74,7 +74,7 @@ export default function PlaylistDialog() {
 		if (!newPlaylistName.trim()) return
 		createPlaylist(newPlaylistName)
 		setNewPlaylistName("")
-	}, [generateUnusedID, playlists, setPlaylists, newPlaylistName])
+	}, [newPlaylistName, createPlaylist])
 
 	const handlePlaylistSelected = useCallback(
 		(pid) => {
@@ -82,16 +82,7 @@ export default function PlaylistDialog() {
 
 			// handle whether playlist has one of the selected songs
 			const hasSelected = () => {
-				if (Array.isArray(selectedSongPath)) {
-					for (let elt of selectedSongPath) {
-						if (playlists.filter((e) => e.id == pid)[0].songs.includes(elt)) {
-							return true
-						}
-					}
-					return false
-				} else {
-					return playlists.filter((e) => e.id == pid)[0].songs.includes(selectedSongPath)
-				}
+				return playlistsHavingSong.includes(pid)
 			}
 
 			if (hasSelected()) {
@@ -141,7 +132,7 @@ export default function PlaylistDialog() {
 				setPlaylists(p)
 			}
 		},
-		[playlists, setPlaylists, selectedSongPath]
+		[playlists, setPlaylists, selectedSongPath, playlistsHavingSong]
 	)
 
 	const displaySelectedSong = useMemo(() => {
@@ -285,17 +276,30 @@ export default function PlaylistDialog() {
 							<IoAdd size={20} />
 						</motion.div>
 					</div>
-					<motion.ul className="h-full w-full flex flex-col items-center justify-start gap-2 overflow-y-scroll">
-						{playlists.map((e) => {
-							return selectedSongPath == "*" ? (
-								<motion.li className="w-full" layout key={e.id}>
+					{selectedSongPath == "*" ? (
+						<Reorder.Group
+							values={playlists}
+							onReorder={setPlaylists}
+							className="h-full w-full flex flex-col items-center justify-start gap-2 overflow-y-scroll"
+						>
+							{playlists.map((e) => (
+								<Reorder.Item
+									key={e.id}
+									value={e}
+									className="w-full cursor-grab"
+									layout
+								>
 									<ManagedPlaylistItem
 										pid={e.id}
 										pname={e.name}
 										plength={e.songs.length}
 									/>
-								</motion.li>
-							) : (
+								</Reorder.Item>
+							))}
+						</Reorder.Group>
+					) : (
+						<motion.ul className="h-full w-full flex flex-col items-center justify-start gap-2 overflow-y-scroll">
+							{playlists.map((e) => (
 								<motion.li
 									layout
 									key={e.id}
@@ -312,9 +316,9 @@ export default function PlaylistDialog() {
 									<p className="line-clamp-1">{e.name}</p>
 									<p className="min-w-max line-clamp-1 opacity-75 text-xs brightness-90">{`${e.songs.length} item(s)`}</p>
 								</motion.li>
-							)
-						})}
-					</motion.ul>
+							))}
+						</motion.ul>
+					)}
 				</div>
 			</div>
 		</div>
