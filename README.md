@@ -27,17 +27,18 @@ Local music player and downloader :3
 - Automatically download missing playlist tracks
 - Search and download songs and albums directly from the internet, using yt-dlp
 - Allow downloading songs and playlists using direct url
+- Lyrics auto fetching from song file name + caching
+- Change lyrics source if they are incorrect or sync is broken
 - Power saving / appearance toggle, if your machine struggles with pretty blurs and overly long queues :p
-- Automatically fetches album cover art using filename and parent directory name
-- Link your Youtube account (by using your browser's cookies) to download content that fails otherwise
+- Automatically fetches album cover art using filename and parent directory name + caching
 - Enable / disable auto cover art fetching
+- Link your Youtube account (by using your browser's cookies) to download content that fails otherwise
 - Looks cute and pretty :3
 
 ### Planned
 
 - Fix incorrect cover art manually when it fails to find your music
 - Audio visualizer
-- Lyrics support
 
 <br/>
 Stay tuned and support the project by starring it >:3
@@ -49,6 +50,7 @@ Stay tuned and support the project by starring it >:3
 - `ctrl+l` : toggle loop modes
 - `ctrl+s` : toggle shuffling
 - `ctrl+k` : add current track to playlist
+- `ctrl+h` : toggle lyrics panel
 - `ctrl+t/f` : scroll to top and focus search bar
 - `ctrl+tab` : switch tab
 - `ctrl+j` : switch filter (subtabs/categories)
