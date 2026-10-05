@@ -568,10 +568,13 @@ export default function DownloadTab() {
 		const unsubFinished = window.electron.ipcRenderer.on("url_audio_complete", (e, v) => {
 			if (v.playlist_id) {
 				if (!urlPlaylistsLocalIdsDb.current[v.playlist_id]) {
+					const elt = {}
+					elt[v.filepath] = v.id
 					urlPlaylistsLocalIdsDb.current[v.playlist_id] = createPlaylist(
 						getFolderName(v.filepath, 1),
 						[v.filepath],
-						v.playlist_url
+						v.playlist_id,
+						elt
 					)
 				} else {
 					const pl = []
@@ -579,6 +582,9 @@ export default function DownloadTab() {
 						const temp = { ...p }
 						if (p.id == urlPlaylistsLocalIdsDb.current[v.playlist_id]) {
 							temp.songs = [...p.songs, v.filepath]
+							const t = {}
+							t[v.filepath] = v.id
+							temp.songUrls = { ...p.songUrls, ...t }
 						}
 						pl.push(temp)
 					}
@@ -1078,9 +1084,14 @@ export default function DownloadTab() {
 	}, [search, linkEnabled])
 
 	// auto switch to link mode
-	if (search.startsWith("https://")) {
-		setLinkEnabled(true)
-	}
+	useEffect(() => {
+		const action = async () => {
+			if (search.startsWith("https://")) {
+				setLinkEnabled(true)
+			}
+		}
+		action()
+	}, [search])
 
 	// process unlisted albums
 	useEffect(() => {

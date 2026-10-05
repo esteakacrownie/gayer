@@ -29,7 +29,7 @@ export default function FixMissingPlaylistTracksIndicator() {
 	useEffect(() => {
 		const action = async () => {
 			let res = []
-			const psongs = getPlaylistFromId(selectedPlaylist).songs
+			const { songs: psongs, songUrls } = getPlaylistFromId(selectedPlaylist)
 			requestedTracksReplacements.map((e) => {
 				if (psongs.includes(e)) {
 					res.push(e)
@@ -40,7 +40,7 @@ export default function FixMissingPlaylistTracksIndicator() {
 			})
 			let missing = []
 			for (let s of Object.keys(res)) {
-				if (res[s] === false) {
+				if (res[s] === false && !songUrls[s]) {
 					missing = [...new Set([...missing, s])]
 				}
 			}

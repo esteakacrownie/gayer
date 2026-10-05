@@ -295,6 +295,9 @@ export const generateM3U8 = (playlist) => {
 	res += playlist.name || "My Playlist"
 	res += "\n"
 	for (let i of playlist.songs) {
+		if (playlist.songUrls && playlist.songUrls[i]) {
+			res += `#EXTINF:url=${playlist.songUrls[i]}` + "\n"
+		}
 		res += i + "\n"
 	}
 	return res
@@ -309,5 +312,20 @@ export const parseM3U8 = (str) => {
 		""
 	)
 	playlist.songs = parts.filter((e) => !e.startsWith("#") && isMusicFile(e))
+	let urls = {}
+	parts.map((p, i) => {
+		if (!p.startsWith("#EXTINF:")) return
+		const splits = p.split(/[ ,:]/).filter((e) => e.trim())
+		for (let s of splits) {
+			if (s.startsWith("url=")) {
+				const t = {}
+				if (parts[i + 1]) {
+					t[parts[i + 1]] = s.slice(4)
+					urls = { ...urls, ...t }
+				}
+			}
+		}
+	})
+	playlist.songUrls = Object.keys(urls).length > 0 ? urls : undefined
 	return playlist
 }

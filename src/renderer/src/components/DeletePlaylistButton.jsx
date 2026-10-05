@@ -22,7 +22,7 @@ import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 import { useSettingsStore } from "../stores/useSettingsStore"
 
 export default function DeletePlaylistButton({ pid }) {
-	const { selectedPlaylist, setSelectedPlaylist } = usePlayerStore()
+	const { setSelectedPlaylist } = usePlayerStore()
 
 	const { setForceRefreshLocationsTracker } = useSettingsStore()
 

@@ -32,8 +32,6 @@ import { useFilesStore } from "./stores/useFilesStore"
 import { useHotkeys } from "react-hotkeys-hook"
 import UpdatesDialog from "./components/UpdatesDialog"
 
-let initialized = false
-
 function App() {
 	const { setQueue, setAutoplay, setNextAction } = usePlayerStore()
 	const { setSettings } = useSettingsStore()
@@ -43,57 +41,54 @@ function App() {
 
 	// startup settings loading and arguments processing
 	useEffect(() => {
-		if (!initialized) {
-			initialized = true
-			// load settings
-			let shufflePlayOnStart = false
-			window.electron.ipcRenderer
-				.invoke("read_configfile", { path: "settings.json" })
-				.then((d) => {
-					const settings = JSON.parse(d)
-					// console.log(settings)
-					shufflePlayOnStart = settings.shufflePlay ?? false
-					setSettings(settings)
-				})
-				.catch(() => console.log("Couldn't parse settings file"))
-			// load cache
-			window.electron.ipcRenderer
-				.invoke("read_configfile", { path: "cache.json" })
-				.then((d) => {
-					const res = JSON.parse(d)
-					if ((res?.version || 0) >= 3) {
-						setCache(res)
-					}
-				})
-				.catch(() => console.log("Couldn't parse cache file"))
-			// load playlists
-			window.electron.ipcRenderer
-				.invoke("read_configfile", { path: "playlists.json" })
-				.then((d) => {
-					// console.log(d)
-					const parsed = JSON.parse(d)
-					const data = Array.isArray(parsed) ? parsed : []
-					setPlaylists(data)
-				})
-				.catch(() => console.log("Couldn't parse playlists file"))
-			// parse arguments
-			window.electron.ipcRenderer
-				.invoke("get_args", {})
-				.then((elt) => {
-					// console.log(elt)
-					return handleDropped(elt)
-				})
-				.then((songs) => {
-					// const songs = elt.args.files.value.filter((v) => isMusicFile(v))
-					if (songs && songs.length < 1) return
+		// load settings
+		let shufflePlayOnStart = false
+		window.electron.ipcRenderer
+			.invoke("read_configfile", { path: "settings.json" })
+			.then((d) => {
+				const settings = JSON.parse(d)
+				// console.log(settings)
+				shufflePlayOnStart = settings.shufflePlay ?? false
+				setSettings(settings)
+			})
+			.catch(() => console.log("Couldn't parse settings file"))
+		// load cache
+		window.electron.ipcRenderer
+			.invoke("read_configfile", { path: "cache.json" })
+			.then((d) => {
+				const res = JSON.parse(d)
+				if ((res?.version || 0) >= 3) {
+					setCache(res)
+				}
+			})
+			.catch(() => console.log("Couldn't parse cache file"))
+		// load playlists
+		window.electron.ipcRenderer
+			.invoke("read_configfile", { path: "playlists.json" })
+			.then((d) => {
+				console.log(d)
+				const parsed = JSON.parse(d)
+				const data = Array.isArray(parsed) ? parsed : []
+				setPlaylists(data)
+			})
+			.catch(() => console.log("Couldn't parse playlists file"))
+		// parse arguments
+		window.electron.ipcRenderer
+			.invoke("get_args", {})
+			.then((elt) => {
+				// console.log(elt)
+				return handleDropped(elt)
+			})
+			.then((songs) => {
+				// const songs = elt.args.files.value.filter((v) => isMusicFile(v))
+				if (songs && songs.length < 1) return
 
-					setFilesIgnoreExistenceCheck(songs)
-					setAutoplay(true)
-					setQueue([...new Set(shufflePlayOnStart ? shuffleArray(songs) : songs)])
-					setNextAction("setArgQueue")
-				})
-				.catch((e) => console.log(e))
-		}
+				setFilesIgnoreExistenceCheck(songs)
+				setAutoplay(true)
+				setQueue([...new Set(shufflePlayOnStart ? shuffleArray(songs) : songs)])
+				setNextAction("setArgQueue")
+			})
+			.catch((e) => console.log(e))
 	}, [])
 
 	const mainDiv = useRef(null)

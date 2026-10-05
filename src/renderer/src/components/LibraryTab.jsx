@@ -36,7 +36,8 @@ import {
 	shuffleArray,
 	toSearchString,
 	albumArtQueryForPath,
-	toKeywords
+	toKeywords,
+	delay
 } from "../utils"
 import SongElement from "./SongElement"
 import { usePlayerStore } from "../stores/usePlayerStore"
@@ -829,6 +830,22 @@ const CoverArtUpdater = ({ songs = [] }) => {
 					}
 				} catch (error) {
 					console.log(error)
+					if (error.message.includes("No results found")) {
+						console.log("disabling cover art for file : " + i)
+						const r = {}
+						r[i] = "#"
+						// disabling cover art
+						thumbnailCacheRef.current = { ...thumbnailCacheRef.current, ...r }
+						// appending to paths to ignore
+						alreadyFetchedArtPaths.current = [...alreadyFetchedArtPaths.current, i]
+						// removing to paths being processed
+						processingArtPaths.current = processingArtPaths.current.filter(
+							(e) => e != i
+						)
+						pathsFortThisThread.splice(0, 1)
+					} else {
+						await delay(1000)
+					}
 				}
 			}
 		},

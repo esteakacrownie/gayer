@@ -30,13 +30,13 @@ export default function FixMissingPlaylistTracksButton() {
 
 	const computeMissingTracks = useCallback(
 		async (playlistId) => {
-			const songs = getPlaylistFromId(playlistId).songs
+			const { songs, songUrls } = getPlaylistFromId(playlistId)
 			const res = await window.electron.ipcRenderer.invoke("get_files_exist", {
 				paths: songs
 			})
 			let missing = []
 			for (let s of Object.keys(res)) {
-				if (res[s] === false) {
+				if (res[s] === false && !songUrls[s]) {
 					missing = [...new Set([...missing, s])]
 				}
 			}

@@ -45,7 +45,7 @@ export default function usePlaylistUtils() {
 	}, [playlists])
 
 	const createPlaylist = useCallback(
-		(name = "", songs = [], url) => {
+		(name = "", songs = [], url, songUrls) => {
 			if (!name) return
 			const n = name.trim()
 			if (!n) return
@@ -54,16 +54,32 @@ export default function usePlaylistUtils() {
 			if (url) {
 				p.url = url
 			}
+			if (songUrls) {
+				p.songUrls = songUrls
+			}
 			setPlaylists([...playlists, p])
 			return id
 		},
 		[generateUnusedID, setPlaylists, playlists]
 	)
 
+	const getSongUrlForPath = useCallback(
+		(f) => {
+			for (let p of playlists) {
+				if (p.songUrls && p.songUrls[f]) {
+					return p.songUrls[f]
+				}
+			}
+			return undefined
+		},
+		[playlists]
+	)
+
 	return {
 		getPlaylistFromId,
 		idInPlaylists,
 		generateUnusedID,
-		createPlaylist
+		createPlaylist,
+		getSongUrlForPath
 	}
 }
