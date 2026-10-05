@@ -254,8 +254,8 @@ async function createWindow() {
 		y: mainWindowStateKeeper.y,
 		width: mainWindowStateKeeper.width,
 		height: mainWindowStateKeeper.height,
-		minWidth: 432,
-		minHeight: 432,
+		minWidth: 592,
+		minHeight: 592,
 		show: false,
 		autoHideMenuBar: true,
 		webPreferences: {

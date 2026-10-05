@@ -23,6 +23,7 @@ export const usePlayerStore = create((set) => ({
 	currentTrack: "",
 	nextAction: "", // "setPrevious", "setNext", "playCurrent"
 	selectedPlaylist: "", // playlist / album you are browsing in library tab
+	lyricsPanelOpen: false,
 	currentTrackChangeTracker: 0,
 	setAutoplay: (v) => set((state) => ({ autoplay: v })),
 	setIsPlaying: (v) => set((state) => ({ isPlaying: v })),
@@ -34,5 +35,6 @@ export const usePlayerStore = create((set) => ({
 			currentTrackChangeTracker: state.currentTrackChangeTracker + 1
 		})),
 	setNextAction: (v) => set((state) => ({ nextAction: v })),
-	setSelectedPlaylist: (v) => set((state) => ({ selectedPlaylist: v }))
+	setSelectedPlaylist: (v) => set((state) => ({ selectedPlaylist: v })),
+	setLyricsPanelOpen: (v) => set((state) => ({ lyricsPanelOpen: v }))
 }))

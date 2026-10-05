@@ -29,4 +29,9 @@ html {
 	display: none;
 }
 
+braccato-lyrics {
+	display: block;
+	overflow-y: auto;
+}
+
 @import "tailwindcss";

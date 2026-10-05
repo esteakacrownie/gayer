@@ -13,6 +13,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
+import "@braccato/core/element"
+import "@braccato/core/styles/variables.css"
+import "@braccato/core/styles/lyrics.css"
+import "@braccato/core/styles/instrumental.css"
+import { detectParser } from "@braccato/parsers"
 import { useEffect, useMemo, useState, useCallback, useRef } from "react"
 import { FaPlay, FaPause, FaStepForward, FaStepBackward } from "react-icons/fa"
 import {
@@ -22,7 +27,7 @@ import {
 	IoMdShuffle,
 	IoMdAddCircleOutline
 } from "react-icons/io"
-import { MdLoop } from "react-icons/md"
+import { MdLoop, MdLyrics } from "react-icons/md"
 import { AnimatePresence, motion } from "motion/react"
 import { getSongName } from "../utils"
 import { usePlayerStore } from "../stores/usePlayerStore"
@@ -33,9 +38,18 @@ import TimeLine from "./TimeLine"
 import { useCacheStore } from "../stores/useCacheStore"
 import { useHotkeys } from "react-hotkeys-hook"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
+import { LiaExchangeAltSolid } from "react-icons/lia"
 
 export default function Player() {
-	const { isPlaying, currentTrack, setHistory, nextAction, setNextAction } = usePlayerStore()
+	const {
+		isPlaying,
+		currentTrack,
+		setHistory,
+		nextAction,
+		setNextAction,
+		lyricsPanelOpen,
+		setLyricsPanelOpen
+	} = usePlayerStore()
 
 	const {
 		setVolume: setUiVolume,
@@ -44,16 +58,20 @@ export default function Player() {
 		shufflePlay,
 		setShufflePlay,
 		loopMode,
-		setLoopMode
+		setLoopMode,
+		showLyricsPanel,
+		setShowLyricsPanel
 	} = useSettingsStore()
 
-	const { thumbnailCache } = useCacheStore()
+	const { thumbnailCache, lyricsCache, setLyricsCache } = useCacheStore()
 
 	const { setSelectedSongPath } = usePlaylistsStore()
 
 	const { nextSong, previousSong, pause, resume, resetPlay } = usePlayerControls()
 
 	const [coverArt, setCoverArt] = useState("#")
+
+	const braccatoElt = useRef(null)
 
 	const getVolumeLabel = (v) => {
 		return v > 0 ? (v > 0.5 ? "high" : "low") : "mute"
@@ -218,6 +236,114 @@ export default function Player() {
 		}
 	}, [volumeSliderRef, volumeWheelHandler])
 
+	const [currentLyrics, setCurrentLyrics] = useState("")
+	const addTrackToLyricsCache = useCallback(
+		(path, lyrics, id) => {
+			const t = {}
+			t[path] = { id, lyrics }
+			setLyricsCache({
+				...lyricsCache,
+				...t
+			})
+		},
+		[lyricsCache, setLyricsCache]
+	)
+	//TODO : button to change fetched lyrics, that makes a refetch but splitting the result from case where id == cached ID, putting what's before to the end, and caching the next one
+	const handleChangeLyricsSource = useCallback(() => {
+		if (lyricsCache[getSongName(currentTrack)]) {
+			const id = lyricsCache[getSongName(currentTrack)].id
+			fetch(`https://lrclib.net/api/search?q=${encodeURI(getSongName(currentTrack))}`)
+				.then((r) => {
+					// console.log(r)
+					return r.json()
+				})
+				.then((d) => {
+					if (Array.isArray(d) && d.length > 0) {
+						let idx = 0
+						for (let elt of d) {
+							if (elt.id == id) {
+								break
+							}
+							idx += 1
+						}
+						const data = idx > 0 ? [...d.slice(idx), ...d.slice(0, idx)] : d
+						for (let elt of data.filter((e) => e.id != id)) {
+							if (elt.syncedLyrics) {
+								setLyricsPanelOpen(true)
+								addTrackToLyricsCache(
+									getSongName(currentTrack),
+									elt.syncedLyrics,
+									elt.id
+								)
+								return elt.syncedLyrics
+							}
+						}
+					}
+					return undefined
+				})
+		}
+	}, [addTrackToLyricsCache, currentTrack, setLyricsPanelOpen, lyricsCache])
+	const fetchLyrics = useCallback(
+		(track) => {
+			return fetch(`https://lrclib.net/api/search?q=${encodeURI(getSongName(track))}`)
+				.then((r) => {
+					// console.log(r)
+					return r.json()
+				})
+				.then((d) => {
+					if (Array.isArray(d) && d.length > 0) {
+						for (let elt of d) {
+							if (elt.syncedLyrics) {
+								setLyricsPanelOpen(true)
+								addTrackToLyricsCache(getSongName(track), elt.syncedLyrics, elt.id)
+								return elt.syncedLyrics
+							}
+						}
+					}
+					return undefined
+				})
+		},
+		[addTrackToLyricsCache, setLyricsPanelOpen]
+	)
+	// set lyrics when cache gets updated
+	useEffect(() => {
+		const action = async () => {
+			if (lyricsCache[getSongName(currentTrack)]) {
+				const text = lyricsCache[getSongName(currentTrack)].lyrics
+				setCurrentLyrics(detectParser(text).parse(text))
+			}
+		}
+		action()
+	}, [lyricsCache])
+	// set or fetch lyrics when currentTrack changes
+	useEffect(() => {
+		let cancelled = false
+		const action = async () => {
+			if (currentTrack) {
+				if (lyricsCache[getSongName(currentTrack)]) {
+					const text = lyricsCache[getSongName(currentTrack)].lyrics
+					setCurrentLyrics(detectParser(text).parse(text))
+					setLyricsPanelOpen(true)
+				} else {
+					setCurrentLyrics("")
+					setLyricsPanelOpen(false)
+					fetchLyrics(currentTrack).then((text) => {
+						if (!cancelled && text) {
+							setCurrentLyrics(detectParser(text).parse(text))
+						}
+					})
+				}
+			} else {
+				setCurrentLyrics("")
+				setLyricsPanelOpen(false)
+			}
+		}
+		action()
+		return () => {
+			cancelled = true
+		}
+	}, [currentTrack])
+
 	useHotkeys("space", (e) => {
 		e.preventDefault()
 		togglePlay()
@@ -286,6 +412,14 @@ export default function Player() {
 		},
 		{ enableOnFormTags: true }
 	)
+	useHotkeys(
+		"ctrl+h",
+		(e) => {
+			e.preventDefault()
+			setShowLyricsPanel(!showLyricsPanel)
+		},
+		{ enableOnFormTags: true }
+	)
 
 	return (
 		<div className="flex flex-col justify-center gap-4 fixed z-10 bottom-0 p-4 w-full ">
@@ -308,6 +442,35 @@ export default function Player() {
 					</AnimatePresence>
 				</div>
 				<div className="flex flex-col justify-center w-full h-full bg-linear-180 from-slate-950 to-pink-800 outline-2 outline-pink-300/80 from-[-75%] to-150% shadow-pink-400/40 shadow-[0_0_7px_7px] rounded-2xl overflow-clip gap-4 p-4">
+					{lyricsPanelOpen && showLyricsPanel && (
+						<div className="relative flex flex-col w-full justify-center items-center brightness-90">
+							<div className="absolute top-0 left-0">
+								<motion.button
+									title="Change lyrics source (press if lyrics are incorrect or not in sync)"
+									className="relative hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
+									onClick={handleChangeLyricsSource}
+									initial={{
+										scale: 1.0
+									}}
+									animate={{
+										scale: 1.0
+									}}
+									whileTap={{
+										scale: 0.8
+									}}
+									transition={{
+										duration: 0.025,
+										ease: "easeOut"
+									}}
+								>
+									<LiaExchangeAltSolid className="-scale-x-100" size={20} />
+								</motion.button>
+							</div>
+							<div className="relative min-w-170 w-[160vw] lg:w-[125vw] flex flex-col scale-45 -m-10 lg:scale-50 h-55">
+								<braccato-lyrics ref={braccatoElt} lyrics={currentLyrics} />
+							</div>
+						</div>
+					)}
 					{/* <div>
 						{JSON.stringify(history.map((elt) => getSongName(elt)))}
 					</div>
@@ -450,10 +613,33 @@ export default function Player() {
 							>
 								<IoMdAddCircleOutline size={20} />
 							</motion.button>
+							<motion.button
+								title="Toggle Lyrics [Ctrl+H]"
+								className={cn(
+									"relative hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
+									showLyricsPanel && "bg-pink-400/50 outline-2 outline-pink-300"
+								)}
+								onClick={() => setShowLyricsPanel(!showLyricsPanel)}
+								initial={{
+									scale: 1.0
+								}}
+								animate={{
+									scale: 1.0
+								}}
+								whileTap={{
+									scale: 0.8
+								}}
+								transition={{
+									duration: 0.025,
+									ease: "easeOut"
+								}}
+							>
+								<MdLyrics size={20} />
+							</motion.button>
 						</div>
 						<div className="flex flex-row justify-end items-center absolute w-full right-0 top-1.75 pointer-events-none">
 							{volumeIcon}
-							<div className="bg-pink-800/10 flex flex-row outline-2 outline-pink-300 shadow-pink-500/70 shadow-[0_0_5px_5px] justify-center items-center px-1 rounded-2xl min-w-16 w-[16%] max-w-50">
+							<div className="bg-pink-800/10 flex flex-row outline-2 outline-pink-300 shadow-pink-500/70 shadow-[0_0_5px_5px] justify-center items-center px-1 rounded-2xl min-w-16 w-[25%] max-w-50">
 								<input
 									title="Manage volume [Scroll/Ctrl+Up/Down]"
 									ref={volumeSliderRef}
@@ -468,7 +654,7 @@ export default function Player() {
 							</div>
 						</div>
 					</div>
-					<TimeLine />
+					<TimeLine lyricsRef={braccatoElt} />
 				</div>
 			</div>
 		</div>

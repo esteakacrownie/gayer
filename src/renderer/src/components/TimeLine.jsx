@@ -19,7 +19,7 @@ import { usePlayerStore } from "../stores/usePlayerStore"
 import { cn } from "@sglara/cn"
 import { useSettingsStore } from "../stores/useSettingsStore"
 
-export default function TimeLine() {
+export default function TimeLine({ lyricsRef }) {
 	const {
 		isPlaying,
 		setIsPlaying,
@@ -88,9 +88,22 @@ export default function TimeLine() {
 				progressContentRef.current.style.width = `${currentTrack ? parseInt(maxWidth * (p / duration)) : 0}px`
 			}
 
+			if (audioRef.current && lyricsRef.current) {
+				lyricsRef.current.source = audioRef.current
+				// lyricsRef.current.currentTime = audioRef.current.currentTime
+				// lyricsRef.current.playing = !audioRef.current.paused
+			}
 			// updateMediasessionTime(audioRef.current?.duration)
 		},
-		[progressRef, progressContentRef, positionLabel, duration, currentTrack]
+		[
+			progressRef,
+			progressContentRef,
+			positionLabel,
+			duration,
+			currentTrack,
+			lyricsRef,
+			audioRef
+		]
 	)
 
 	const updateAudioData = useCallback(() => {

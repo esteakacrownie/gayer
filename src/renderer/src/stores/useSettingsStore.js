@@ -21,41 +21,61 @@ const persist = () => (set, get) => (next) => async (partial) => {
 	window.electron.ipcRenderer.invoke("writeConfigFile", {
 		path: "settings.json",
 		content: JSON.stringify({
-			volume: s.volume ?? 0.45,
-			powerSavingMode: s.powerSavingMode ?? false,
-			defaultAutoplay: s.defaultAutoplay ?? true,
-			shufflePlay: s.shufflePlay ?? false,
-			loopMode: s.loopMode ?? "off",
-			tab: s.tab ?? "library",
-			libraryLocations: s.libraryLocations ?? [],
-			libraryFilter: s.libraryFilter ?? "playlists",
-			downloadLocation: s.downloadLocation ?? "",
-			playlistsFolded: s.playlistsFolded ?? false,
-			albumsFolded: s.albumsFolded ?? false,
-			ytCookiesEnabled: s.ytCookiesEnabled ?? false,
-			ytCookiesBrowser: s.ytCookiesBrowser ?? "",
-			showYtCookiesHint: s.showYtCookiesHint ?? true
+			volume: s.volume ?? defaults.volume,
+			powerSavingMode: s.powerSavingMode ?? defaults.powerSavingMode,
+			defaultAutoplay: s.defaultAutoplay ?? defaults.defaultAutoplay,
+			shufflePlay: s.shufflePlay ?? defaults.shufflePlay,
+			loopMode: s.loopMode ?? defaults.loopMode,
+			tab: s.tab ?? defaults.tab,
+			libraryLocations: s.libraryLocations ?? defaults.libraryLocations,
+			libraryFilter: s.libraryFilter ?? defaults.libraryFilter,
+			downloadLocation: s.downloadLocation ?? defaults.downloadLocation,
+			playlistsFolded: s.playlistsFolded ?? defaults.playlistsFolded,
+			albumsFolded: s.albumsFolded ?? defaults.albumsFolded,
+			ytCookiesEnabled: s.ytCookiesEnabled ?? defaults.ytCookiesEnabled,
+			ytCookiesBrowser: s.ytCookiesBrowser ?? defaults.ytCookiesBrowser,
+			showYtCookiesHint: s.showYtCookiesHint ?? defaults.showYtCookiesHint,
+			showLyricsPanel: s.showLyricsPanel ?? defaults.showLyricsPanel
 		})
 	})
 }
 
+const defaults = {
+	volume: 0.45,
+	powerSavingMode: false,
+	defaultAutoplay: true,
+	shufflePlay: false,
+	loopMode: "off", // queue, current, off
+	tab: "library",
+	libraryLocations: [],
+	libraryFilter: "songs",
+	downloadLocation: "",
+	playlistsFolded: false,
+	albumsFolded: false,
+	ytCookiesEnabled: false,
+	ytCookiesBrowser: "",
+	showYtCookiesHint: true,
+	showLyricsPanel: false
+}
+
 export const useSettingsStore = create(
 	(set) => ({
-		volume: 0.45,
-		powerSavingMode: false,
-		defaultAutoplay: true,
-		shufflePlay: false,
-		loopMode: "off", // queue, current, off
-		tab: "library",
-		libraryLocations: [],
-		libraryFilter: "songs",
-		downloadLocation: "",
-		playlistsFolded: false,
-		albumsFolded: false,
-		ytCookiesEnabled: false,
-		ytCookiesBrowser: "",
-		showYtCookiesHint: true,
-		forceRefreshLocationsTracker: 0,
+		volume: defaults.volume,
+		powerSavingMode: defaults.powerSavingMode,
+		defaultAutoplay: defaults.defaultAutoplay,
+		shufflePlay: defaults.shufflePlay,
+		loopMode: defaults.loopMode, // queue, current, off
+		tab: defaults.tab,
+		libraryLocations: defaults.libraryLocations,
+		libraryFilter: defaults.libraryFilter,
+		downloadLocation: defaults.downloadLocation,
+		playlistsFolded: defaults.playlistsFolded,
+		albumsFolded: defaults.albumsFolded,
+		ytCookiesEnabled: defaults.ytCookiesEnabled,
+		ytCookiesBrowser: defaults.ytCookiesBrowser,
+		showYtCookiesHint: defaults.showYtCookiesHint,
+		showLyricsPanel: defaults.showLyricsPanel,
+		forceRefreshLocationsTracker: defaults.forceRefreshLocationsTracker,
 		setVolume: (v) => set((state) => ({ volume: v })),
 		setDefaultAutoplay: (v) => set((state) => ({ defaultAutoplay: v })),
 		setShufflePlay: (v) => set((state) => ({ shufflePlay: v })),
@@ -70,25 +90,27 @@ export const useSettingsStore = create(
 		setYtCookiesEnabled: (v) => set((state) => ({ ytCookiesEnabled: v })),
 		setYtCookiesBrowser: (v) => set((state) => ({ ytCookiesBrowser: v })),
 		setShowYtCookiesHint: (v) => set((state) => ({ showYtCookiesHint: v })),
+		setShowLyricsPanel: (v) => set((state) => ({ showLyricsPanel: v })),
 		setForceRefreshLocationsTracker: (v) =>
 			set((state) => ({ forceRefreshLocationsTracker: v })),
 		setSettings: (s) =>
 			set((state) => ({
-				volume: s.volume ?? 0.45,
-				powerSavingMode: s.powerSavingMode ?? false,
-				defaultAutoplay: s.defaultAutoplay ?? true,
-				shufflePlay: s.shufflePlay ?? false,
-				loopMode: s.loopMode ?? "off",
-				tab: s.tab ?? "library",
-				libraryLocations: s.libraryLocations ?? [],
-				libraryFilter: s.libraryFilter ?? "playlists",
-				downloadLocation: s.downloadLocation ?? "",
-				playlistsFolded: s.playlistsFolded ?? false,
-				albumsFolded: s.albumsFolded ?? false,
-				ytCookiesEnabled: s.ytCookiesEnabled ?? false,
-				ytCookiesBrowser: s.ytCookiesBrowser ?? "",
-				showYtCookiesHint: s.showYtCookiesHint ?? true,
-				forceRefreshLocationsTracker: 0
+				volume: s.volume ?? defaults.volume,
+				powerSavingMode: s.powerSavingMode ?? defaults.powerSavingMode,
+				defaultAutoplay: s.defaultAutoplay ?? defaults.defaultAutoplay,
+				shufflePlay: s.shufflePlay ?? defaults.shufflePlay,
+				loopMode: s.loopMode ?? defaults.loopMode,
+				tab: s.tab ?? defaults.tab,
+				libraryLocations: s.libraryLocations ?? defaults.libraryLocations,
+				libraryFilter: s.libraryFilter ?? defaults.libraryFilter,
+				downloadLocation: s.downloadLocation ?? defaults.downloadLocation,
+				playlistsFolded: s.playlistsFolded ?? defaults.playlistsFolded,
+				albumsFolded: s.albumsFolded ?? defaults.albumsFolded,
+				ytCookiesEnabled: s.ytCookiesEnabled ?? defaults.ytCookiesEnabled,
+				ytCookiesBrowser: s.ytCookiesBrowser ?? defaults.ytCookiesBrowser,
+				showYtCookiesHint: s.showYtCookiesHint ?? defaults.showYtCookiesHint,
+				showLyricsPanel: s.showLyricsPanel ?? defaults.showLyricsPanel,
+				forceRefreshLocationsTracker: defaults.forceRefreshLocationsTracker
 			}))
 	}),
 	[persist()]

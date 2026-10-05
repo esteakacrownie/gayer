@@ -33,8 +33,8 @@ import { useHotkeys } from "react-hotkeys-hook"
 import UpdatesDialog from "./components/UpdatesDialog"
 
 function App() {
-	const { setQueue, setAutoplay, setNextAction } = usePlayerStore()
-	const { setSettings } = useSettingsStore()
+	const { setQueue, setAutoplay, setNextAction, lyricsPanelOpen } = usePlayerStore()
+	const { setSettings, showLyricsPanel } = useSettingsStore()
 	const { setCache } = useCacheStore()
 	const { setPlaylists } = usePlaylistsStore()
 	const { setFilesIgnoreExistenceCheck } = useFilesStore()
@@ -112,7 +112,9 @@ function App() {
 				<FileSystemTab />
 				<UpdatesDialog />
 				{/* scroll padding to compensate player height's offset */}
-				<div className="my-24">&nbsp;</div>
+				<div className={lyricsPanelOpen && showLyricsPanel ? "min-h-68" : "min-h-34"}>
+					&nbsp;
+				</div>
 			</div>
 			<Tabs />
 			<DragDropHandler />

@@ -24,12 +24,25 @@ const persist = () => (set, get) => (next) => async (partial) => {
 	})
 }
 
+const defaults = {
+	thumbnailCache: {},
+	lyricsCache: {}, // { filepath: { id: (lrclib db ID), lyrics: "" } }
+	version: 4
+}
+
 export const useCacheStore = create(
 	(set) => ({
-		thumbnailCache: {},
-		version: 3,
+		thumbnailCache: defaults.thumbnailCache,
+		lyricsCache: defaults.lyricsCache, // { filepath: { id: (lrclib db ID), lyrics: "" } }
+		version: defaults.version,
 		setThumbnailCache: (v) => set((state) => ({ thumbnailCache: v })),
-		setCache: (c) => set((state) => c)
+		setLyricsCache: (v) => set((state) => ({ lyricsCache: v })),
+		setCache: (c) =>
+			set((state) => ({
+				thumbnailCache: c.thumbnailCache ?? defaults.thumbnailCache,
+				lyricsCache: c.lyricsCache ?? defaults.lyricsCache, // { filepath: { id: (lrclib db ID), lyrics: "" } }
+				version: c.version ?? defaults.version
+			}))
 	}),
 	[persist()]
 )
