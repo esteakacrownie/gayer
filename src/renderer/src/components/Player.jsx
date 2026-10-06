@@ -304,6 +304,7 @@ export default function Player() {
 		(track) => {
 			return fetch(`https://lrclib.net/api/search?q=${encodeURI(getSongName(track))}`)
 				.then((r) => {
+					if (!r.ok) return Promise.reject(new Error("Couldn't fetch lyrics"))
 					// console.log(r)
 					return r.json()
 				})
@@ -334,7 +335,6 @@ export default function Player() {
 	}, [lyricsCache])
 	// set or fetch lyrics when currentTrack changes
 	useEffect(() => {
-		let cancelled = false
 		const action = async () => {
 			if (currentTrack) {
 				if (lyricsCache[getSongName(currentTrack)]) {
@@ -344,11 +344,15 @@ export default function Player() {
 				} else {
 					setCurrentLyrics("")
 					setLyricsPanelOpen(false)
-					fetchLyrics(currentTrack).then((text) => {
-						if (!cancelled && text) {
-							setCurrentLyrics(detectParser(text).parse(text))
+					let success = false
+					while (!success) {
+						try {
+							await fetchLyrics(currentTrack)
+							success = true
+						} catch {
+							await delay(3000)
 						}
-					})
+					}
 				}
 			} else {
 				setCurrentLyrics("")
@@ -356,9 +360,6 @@ export default function Player() {
 			}
 		}
 		action()
-		return () => {
-			cancelled = true
-		}
 	}, [currentTrack])
 
 	useHotkeys("space", (e) => {
@@ -459,13 +460,13 @@ export default function Player() {
 					</AnimatePresence>
 				</div>
 				<div className="flex flex-col justify-center w-full h-full bg-linear-180 from-slate-950 to-pink-800 outline-2 outline-pink-300/80 from-[-75%] to-150% shadow-pink-400/40 shadow-[0_0_7px_7px] rounded-2xl overflow-clip gap-4 p-4">
-					{lyricsPanelOpen && showLyricsPanel && (
-						<div className="relative flex flex-col w-full justify-center items-center brightness-90">
-							<div className="absolute top-0 left-0">
+					{showLyricsPanel && currentTrack && (
+						<div className="relative flex flex-col w-full justify-center items-center brightness-90 overflow-clip -my-4">
+							<div className="absolute top-4 left-0">
 								<motion.button
 									title="Change lyrics source (press if lyrics are incorrect or not in sync)"
 									className={cn(
-										"relative hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
+										"relative outline-none hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
 										isFetchingNewLyrics && "animate-pulse"
 									)}
 									onClick={handleChangeLyricsSource}
@@ -489,10 +490,10 @@ export default function Player() {
 									/>
 								</motion.button>
 							</div>
-							<div className="absolute top-0 right-0">
+							<div className="absolute top-4 right-0">
 								<motion.button
 									title="Toggle fullscreen mode"
-									className="relative hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
+									className="relative outline-none hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
 									onClick={() => setLyricsFullscreen(!lyricsFullscreen)}
 									initial={{
 										scale: 1.0
@@ -517,11 +518,19 @@ export default function Player() {
 							</div>
 							<div
 								className={cn(
-									"relative min-w-85 w-[80vw] lg:w-[70vw] flex flex-col -m-10 h-55",
-									lyricsFullscreen && "h-[calc(100vh-80px)]"
+									"relative min-w-85 w-[80vw] lg:w-[70vw] flex flex-col -m-10 h-60",
+									lyricsFullscreen && "h-[calc(100vh-46px)]"
 								)}
 							>
-								<braccato-lyrics ref={braccatoElt} lyrics={currentLyrics} />
+								{lyricsPanelOpen ? (
+									<braccato-lyrics ref={braccatoElt} lyrics={currentLyrics} />
+								) : (
+									<div className="w-full h-full flex flex-col items-center justify-center">
+										<p className="animate-pulse font-bold text-3xl">
+											Fetching lyrics...
+										</p>
+									</div>
+								)}
 							</div>
 						</div>
 					)}
