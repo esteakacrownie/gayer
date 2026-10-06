@@ -27,9 +27,9 @@ import {
 	IoMdShuffle,
 	IoMdAddCircleOutline
 } from "react-icons/io"
-import { MdLoop, MdLyrics } from "react-icons/md"
+import { MdFullscreen, MdFullscreenExit, MdLoop, MdLyrics } from "react-icons/md"
 import { AnimatePresence, motion } from "motion/react"
-import { getSongName } from "../utils"
+import { delay, getSongName } from "../utils"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import usePlayerControls from "../hooks/usePlayerControls"
 import { cn } from "@sglara/cn"
@@ -236,6 +236,7 @@ export default function Player() {
 		}
 	}, [volumeSliderRef, volumeWheelHandler])
 
+	const [lyricsFullscreen, setLyricsFullscreen] = useState(false)
 	const [currentLyrics, setCurrentLyrics] = useState("")
 	const addTrackToLyricsCache = useCallback(
 		(path, lyrics, id) => {
@@ -248,10 +249,13 @@ export default function Player() {
 		},
 		[lyricsCache, setLyricsCache]
 	)
-	//TODO : button to change fetched lyrics, that makes a refetch but splitting the result from case where id == cached ID, putting what's before to the end, and caching the next one
+	const [isFetchingNewLyrics, setIsFetchingNewLyrics] = useState(false)
+	// fetch and cache next source for current track
 	const handleChangeLyricsSource = useCallback(() => {
+		if (isFetchingNewLyrics) return
 		if (lyricsCache[getSongName(currentTrack)]) {
 			const id = lyricsCache[getSongName(currentTrack)].id
+			setIsFetchingNewLyrics(true)
 			fetch(`https://lrclib.net/api/search?q=${encodeURI(getSongName(currentTrack))}`)
 				.then((r) => {
 					// console.log(r)
@@ -275,14 +279,27 @@ export default function Player() {
 									elt.syncedLyrics,
 									elt.id
 								)
-								return elt.syncedLyrics
+								console.log(`source changed from ${id} to ${elt.id}`)
+								break
 							}
 						}
 					}
+					setIsFetchingNewLyrics(false)
 					return undefined
 				})
+				.catch(() => {
+					delay(3000).then(() => setIsFetchingNewLyrics(false))
+				})
 		}
-	}, [addTrackToLyricsCache, currentTrack, setLyricsPanelOpen, lyricsCache])
+	}, [
+		addTrackToLyricsCache,
+		currentTrack,
+		setLyricsPanelOpen,
+		lyricsCache,
+		isFetchingNewLyrics,
+		setIsFetchingNewLyrics
+	])
+	// return promise resolving in fetched lyrics (get first source available, cache and return it)
 	const fetchLyrics = useCallback(
 		(track) => {
 			return fetch(`https://lrclib.net/api/search?q=${encodeURI(getSongName(track))}`)
@@ -422,7 +439,7 @@ export default function Player() {
 	)
 
 	return (
-		<div className="flex flex-col justify-center gap-4 fixed z-10 bottom-0 p-4 w-full ">
+		<div className="flex flex-col justify-center gap-4 fixed z-10 bottom-0 p-4 w-full">
 			<div className="relative">
 				<div className="overflow-clip w-full h-full absolute top-0 left-0 rounded-2xl flex flex-row justify-start items-center">
 					<AnimatePresence mode="popLayout">
@@ -447,7 +464,10 @@ export default function Player() {
 							<div className="absolute top-0 left-0">
 								<motion.button
 									title="Change lyrics source (press if lyrics are incorrect or not in sync)"
-									className="relative hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
+									className={cn(
+										"relative hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
+										isFetchingNewLyrics && "animate-pulse"
+									)}
 									onClick={handleChangeLyricsSource}
 									initial={{
 										scale: 1.0
@@ -463,10 +483,44 @@ export default function Player() {
 										ease: "easeOut"
 									}}
 								>
-									<LiaExchangeAltSolid className="-scale-x-100" size={20} />
+									<LiaExchangeAltSolid
+										className={isFetchingNewLyrics && "animate-spin"}
+										size={20}
+									/>
 								</motion.button>
 							</div>
-							<div className="relative min-w-170 w-[160vw] lg:w-[125vw] flex flex-col scale-45 -m-10 lg:scale-50 h-55">
+							<div className="absolute top-0 right-0">
+								<motion.button
+									title="Toggle fullscreen mode"
+									className="relative hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
+									onClick={() => setLyricsFullscreen(!lyricsFullscreen)}
+									initial={{
+										scale: 1.0
+									}}
+									animate={{
+										scale: 1.0
+									}}
+									whileTap={{
+										scale: 0.8
+									}}
+									transition={{
+										duration: 0.025,
+										ease: "easeOut"
+									}}
+								>
+									{lyricsFullscreen ? (
+										<MdFullscreenExit className="scale-125" size={20} />
+									) : (
+										<MdFullscreen className="scale-125" size={20} />
+									)}
+								</motion.button>
+							</div>
+							<div
+								className={cn(
+									"relative min-w-85 w-[80vw] lg:w-[70vw] flex flex-col -m-10 h-55",
+									lyricsFullscreen && "h-[calc(100vh-80px)]"
+								)}
+							>
 								<braccato-lyrics ref={braccatoElt} lyrics={currentLyrics} />
 							</div>
 						</div>

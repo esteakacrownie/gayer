@@ -66,7 +66,7 @@ function App() {
 		window.electron.ipcRenderer
 			.invoke("read_configfile", { path: "playlists.json" })
 			.then((d) => {
-				console.log(d)
+				// console.log(d)
 				const parsed = JSON.parse(d)
 				const data = Array.isArray(parsed) ? parsed : []
 				setPlaylists(data)
