@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import LyricsLine from "./LyricsLine"
 import { motion } from "motion/react"
+import { cn } from "@sglara/cn"
+import { MdSync } from "react-icons/md"
 
 export default function LyricsDisplay({ lyrics, lyricsRef, fullScreen, offset = 0 }) {
 	const [manualScrolled, setManualScrolled] = useState(false)
@@ -13,6 +15,7 @@ export default function LyricsDisplay({ lyrics, lyricsRef, fullScreen, offset = 
 		(t) => {
 			if (lyricsRef.current?.source) {
 				lyricsRef.current.source.currentTime = t
+				setManualScrolled(false)
 			}
 		},
 		[lyricsRef]
@@ -54,45 +57,62 @@ export default function LyricsDisplay({ lyrics, lyricsRef, fullScreen, offset = 
 	}, [lyrics, lyricsRef, repeat, currentLine])
 
 	return (
-		<motion.div
-			style={{
-				gap: fullScreen ? "48px" : "24px"
-			}}
-			ref={containerRef}
-			className="py-36 gap-6 flex flex-col text-center items-center justify-start w-full h-full overflow-y-scroll"
-		>
-			{lyrics.length > 0 && (
-				<LyricsLine
-					key={-1}
-					autoScroll={!manualScrolled}
-					highlighted={currentLine == -1}
-					fullScreen={fullScreen}
-					words=""
-					containerRef={containerRef}
-				/>
-			)}
-			{(lyrics || []).map((e, i) => (
-				<LyricsLine
-					key={i}
-					autoScroll={!manualScrolled}
-					highlighted={currentLine == i}
-					fullScreen={fullScreen}
-					words={e.words}
-					containerRef={containerRef}
-					startTimeMs={e.startTimeMs}
-					seekFn={seekTo}
-				/>
-			))}
-			{lyrics.length > 0 && (
-				<LyricsLine
-					key={lyrics.length}
-					autoScroll={!manualScrolled}
-					highlighted={currentLine == lyrics.length}
-					fullScreen={fullScreen}
-					words=""
-					containerRef={containerRef}
-				/>
-			)}
-		</motion.div>
+		<>
+			<div className="absolute top-4 pr-4 pointer-events-none w-full h-full flex flex-col items-center">
+				<button
+					className={cn(
+						"z-10 flex flex-row relative outline-none gap-1 justify-center items-center backdrop-blur-sm bg-pink-400/50  hover:bg-pink-400/30 rounded-full border border-pink-300 py-1 px-2 transition ease-out duration-200 pointer-events-auto cursor-pointer",
+						manualScrolled ? "translate-y-0" : "-translate-y-20"
+					)}
+					onClick={() => {
+						setManualScrolled(false)
+					}}
+				>
+					<MdSync size={16} />
+					<span>Re-sync lyrics</span>
+				</button>
+			</div>
+			<motion.div
+				style={{
+					gap: fullScreen ? "3em" : "1.5em"
+				}}
+				ref={containerRef}
+				onWheel={() => setManualScrolled(true)}
+				className="py-36.5 pl-16 pr-20 flex flex-col text-center items-center justify-start w-screen h-full overflow-y-scroll"
+			>
+				{lyrics.length > 0 && (
+					<LyricsLine
+						key={-1}
+						autoScroll={!manualScrolled}
+						highlighted={currentLine == -1}
+						fullScreen={fullScreen}
+						words=""
+						containerRef={containerRef}
+					/>
+				)}
+				{(lyrics || []).map((e, i) => (
+					<LyricsLine
+						key={i}
+						autoScroll={!manualScrolled}
+						highlighted={currentLine == i}
+						fullScreen={fullScreen}
+						words={e.words}
+						containerRef={containerRef}
+						startTimeMs={e.startTimeMs}
+						seekFn={seekTo}
+					/>
+				))}
+				{lyrics.length > 0 && (
+					<LyricsLine
+						key={lyrics.length}
+						autoScroll={!manualScrolled}
+						highlighted={currentLine == lyrics.length}
+						fullScreen={fullScreen}
+						words=""
+						containerRef={containerRef}
+					/>
+				)}
+			</motion.div>
+		</>
 	)
 }

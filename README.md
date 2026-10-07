@@ -51,6 +51,7 @@ Stay tuned and support the project by starring it >:3
 - `ctrl+s` : toggle shuffling
 - `ctrl+k` : add current track to playlist
 - `ctrl+h` : toggle lyrics panel
+- `ctrl+e` : expand lyrics panel
 - `ctrl+t/f` : scroll to top and focus search bar
 - `ctrl+tab` : switch tab
 - `ctrl+j` : switch filter (subtabs/categories)

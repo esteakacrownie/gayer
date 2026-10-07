@@ -429,6 +429,16 @@ export default function Player() {
 		{ enableOnFormTags: true }
 	)
 	useHotkeys(
+		"ctrl+e",
+		(e) => {
+			e.preventDefault()
+			if (showLyricsPanel) {
+				setLyricsFullscreen(!lyricsFullscreen)
+			}
+		},
+		{ enableOnFormTags: true }
+	)
+	useHotkeys(
 		"ctrl+h",
 		(e) => {
 			e.preventDefault()
@@ -448,7 +458,7 @@ export default function Player() {
 							animate={{ opacity: 0.3 }}
 							exit={{ opacity: 0 }}
 							className={cn(
-								"w-full object-cover scale-105 pointer-events-none",
+								"w-full h-full object-cover scale-105 pointer-events-none",
 								coverArt != "#" ? "" : "hidden",
 								powerSavingMode ? "" : "blur-[2px]"
 							)}
@@ -459,8 +469,8 @@ export default function Player() {
 				</div>
 				<div className="flex flex-col justify-center w-full h-full bg-linear-180 from-slate-950 to-pink-800 outline-2 outline-pink-300/80 from-[-75%] to-150% shadow-pink-400/40 shadow-[0_0_7px_7px] rounded-2xl overflow-clip gap-4 p-4">
 					{showLyricsPanel && currentTrack && (
-						<div className="relative flex flex-col w-full justify-center items-center brightness-90 overflow-clip -my-4">
-							<div className="absolute top-4 left-0">
+						<div className="relative flex flex-col w-screen justify-center items-center overflow-y-clip -m-4 pr-4 bg-linear-180 from-black/40 via-65% via-black/25 to-transparent">
+							<div className="absolute top-4 left-4">
 								<motion.button
 									title="Change lyrics source (press if lyrics are incorrect or not in sync)"
 									className={cn(
@@ -488,9 +498,9 @@ export default function Player() {
 									/>
 								</motion.button>
 							</div>
-							<div className="absolute top-4 right-0">
+							<div className="absolute top-4 right-12">
 								<motion.button
-									title="Toggle fullscreen mode"
+									title="Expand lyrics panel [Ctrl+E]"
 									className="relative outline-none hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
 									onClick={() => setLyricsFullscreen(!lyricsFullscreen)}
 									initial={{
@@ -516,7 +526,7 @@ export default function Player() {
 							</div>
 							<div
 								className={cn(
-									"relative min-w-85 w-[80vw] lg:w-[70vw] flex flex-col -m-10 h-60",
+									"flex flex-col -m-10 h-60",
 									lyricsFullscreen && "h-[calc(100vh-46px)]"
 								)}
 							>

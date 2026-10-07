@@ -25,11 +25,17 @@ import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 import { motion, Reorder } from "motion/react"
 import { useClickOutside } from "../hooks/useClickOutside"
 import { useHotkeys } from "react-hotkeys-hook"
+import { useSettingsStore } from "../stores/useSettingsStore"
+import { usePlayerStore } from "../stores/usePlayerStore"
 
 export default function PlaylistDialog() {
 	const { selectedSongPath, setSelectedSongPath, playlists, setPlaylists } = usePlaylistsStore()
 
 	const { generateUnusedID } = usePlaylistUtils()
+
+	const { currentTrack } = usePlayerStore()
+
+	const { showLyricsPanel } = useSettingsStore()
 
 	const [newPlaylistName, setNewPlaylistName] = useState("")
 
@@ -171,7 +177,10 @@ export default function PlaylistDialog() {
 	return (
 		<div
 			ref={mainContainer}
-			className="fixed z-10 top-0 w-screen h-screen mx-auto pt-4 pb-34 backdrop-blur-sm backdrop-brightness-75 flex flex-col justify-center items-center"
+			className={cn(
+				"fixed z-10 top-0 w-screen pb-34 h-screen mx-auto pt-4 backdrop-blur-sm backdrop-brightness-75 flex flex-col justify-center items-center",
+				currentTrack && showLyricsPanel && "pb-70"
+			)}
 		>
 			<div
 				ref={container}

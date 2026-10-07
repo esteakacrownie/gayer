@@ -18,7 +18,7 @@ export default function LyricsLine({
 		if (seekFn && startTimeMs) {
 			seekFn(startTimeMs * 0.001 + 0.05)
 		}
-	}, [startTimeMs])
+	}, [startTimeMs, seekFn])
 
 	// scroll to self
 	useEffect(() => {
@@ -26,19 +26,20 @@ export default function LyricsLine({
 			containerRef.current.scrollTo({
 				top:
 					scrollRef.current.offsetTop -
-					containerRef.current.getBoundingClientRect().height / (fullScreen ? 2.5 : 3),
+					containerRef.current.getBoundingClientRect().height /
+						(fullScreen ? 2.75 : 4.5 - (words == "" ? 0.5 : 0.0)),
 				behavior: "smooth"
 			})
 		}
-	}, [autoScroll, highlighted, fullScreen, words])
+	}, [autoScroll, highlighted, fullScreen, words, containerRef])
 
 	return (
 		<motion.div
 			ref={scrollRef}
 			onClick={handleClick}
 			className={cn(
-				"font-bold text-2xl md:text-3xl text-shadow-red-500 transition duration-200 ease-out cursor-pointer",
-				highlighted ? "opacity-100" : "opacity-25",
+				"font-bold text-2xl md:text-3xl transition duration-200 ease-out cursor-pointer",
+				highlighted ? "opacity-100" : "opacity-30",
 				fullScreen && "lg:text-4xl"
 			)}
 			initial={{
