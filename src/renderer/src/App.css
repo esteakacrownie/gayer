@@ -29,29 +29,4 @@ html {
 	display: none;
 }
 
-braccato-lyrics {
-	display: block;
-	overflow-y: auto;
-	translate: 0 25px;
-	--blyrics-font-size: 28px;
-	--blyrics-padding: 12px;
-}
-
-@media (min-width: 1280px) {
-	braccato-lyrics {
-		--blyrics-font-size: 34px;
-		--blyrics-padding: 18px;
-	}
-}
-
-.blyrics-container * {
-	text-align: center;
-	transform-origin: center center !important;
-}
-
-.blyrics--line {
-	padding-top: 0px;
-	padding-bottom: 0px;
-}
-
 @import "tailwindcss";

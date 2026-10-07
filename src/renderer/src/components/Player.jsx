@@ -13,10 +13,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
-import "@braccato/core/element"
-import "@braccato/core/styles/variables.css"
-import "@braccato/core/styles/lyrics.css"
-import "@braccato/core/styles/instrumental.css"
 import { detectParser } from "@braccato/parsers"
 import { useEffect, useMemo, useState, useCallback, useRef } from "react"
 import { FaPlay, FaPause, FaStepForward, FaStepBackward } from "react-icons/fa"
@@ -39,6 +35,7 @@ import { useCacheStore } from "../stores/useCacheStore"
 import { useHotkeys } from "react-hotkeys-hook"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { LiaExchangeAltSolid } from "react-icons/lia"
+import LyricsDisplay from "./LyricsDisplay"
 
 export default function Player() {
 	const {
@@ -70,8 +67,6 @@ export default function Player() {
 	const { nextSong, previousSong, pause, resume, resetPlay } = usePlayerControls()
 
 	const [coverArt, setCoverArt] = useState("#")
-
-	const braccatoElt = useRef(null)
 
 	const getVolumeLabel = (v) => {
 		return v > 0 ? (v > 0.5 ? "high" : "low") : "mute"
@@ -221,6 +216,7 @@ export default function Player() {
 		(event) => {
 			if (volumeSliderRef.current && volumeSliderRef.current.contains(event.target)) {
 				event.preventDefault()
+				event.stopPropagation()
 				// console.log(event)
 				setVolumeClamped(uiVolume + 0.05 * -Math.sign(event.deltaY))
 			}
@@ -236,6 +232,8 @@ export default function Player() {
 		}
 	}, [volumeSliderRef, volumeWheelHandler])
 
+	// lyrics logic
+	const lyricsRef = useRef({ source: null })
 	const [lyricsFullscreen, setLyricsFullscreen] = useState(false)
 	const [currentLyrics, setCurrentLyrics] = useState("")
 	const addTrackToLyricsCache = useCallback(
@@ -523,7 +521,11 @@ export default function Player() {
 								)}
 							>
 								{lyricsPanelOpen ? (
-									<braccato-lyrics ref={braccatoElt} lyrics={currentLyrics} />
+									<LyricsDisplay
+										lyrics={currentLyrics}
+										lyricsRef={lyricsRef}
+										fullScreen={lyricsFullscreen}
+									/>
 								) : (
 									<div className="w-full h-full flex flex-col items-center justify-center">
 										<p className="animate-pulse font-bold text-3xl">
@@ -717,7 +719,7 @@ export default function Player() {
 							</div>
 						</div>
 					</div>
-					<TimeLine lyricsRef={braccatoElt} />
+					<TimeLine lyricsRef={lyricsRef} />
 				</div>
 			</div>
 		</div>
