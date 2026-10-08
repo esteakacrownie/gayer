@@ -16,10 +16,10 @@ Local music player and downloader :3
 
 ## Features
 
-- Play local audio in different ways
-- Drag and drop multiple files and folders from your file manager onto the app to add them to the queue
-- Build and search your own custom audio library in app, by registering locations from your computer
-- Manually select a folder to open
+- Play local audio in different ways:
+  - Drag and drop multiple files and folders from your file manager onto the app to add them to the queue
+  - Build and search your own custom audio library in app, by registering locations from your computer
+  - Manually select a folder to open
 - Reorder and shuffle queue
 - Loop current or whole queue
 - Create your own playlists
