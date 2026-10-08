@@ -18,7 +18,7 @@ export default function LyricsLine({
 	const handleClick = useCallback(() => {
 		console.log(startTimeMs)
 		if (seekFn && startTimeMs !== undefined) {
-			seekFn(startTimeMs * 0.001 + 0.05)
+			seekFn(startTimeMs * 0.001 + 0.005)
 		}
 	}, [startTimeMs, seekFn])
 
@@ -69,7 +69,10 @@ export default function LyricsLine({
 			{words.trim() ? (
 				words
 			) : (
-				<IoMusicalNote size={32} className={highlighted ? "animate-bounce" : ""} />
+				<IoMusicalNote
+					size={fullScreen ? 32 : 28}
+					className={highlighted ? "animate-bounce" : ""}
+				/>
 			)}
 		</motion.div>
 	)

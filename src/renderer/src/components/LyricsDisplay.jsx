@@ -112,6 +112,12 @@ export default function LyricsDisplay({ lyrics, lyricsRef, fullScreen, offset = 
 						fullScreen={fullScreen}
 						words=""
 						containerRef={containerRef}
+						startTimeMs={
+							lyrics[lyrics.length - 1].startTimeMs +
+							lyrics[lyrics.length - 1].durationMs +
+							1
+						}
+						seekFn={seekTo}
 					/>
 				)}
 			</motion.div>
