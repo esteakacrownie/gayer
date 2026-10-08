@@ -2,6 +2,7 @@
 import { cn } from "@sglara/cn"
 import { useCallback, useEffect, useRef } from "react"
 import { motion } from "motion/react"
+import { IoMusicalNote } from "react-icons/io5"
 
 export default function LyricsLine({
 	highlighted,
@@ -15,13 +16,13 @@ export default function LyricsLine({
 	const scrollRef = useRef(null)
 
 	const handleClick = useCallback(() => {
-		if (seekFn && startTimeMs) {
+		console.log(startTimeMs)
+		if (seekFn && startTimeMs !== undefined) {
 			seekFn(startTimeMs * 0.001 + 0.05)
 		}
 	}, [startTimeMs, seekFn])
 
-	// scroll to self
-	useEffect(() => {
+	const applyScrollToSelf = useCallback(() => {
 		if (highlighted && autoScroll && containerRef.current && scrollRef.current) {
 			containerRef.current.scrollTo({
 				top:
@@ -32,6 +33,15 @@ export default function LyricsLine({
 			})
 		}
 	}, [autoScroll, highlighted, fullScreen, words, containerRef])
+
+	// scroll to self
+	useEffect(() => {
+		applyScrollToSelf()
+		window.addEventListener("resize", applyScrollToSelf)
+		return () => {
+			window.removeEventListener("resize", applyScrollToSelf)
+		}
+	}, [applyScrollToSelf])
 
 	return (
 		<motion.div
@@ -56,7 +66,11 @@ export default function LyricsLine({
 				// ease: "easeOut"
 			}}
 		>
-			{words}
+			{words.trim() ? (
+				words
+			) : (
+				<IoMusicalNote size={32} className={highlighted ? "animate-bounce" : ""} />
+			)}
 		</motion.div>
 	)
 }

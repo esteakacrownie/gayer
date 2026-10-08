@@ -47,15 +47,15 @@ Stay tuned and support the project by starring it >:3
 
 - `(ctrl+)space` : toggle pause / play (spacebar works on its own, unless you're typing in a searchbar, in which case ctrl+space comes in handy)
 - `ctrl+right/left` | `ctrl+n/p` : next/previous song in queue
+- `ctrl+up/down` : increase / decrease volume
 - `ctrl+l` : toggle loop modes
 - `ctrl+s` : toggle shuffling
 - `ctrl+k` : add current track to playlist
 - `ctrl+h` : toggle lyrics panel
-- `ctrl+e` : expand lyrics panel
+- `ctrl+e` : toggle expand lyrics panel
 - `ctrl+t/f` : scroll to top and focus search bar
 - `ctrl+tab` : switch tab
 - `ctrl+j` : switch filter (subtabs/categories)
-- `ctrl+up/down` : increase / decrease volume
 
 ## Recommended IDE Setup
 

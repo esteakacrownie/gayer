@@ -23,7 +23,7 @@ import {
 	IoMdShuffle,
 	IoMdAddCircleOutline
 } from "react-icons/io"
-import { MdFullscreen, MdFullscreenExit, MdLoop, MdLyrics } from "react-icons/md"
+import { MdFullscreen, MdFullscreenExit, MdInfoOutline, MdLoop, MdLyrics } from "react-icons/md"
 import { AnimatePresence, motion } from "motion/react"
 import { delay, getSongName } from "../utils"
 import { usePlayerStore } from "../stores/usePlayerStore"
@@ -36,6 +36,7 @@ import { useHotkeys } from "react-hotkeys-hook"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { LiaExchangeAltSolid } from "react-icons/lia"
 import LyricsDisplay from "./LyricsDisplay"
+import { RxTimer } from "react-icons/rx"
 
 export default function Player() {
 	const {
@@ -237,9 +238,9 @@ export default function Player() {
 	const [lyricsFullscreen, setLyricsFullscreen] = useState(false)
 	const [currentLyrics, setCurrentLyrics] = useState("")
 	const addTrackToLyricsCache = useCallback(
-		(path, lyrics, id) => {
+		(path, lyrics, id, info, delay) => {
 			const t = {}
-			t[path] = { id, lyrics }
+			t[path] = { id, lyrics, info, delay }
 			setLyricsCache({
 				...lyricsCache,
 				...t
@@ -248,6 +249,8 @@ export default function Player() {
 		[lyricsCache, setLyricsCache]
 	)
 	const [isFetchingNewLyrics, setIsFetchingNewLyrics] = useState(false)
+	const [fetchedLyricsInfo, setFetchedLyricsInfo] = useState("")
+	const [lyricsDelay, setLyricsDelay] = useState(0)
 	// fetch and cache next source for current track
 	const handleChangeLyricsSource = useCallback(() => {
 		if (isFetchingNewLyrics) return
@@ -261,25 +264,31 @@ export default function Player() {
 				})
 				.then((d) => {
 					if (Array.isArray(d) && d.length > 0) {
+						const sources = d.filter((e) => e.syncedLyrics)
 						let idx = 0
-						for (let elt of d) {
+						for (let elt of sources) {
 							if (elt.id == id) {
 								break
 							}
 							idx += 1
 						}
-						const data = idx > 0 ? [...d.slice(idx), ...d.slice(0, idx)] : d
+						const data =
+							idx > 0 ? [...sources.slice(idx), ...sources.slice(0, idx)] : sources
 						for (let elt of data.filter((e) => e.id != id)) {
-							if (elt.syncedLyrics) {
-								setLyricsPanelOpen(true)
-								addTrackToLyricsCache(
-									getSongName(currentTrack),
-									elt.syncedLyrics,
-									elt.id
-								)
-								console.log(`source changed from ${id} to ${elt.id}`)
-								break
-							}
+							setLyricsPanelOpen(true)
+							const sourceIdx = sources
+								.map((e, i) => ({ ...e, idx: i }))
+								.filter((e) => e.id == elt.id)[0].idx
+							const info = `Source ${sourceIdx + 1} of ${sources.length}`
+							addTrackToLyricsCache(
+								getSongName(currentTrack),
+								elt.syncedLyrics,
+								elt.id,
+								info,
+								0
+							)
+							// console.log(`source changed from ${id} to ${elt.id}`)
+							break
 						}
 					}
 					setIsFetchingNewLyrics(false)
@@ -297,6 +306,22 @@ export default function Player() {
 		isFetchingNewLyrics,
 		setIsFetchingNewLyrics
 	])
+	const handleChangeLyricsDelay = useCallback(
+		(inc) => {
+			if (!currentTrack || !lyricsCache[getSongName(currentTrack)]) return
+			const cachedElt = lyricsCache[getSongName(currentTrack)]
+			const newDelay = inc == 0 ? 0 : lyricsDelay + inc
+			setLyricsDelay(newDelay)
+			addTrackToLyricsCache(
+				getSongName(currentTrack),
+				cachedElt.lyrics,
+				cachedElt.id,
+				cachedElt.info,
+				newDelay
+			)
+		},
+		[currentTrack, lyricsDelay, setLyricsDelay, addTrackToLyricsCache, lyricsCache]
+	)
 	// return promise resolving in fetched lyrics (get first source available, cache and return it)
 	const fetchLyrics = useCallback(
 		(track) => {
@@ -307,13 +332,21 @@ export default function Player() {
 					return r.json()
 				})
 				.then((d) => {
-					if (Array.isArray(d) && d.length > 0) {
-						for (let elt of d) {
-							if (elt.syncedLyrics) {
-								setLyricsPanelOpen(true)
-								addTrackToLyricsCache(getSongName(track), elt.syncedLyrics, elt.id)
-								return elt.syncedLyrics
-							}
+					if (Array.isArray(d)) {
+						const sources = d.filter((e) => e.syncedLyrics)
+						if (sources.length > 0) {
+							const elt = sources[0]
+							setLyricsPanelOpen(true)
+							const info = `Source 1 of ${sources.length}`
+							setFetchedLyricsInfo(info)
+							addTrackToLyricsCache(
+								getSongName(track),
+								elt.syncedLyrics,
+								elt.id,
+								info,
+								0
+							)
+							return elt.syncedLyrics
 						}
 					}
 					return undefined
@@ -325,8 +358,10 @@ export default function Player() {
 	useEffect(() => {
 		const action = async () => {
 			if (lyricsCache[getSongName(currentTrack)]) {
-				const text = lyricsCache[getSongName(currentTrack)].lyrics
+				const { lyrics: text, info, delay } = lyricsCache[getSongName(currentTrack)]
 				setCurrentLyrics(detectParser(text).parse(text))
+				setLyricsDelay(delay)
+				setFetchedLyricsInfo(info)
 			}
 		}
 		action()
@@ -334,9 +369,13 @@ export default function Player() {
 	// set or fetch lyrics when currentTrack changes
 	useEffect(() => {
 		const action = async () => {
+			setFetchedLyricsInfo("")
+			setLyricsDelay(0)
 			if (currentTrack) {
 				if (lyricsCache[getSongName(currentTrack)]) {
-					const text = lyricsCache[getSongName(currentTrack)].lyrics
+					const { lyrics: text, info, delay } = lyricsCache[getSongName(currentTrack)]
+					if (info) setFetchedLyricsInfo(info)
+					if (delay) setLyricsDelay(delay)
 					setCurrentLyrics(detectParser(text).parse(text))
 					setLyricsPanelOpen(true)
 				} else {
@@ -470,37 +509,151 @@ export default function Player() {
 				<div className="flex flex-col justify-center w-full h-full bg-linear-180 from-slate-950 to-pink-800 outline-2 outline-pink-300/80 from-[-75%] to-150% shadow-pink-400/40 shadow-[0_0_7px_7px] rounded-2xl overflow-clip gap-4 p-4">
 					{showLyricsPanel && currentTrack && (
 						<div className="relative flex flex-col w-screen justify-center items-center overflow-y-clip -m-4 pr-4 bg-linear-180 from-black/40 via-65% via-black/25 to-transparent">
-							<div className="absolute top-4 left-4">
-								<motion.button
-									title="Change lyrics source (press if lyrics are incorrect or not in sync)"
-									className={cn(
-										"relative outline-none hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
-										isFetchingNewLyrics && "animate-pulse"
-									)}
-									onClick={handleChangeLyricsSource}
+							<div className="absolute z-10 top-4 left-4 flex flex-col gap-2">
+								<motion.div
+									className="relative pointer-events-none flex flex-row gap-2 overflow-x-clip"
 									initial={{
-										scale: 1.0
+										width: "40px"
 									}}
 									animate={{
-										scale: 1.0
-									}}
-									whileTap={{
-										scale: 0.8
+										witdh: "40px"
 									}}
 									transition={{
-										duration: 0.025,
+										duration: 0.1,
 										ease: "easeOut"
 									}}
+									whileHover={{
+										width: fetchedLyricsInfo ? "auto" : "40px"
+									}}
 								>
-									<LiaExchangeAltSolid
-										className={isFetchingNewLyrics && "animate-spin"}
-										size={20}
-									/>
-								</motion.button>
+									<motion.button
+										title="Change lyrics source (press if lyrics are incorrect or not in sync)"
+										className={cn(
+											"relative outline-none hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
+											isFetchingNewLyrics && "animate-pulse"
+										)}
+										onClick={handleChangeLyricsSource}
+										initial={{
+											scale: 1.0
+										}}
+										animate={{
+											scale: 1.0
+										}}
+										whileTap={{
+											scale: 0.8
+										}}
+										transition={{
+											duration: 0.025,
+											ease: "easeOut"
+										}}
+									>
+										<LiaExchangeAltSolid
+											className={isFetchingNewLyrics && "animate-spin"}
+											size={20}
+										/>
+									</motion.button>
+									<div className="line-clamp-1 min-w-max flex flex-row relative outline-none gap-1 justify-center items-center bg-pink-800 rounded-full border border-pink-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700">
+										<MdInfoOutline size={16} />
+										<span>{fetchedLyricsInfo}</span>
+									</div>
+								</motion.div>
+								<motion.div
+									className="relative flex flex-row gap-2 overflow-x-clip"
+									initial={{
+										width: "40px"
+									}}
+									animate={{
+										witdh: "40px"
+									}}
+									transition={{
+										duration: 0.1,
+										ease: "easeOut"
+									}}
+									whileHover={{
+										width: "auto"
+									}}
+								>
+									<motion.button
+										title="Reset lyrics delay"
+										className="relative outline-none hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
+										onClick={() => handleChangeLyricsDelay(0)}
+										initial={{
+											scale: 1.0
+										}}
+										animate={{
+											scale: 1.0
+										}}
+										whileTap={{
+											scale: 0.8
+										}}
+										transition={{
+											duration: 0.025,
+											ease: "easeOut"
+										}}
+									>
+										<RxTimer size={20} />
+									</motion.button>
+									<motion.button
+										title="Decrease lyrics delay"
+										className="relative outline-none bg-pink-900/95 hover:bg-pink-700/95 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
+										onClick={() => handleChangeLyricsDelay(-0.2)}
+										initial={{
+											scale: 1.0
+										}}
+										animate={{
+											scale: 1.0
+										}}
+										whileTap={{
+											scale: 0.8
+										}}
+										transition={{
+											duration: 0.025,
+											ease: "easeOut"
+										}}
+									>
+										<RxTimer
+											size={20}
+											className="translate-y-0.5 -translate-x-0.5 scale-85"
+										/>
+										<span className="absolute text-sm font-bold top-0.5 right-1">
+											-
+										</span>
+									</motion.button>
+									<motion.button
+										title="Increase lyrics delay"
+										className="relative outline-none bg-pink-900/95 hover:bg-pink-700/95 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
+										onClick={() => handleChangeLyricsDelay(0.2)}
+										initial={{
+											scale: 1.0
+										}}
+										animate={{
+											scale: 1.0
+										}}
+										whileTap={{
+											scale: 0.8
+										}}
+										transition={{
+											duration: 0.025,
+											ease: "easeOut"
+										}}
+									>
+										<RxTimer
+											size={20}
+											className="translate-y-0.5 -translate-x-0.5 scale-85"
+										/>
+										<span className="absolute text-sm font-bold top-0.5 right-1">
+											+
+										</span>
+									</motion.button>
+									<div className="line-clamp-1 min-w-max flex flex-row relative outline-none gap-1 justify-center items-center bg-pink-800 rounded-full border border-pink-400 py-1 px-2 transition ease-out duration-200 hover:bg-pink-700">
+										<MdInfoOutline size={16} />
+										<span>{`${lyricsDelay && lyricsDelay > 0 ? "+" : ""}${lyricsDelay ? Math.round(lyricsDelay * 10) / 10 : 0}s`}</span>
+									</div>
+								</motion.div>
 							</div>
 							<div className="absolute top-4 right-12">
 								<motion.button
-									title="Expand lyrics panel [Ctrl+E]"
+									title={`${lyricsFullscreen ? "Shrink" : "Expand"} lyrics panel [Ctrl+E]`}
 									className="relative outline-none hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
 									onClick={() => setLyricsFullscreen(!lyricsFullscreen)}
 									initial={{
@@ -535,6 +688,7 @@ export default function Player() {
 										lyrics={currentLyrics}
 										lyricsRef={lyricsRef}
 										fullScreen={lyricsFullscreen}
+										offset={lyricsDelay ?? 0}
 									/>
 								) : (
 									<div className="w-full h-full flex flex-col items-center justify-center">
@@ -669,26 +823,6 @@ export default function Player() {
 								)}
 							</motion.button>
 							<motion.button
-								title="Add to playlist [Ctrl+K]"
-								className="hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
-								onClick={handleAddToPlaylist}
-								initial={{
-									scale: 1.0
-								}}
-								animate={{
-									scale: 1.0
-								}}
-								whileTap={{
-									scale: 0.8
-								}}
-								transition={{
-									duration: 0.025,
-									ease: "easeOut"
-								}}
-							>
-								<IoMdAddCircleOutline size={20} />
-							</motion.button>
-							<motion.button
 								title="Toggle Lyrics [Ctrl+H]"
 								className={cn(
 									"relative hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
@@ -710,6 +844,26 @@ export default function Player() {
 								}}
 							>
 								<MdLyrics size={20} />
+							</motion.button>
+							<motion.button
+								title="Add to playlist [Ctrl+K]"
+								className="hover:bg-pink-400/30 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
+								onClick={handleAddToPlaylist}
+								initial={{
+									scale: 1.0
+								}}
+								animate={{
+									scale: 1.0
+								}}
+								whileTap={{
+									scale: 0.8
+								}}
+								transition={{
+									duration: 0.025,
+									ease: "easeOut"
+								}}
+							>
+								<IoMdAddCircleOutline size={20} />
 							</motion.button>
 						</div>
 						<div className="flex flex-row justify-end items-center absolute w-full right-0 top-1.75 pointer-events-none">

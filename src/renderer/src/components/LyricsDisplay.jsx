@@ -14,11 +14,11 @@ export default function LyricsDisplay({ lyrics, lyricsRef, fullScreen, offset = 
 	const seekTo = useCallback(
 		(t) => {
 			if (lyricsRef.current?.source) {
-				lyricsRef.current.source.currentTime = t
+				lyricsRef.current.source.currentTime = t - offset
 				setManualScrolled(false)
 			}
 		},
-		[lyricsRef]
+		[lyricsRef, offset]
 	)
 
 	// return line that matches time, or last line + 1 if time exceeds all lines
@@ -80,7 +80,7 @@ export default function LyricsDisplay({ lyrics, lyricsRef, fullScreen, offset = 
 				onWheel={() => setManualScrolled(true)}
 				className="py-36.5 pl-16 pr-20 flex flex-col text-center items-center justify-start w-screen h-full overflow-y-scroll"
 			>
-				{lyrics.length > 0 && (
+				{lyrics.length > 0 && lyrics[0].words.trim() && (
 					<LyricsLine
 						key={-1}
 						autoScroll={!manualScrolled}
@@ -88,6 +88,8 @@ export default function LyricsDisplay({ lyrics, lyricsRef, fullScreen, offset = 
 						fullScreen={fullScreen}
 						words=""
 						containerRef={containerRef}
+						startTimeMs={1}
+						seekFn={seekTo}
 					/>
 				)}
 				{(lyrics || []).map((e, i) => (
@@ -102,7 +104,7 @@ export default function LyricsDisplay({ lyrics, lyricsRef, fullScreen, offset = 
 						seekFn={seekTo}
 					/>
 				))}
-				{lyrics.length > 0 && (
+				{lyrics.length > 0 && lyrics[lyrics.length - 1].words.trim() && (
 					<LyricsLine
 						key={lyrics.length}
 						autoScroll={!manualScrolled}

@@ -71,7 +71,7 @@ export default function UpdatesDialog() {
 	}
 
 	return (
-		<div className="fixed z-20 top-0 left-0 w-screen h-screen mx-auto p-8 backdrop-blur-sm backdrop-brightness-75 flex flex-col justify-center items-center">
+		<div className="fixed z-50 top-0 left-0 w-screen h-screen mx-auto p-8 backdrop-blur-sm backdrop-brightness-75 flex flex-col justify-center items-center">
 			<div className="px-8 max-h-fit flex flex-col w-full h-full justify-start gap-4 max-w-200 mx-auto">
 				<div className="p-4 flex flex-col gap-2 justify-start items-center w-full  h-full from-slate-950 to-pink-700 from-[-25%] to-150% bg-linear-180 rounded-2xl border-2 border-pink-300 shadow-pink-400/40 shadow-[0_0_7px_7px]">
 					<div className="relative w-full flex flex-col items-center gap-4 overflow-y-scroll">
