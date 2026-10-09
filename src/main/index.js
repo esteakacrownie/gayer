@@ -180,13 +180,13 @@ const startupPlaylistProcessing = async () => {
 	// generate index.json, based on files, only if ids are in display or if display is null
 	const playlistsDir = join(dirs.data, "playlists")
 	await mkdir(playlistsDir, { recursive: true })
-	let playlists = {}
+	let playlists = []
 	let display = null
 	try {
 		if (existsSync(join(dirs.data, "playlists.json"))) {
 			playlists =
 				JSON.parse(readFileSync(join(dirs.data, "playlists.json"), { encoding: "utf8" })) ??
-				{}
+				[]
 		}
 	} catch (error) {
 		console.log(error)
