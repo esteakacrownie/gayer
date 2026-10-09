@@ -13,7 +13,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import SongFilesList from "./SongFilesList"
 import { getFolderName, getSortedFilesAt, shuffleArray } from "../utils"
 import { useFilesStore } from "../stores/useFilesStore"
@@ -28,6 +28,7 @@ import PowerSavingButton from "./PowerSavingButton"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import { cn } from "@sglara/cn"
 import { IoIosFolderOpen } from "react-icons/io"
+import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 
 export default function FileSystemTab() {
 	const { setFiles, setFilesIgnoreExistenceCheck } = useFilesStore()
@@ -36,10 +37,12 @@ export default function FileSystemTab() {
 
 	const { libraryLocations, setLibraryLocations, tab, setTab, shufflePlay } = useSettingsStore()
 
+	const { setSelectedSongPath } = usePlaylistsStore()
+
 	const [folderSongs, setFolderSongs] = useState([])
 	const [folder, setFolder] = useState("")
 
-	const openFolder = async () => {
+	const openFolder = useCallback(async () => {
 		const dir = await window.electron.ipcRenderer.invoke("open_folder", {})
 		if (!dir) return
 		setFolder(dir)
@@ -47,18 +50,23 @@ export default function FileSystemTab() {
 		setFiles(timed)
 		setFolderSongs(songs)
 		setFilesIgnoreExistenceCheck(songs)
-	}
+	}, [setFiles, setFilesIgnoreExistenceCheck])
 
-	const handlePlayAll = () => {
+	const handlePlayAll = useCallback(() => {
 		if (folderSongs.length == 0) return
 		setAutoplay(true)
 		const list = shufflePlay ? shuffleArray(folderSongs) : folderSongs
 		setQueue([...new Set(list.concat(queue))])
 		setNextAction("setNext")
 		setTab("queue")
-	}
+	}, [folderSongs, queue, setAutoplay, setNextAction, setQueue, setTab, shufflePlay])
 
-	const handleAddToQueue = () => {
+	const handleAddAllToPLaylist = useCallback(() => {
+		if (folderSongs.length == 0) return
+		setSelectedSongPath(folderSongs)
+	}, [folderSongs, setSelectedSongPath])
+
+	const handleAddToQueue = useCallback(() => {
 		if (folderSongs.length == 0) return
 		const list = shufflePlay ? shuffleArray(folderSongs) : folderSongs
 		setQueue([...new Set(queue.concat(list))])
@@ -66,16 +74,16 @@ export default function FileSystemTab() {
 			setNextAction("setNext")
 		}
 		setTab("queue")
-	}
+	}, [currentTrack, folderSongs, setQueue, shufflePlay, queue, setNextAction, setTab])
 
-	const handleAddLibrary = () => {
+	const handleAddLibrary = useCallback(() => {
 		if (!folder) return
 		if (libraryLocations.includes(folder)) {
 			setLibraryLocations([...new Set(libraryLocations.filter((elt) => elt != folder))])
 		} else {
 			setLibraryLocations([...new Set(libraryLocations.concat(folder))])
 		}
-	}
+	}, [folder, libraryLocations, setLibraryLocations])
 
 	if (tab != "filesystem") return
 
@@ -97,9 +105,18 @@ export default function FileSystemTab() {
 					<span>Play all</span>
 				</button>
 				<button
+					className="flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+					onClick={handleAddAllToPLaylist}
+				>
+					<MdAddCircleOutline size={16} />
+					<span>Add all to playlist</span>
+				</button>
+				<button
 					className={cn(
 						"flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer",
-						libraryLocations.includes(folder) ? "bg-violet-950 hover:bg-violet-900" : ""
+						libraryLocations.includes(folder)
+							? "bg-pink-900 hover:bg-pink-800 border-pink-300"
+							: ""
 					)}
 					onClick={handleAddLibrary}
 				>

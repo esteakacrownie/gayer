@@ -15,19 +15,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import { usePlayerStore } from "../stores/usePlayerStore"
 import { useSettingsStore } from "../stores/useSettingsStore"
-import { MdPlaylistRemove, MdInfoOutline } from "react-icons/md"
+import { MdPlaylistRemove, MdInfoOutline, MdAddCircleOutline } from "react-icons/md"
 import { Reorder } from "motion/react"
 import PowerSavingButton from "./PowerSavingButton"
 import SongElement from "./SongElement"
+import { useCallback } from "react"
+import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 
 export default function QueueTab() {
 	const maxLength = 25
 	const { queue, setQueue, currentTrack } = usePlayerStore()
 	const { powerSavingMode, tab, setTab } = useSettingsStore()
+	const { setSelectedSongPath } = usePlaylistsStore()
 
 	const clearQueue = () => {
 		setQueue([])
 	}
+
+	const handleAddAllToPLaylist = useCallback(() => {
+		setSelectedSongPath(queue)
+	}, [queue, setSelectedSongPath])
 
 	if (tab != "queue") return
 
@@ -40,6 +47,13 @@ export default function QueueTab() {
 				>
 					<MdPlaylistRemove size={16} />
 					<span>Clear queue</span>
+				</button>
+				<button
+					className="flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+					onClick={handleAddAllToPLaylist}
+				>
+					<MdAddCircleOutline size={16} />
+					<span>Add all to playlist</span>
 				</button>
 				<div className="flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700">
 					<MdInfoOutline size={16} />
