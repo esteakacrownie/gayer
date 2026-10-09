@@ -33,7 +33,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import useConfirm from "../hooks/useConfirmationButton"
-import { useCacheStore } from "../stores/useCacheStore"
+import { useCoversStore } from "../stores/useCoversStore"
 
 export default function PlaylistElement({
 	playlist,
@@ -58,7 +58,7 @@ export default function PlaylistElement({
 
 	const { shufflePlay, setForceRefreshLocationsTracker } = useSettingsStore()
 
-	const { thumbnailCache, setThumbnailCache } = useCacheStore()
+	const { thumbnailCache, setThumbnailCache } = useCoversStore()
 
 	const { playSongs, playBatchNext } = usePlayerControls()
 

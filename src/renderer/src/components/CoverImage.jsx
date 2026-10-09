@@ -16,11 +16,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 import { cn } from "@sglara/cn"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import { useSettingsStore } from "../stores/useSettingsStore"
-import { useCacheStore } from "../stores/useCacheStore"
+import { useCoversStore } from "../stores/useCoversStore"
 
 export default function CoverImage({ song }) {
 	const { powerSavingMode } = useSettingsStore()
-	const { thumbnailCache } = useCacheStore()
+	const { thumbnailCache } = useCoversStore()
 	const { currentTrack } = usePlayerStore()
 
 	return (

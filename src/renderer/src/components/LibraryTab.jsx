@@ -51,11 +51,11 @@ import { useLibraryStore } from "../stores/useLibraryStore"
 import { motion } from "motion/react"
 import { PiPlaylist } from "react-icons/pi"
 import { useFilesStore } from "../stores/useFilesStore"
-import { useCacheStore } from "../stores/useCacheStore"
 import { useHotkeys } from "react-hotkeys-hook"
 import FixMissingPlaylistTracksButton from "./FixMissingPlaylistTracksButton"
 import FixMissingPlaylistTracksIndicator from "./FixMissingPlaylistTracksIndicator"
 import { FuseWorker } from "fuse.js/worker"
+import { useCoversStore } from "../stores/useCoversStore"
 
 export default function LibraryTab() {
 	const maxLength = 25
@@ -799,7 +799,7 @@ export default function LibraryTab() {
 }
 
 const CoverArtUpdater = ({ songs = [] }) => {
-	const { thumbnailCache, setThumbnailCache } = useCacheStore()
+	const { thumbnailCache, setThumbnailCache } = useCoversStore()
 	const { files } = useFilesStore()
 	const { queue } = usePlayerStore()
 

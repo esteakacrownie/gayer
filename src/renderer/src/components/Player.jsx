@@ -31,12 +31,13 @@ import usePlayerControls from "../hooks/usePlayerControls"
 import { cn } from "@sglara/cn"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import TimeLine from "./TimeLine"
-import { useCacheStore } from "../stores/useCacheStore"
 import { useHotkeys } from "react-hotkeys-hook"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { LiaExchangeAltSolid } from "react-icons/lia"
 import LyricsDisplay from "./LyricsDisplay"
 import { RxTimer } from "react-icons/rx"
+import { useCoversStore } from "../stores/useCoversStore"
+import { useLyricsStore } from "../stores/useLyricsStore"
 
 export default function Player() {
 	const {
@@ -61,7 +62,8 @@ export default function Player() {
 		setShowLyricsPanel
 	} = useSettingsStore()
 
-	const { thumbnailCache, lyricsCache, setLyricsCache } = useCacheStore()
+	const { thumbnailCache } = useCoversStore()
+	const { lyricsCache, setLyricsCache } = useLyricsStore()
 
 	const { setSelectedSongPath } = usePlaylistsStore()
 
@@ -356,6 +358,7 @@ export default function Player() {
 	)
 	// set lyrics when cache gets updated
 	useEffect(() => {
+		console.log(lyricsCache)
 		const action = async () => {
 			if (lyricsCache[getSongName(currentTrack)]) {
 				const { lyrics: text, info, delay } = lyricsCache[getSongName(currentTrack)]

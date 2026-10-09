@@ -14,23 +14,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import { create } from "zustic"
-import { toAllowedPlaylistName } from "../utils"
 
-const updatePlaylists = (v) => {
-	window.electron.ipcRenderer.invoke("update_playlists", { playlistsData: v })
+const defaults = {
+	thumbnailCache: {}
+}
+
+const updateCovers = (v) => {
+	window.electron.ipcRenderer.invoke("update_covers", { coversData: v })
 	return v
 }
 
-export const usePlaylistsStore = create((set) => ({
-	selectedSongPath: "", // songs / songs to be added to playlists in dialog
-	playlists: [], //[ { id, name, songs: ["path/to/song1"], url? } ]
-	requestedTracksReplacements: [],
-	setSelectedSongPath: (v) => set((state) => ({ selectedSongPath: v })),
-	setPlaylists: (v) =>
-		set((state) => ({
-			playlists: updatePlaylists(
-				v.map((e) => ({ ...e, name: toAllowedPlaylistName(e.name) }))
-			)
-		})),
-	setRequestedTracksReplacements: (v) => set((state) => ({ requestedTracksReplacements: v }))
+export const useCoversStore = create((set) => ({
+	thumbnailCache: defaults.thumbnailCache,
+	setThumbnailCache: (v) => set((state) => ({ thumbnailCache: updateCovers(v) })),
+	initThumbnailCache: (v) => set((state) => ({ thumbnailCache: v }))
 }))

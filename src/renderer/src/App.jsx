@@ -24,18 +24,20 @@ import Tabs from "./components/Tabs"
 import FileSystemTab from "./components/FileSystemTab"
 import QueueTab from "./components/QueueTab"
 import LibraryTab from "./components/LibraryTab"
-import { useCacheStore } from "./stores/useCacheStore"
 import PlaylistDialog from "./components/PlaylistDialog"
 import { usePlaylistsStore } from "./stores/usePlaylistsStore"
 import DownloadTab from "./components/DownloadTab"
 import { useFilesStore } from "./stores/useFilesStore"
 import { useHotkeys } from "react-hotkeys-hook"
 import UpdatesDialog from "./components/UpdatesDialog"
+import { useCoversStore } from "./stores/useCoversStore"
+import { useLyricsStore } from "./stores/useLyricsStore"
 
 function App() {
 	const { setQueue, setAutoplay, setNextAction, currentTrack } = usePlayerStore()
 	const { setSettings, showLyricsPanel } = useSettingsStore()
-	const { setCache } = useCacheStore()
+	const { initThumbnailCache } = useCoversStore()
+	const { initLyricsCache } = useLyricsStore()
 	const { setPlaylists } = usePlaylistsStore()
 	const { setFilesIgnoreExistenceCheck } = useFilesStore()
 
@@ -52,21 +54,24 @@ function App() {
 				setSettings(settings)
 			})
 			.catch(() => console.log("Couldn't parse settings file"))
-		// load cache
+		// load covers
 		window.electron.ipcRenderer
-			.invoke("read_configfile", { path: "cache.json" })
+			.invoke("read_configfile", { path: "covers/index.json" })
 			.then((d) => {
-				const res = JSON.parse(d)
-				if ((res?.version || 0) >= 3) {
-					setCache(res)
-				}
+				initThumbnailCache(JSON.parse(d))
 			})
-			.catch(() => console.log("Couldn't parse cache file"))
+			.catch(() => console.log("Couldn't parse covers"))
+		// load lyrics
+		window.electron.ipcRenderer
+			.invoke("read_configfile", { path: "lyrics/index.json" })
+			.then((d) => {
+				initLyricsCache(JSON.parse(d))
+			})
+			.catch(() => console.log("Couldn't parse lyrics"))
 		// load playlists
 		window.electron.ipcRenderer
-			.invoke("read_configfile", { path: "playlists.json" })
+			.invoke("read_configfile", { path: "playlists/index.json" })
 			.then((d) => {
-				// console.log(d)
 				const parsed = JSON.parse(d)
 				const data = Array.isArray(parsed) ? parsed : []
 				setPlaylists(data)

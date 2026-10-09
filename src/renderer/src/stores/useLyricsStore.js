@@ -14,23 +14,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import { create } from "zustic"
-import { toAllowedPlaylistName } from "../utils"
 
-const updatePlaylists = (v) => {
-	window.electron.ipcRenderer.invoke("update_playlists", { playlistsData: v })
+const defaults = {
+	lyricsCache: {} // { songName: { id: (lrclib db ID), lyrics: "" } }
+}
+
+const updateLyrics = (v) => {
+	window.electron.ipcRenderer.invoke("update_lyrics", { lyricsData: v })
 	return v
 }
 
-export const usePlaylistsStore = create((set) => ({
-	selectedSongPath: "", // songs / songs to be added to playlists in dialog
-	playlists: [], //[ { id, name, songs: ["path/to/song1"], url? } ]
-	requestedTracksReplacements: [],
-	setSelectedSongPath: (v) => set((state) => ({ selectedSongPath: v })),
-	setPlaylists: (v) =>
-		set((state) => ({
-			playlists: updatePlaylists(
-				v.map((e) => ({ ...e, name: toAllowedPlaylistName(e.name) }))
-			)
-		})),
-	setRequestedTracksReplacements: (v) => set((state) => ({ requestedTracksReplacements: v }))
+export const useLyricsStore = create((set) => ({
+	lyricsCache: defaults.lyricsCache, // { filepath: { id: (lrclib db ID), lyrics: "" } }
+	setLyricsCache: (v) => set((state) => ({ lyricsCache: updateLyrics(v) })),
+	initLyricsCache: (v) => set((state) => ({ lyricsCache: v }))
 }))

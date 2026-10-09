@@ -15,10 +15,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import appDirs from "appdirsjs"
 import { app, shell, BrowserWindow, ipcMain, protocol, dialog } from "electron"
-import { join } from "path"
+import { basename, dirname, join } from "node:path"
+import { readFile, writeFile, stat, readdir, mkdir, unlink, rm } from "node:fs/promises"
+import { existsSync, readFileSync, createWriteStream } from "node:fs"
+import { Readable } from "node:stream"
+import { pipeline } from "node:stream/promises"
 import { electronApp, optimizer, is } from "@electron-toolkit/utils"
-import { readFile, writeFile, stat, readdir, mkdir, unlink, rm } from "fs/promises"
-import { existsSync, readFileSync } from "fs"
 import { windowStateKeeper } from "./stateKeeper"
 import YTMusic from "ytmusic-api"
 import { YtDlp, helpers } from "ytdlp-nodejs"
@@ -47,6 +49,318 @@ const MAX_YTDLP_INSTANCES = 4
 let ytdlpInstancesCount = 0
 
 // utils
+const download = async (url, path) => {
+	const response = await fetch(url)
+
+	if (!response.ok) {
+		throw new Error(`Download failed: ${response.status}`)
+	}
+
+	await mkdir(dirname(path), { recursive: true })
+	await pipeline(Readable.fromWeb(response.body), createWriteStream(path))
+}
+
+const downloadMissingCovers = async (data) => {
+	const coversDir = join(dirs.data, "covers")
+	await mkdir(coversDir, { recursive: true })
+	const queue = []
+	const checkedIDs = []
+	// filter non-existing covers
+	for (let img of Object.values(data)) {
+		if (
+			img != "#" &&
+			img.trim() &&
+			!existsSync(join(coversDir, `${basename(img, ".png")}.png`)) &&
+			!checkedIDs.includes(basename(img, ".png"))
+		) {
+			queue.push({ url: img, path: join(coversDir, `${basename(img, ".png")}.png`) })
+			checkedIDs.push(basename(img, ".png"))
+		}
+	}
+	// launch downloads
+	for (let elt of queue) {
+		try {
+			await download(elt.url, elt.path)
+		} catch (error) {
+			console.log(error)
+		}
+	}
+}
+
+const generateLyricsData = async () => {
+	// generate index.json from .lrc files
+	try {
+		let index = {}
+		const lyricsDir = join(dirs.data, "lyrics")
+		await mkdir(lyricsDir, { recursive: true })
+		for (let path of await readdir(lyricsDir)) {
+			if (path.endsWith(".lrc")) {
+				index[basename(path, ".lrc")] = JSON.parse(
+					readFileSync(join(lyricsDir, path), { encoding: "utf-8" })
+				)
+			}
+		}
+		await writeFile(join(lyricsDir, "index.json"), JSON.stringify(index), { encoding: "utf-8" })
+		return true
+	} catch (error) {
+		console.log(error)
+		return false
+	}
+}
+
+const startupCoversProcessing = async () => {
+	// check if covers/remote.json exists
+	// check if cache.json exists
+	// remote = {...cache, ...remote}
+	// save remote to remote.json
+	// generate index.json from remote,
+	// replacing the urls by the path to cover if it exists
+	// else add cover to the download queue
+	// start download queue
+	let cache = {}
+	let remote = {}
+	const coversDir = join(dirs.data, "covers")
+	await mkdir(coversDir, { recursive: true })
+	try {
+		if (existsSync(join(dirs.data, "cache.json"))) {
+			cache =
+				JSON.parse(
+					readFileSync(join(dirs.data, "cache.json"), {
+						encoding: "utf8"
+					})
+				).thumbnailCache ?? {}
+		}
+	} catch (error) {
+		console.log(error)
+		// return false
+	}
+	try {
+		if (existsSync(join(coversDir, "remote.json"))) {
+			remote =
+				JSON.parse(
+					readFileSync(join(coversDir, "remote.json"), {
+						encoding: "utf8"
+					})
+				) ?? {}
+		}
+	} catch (error) {
+		console.log(error)
+		// return false
+	}
+	const filtered = {}
+	for (let elt of Object.keys(remote)) {
+		if (
+			remote[elt].startsWith("https://") ||
+			remote[elt].startsWith("http://") ||
+			remote[elt] == "#"
+		) {
+			filtered[elt] = remote[elt]
+		}
+	}
+	remote = { ...cache, ...filtered }
+	await writeFile(join(coversDir, "remote.json"), JSON.stringify(remote))
+	const index = { ...remote }
+	const missing = {}
+	for (let elt of Object.keys(remote)) {
+		const img = remote[elt]
+		if (existsSync(join(coversDir, `${basename(img, ".png")}.png`))) {
+			index[elt] = "file://" + join("/", join(coversDir, `${basename(img, ".png")}.png`))
+		} else {
+			missing[elt] = remote[elt]
+		}
+	}
+	await writeFile(join(coversDir, "index.json"), JSON.stringify(index), { encoding: "utf-8" })
+	downloadMissingCovers(missing)
+}
+
+const startupPlaylistProcessing = async () => {
+	// check if playlists.json exists
+	// extract playlists.json to playlists/ID.pl (if file does not already exist), and add entries to display.json (new Set())
+	// check if display.json exists
+	// generate index.json, based on files, only if ids are in display or if display is null
+	const playlistsDir = join(dirs.data, "playlists")
+	await mkdir(playlistsDir, { recursive: true })
+	let playlists = {}
+	let display = null
+	try {
+		if (existsSync(join(dirs.data, "playlists.json"))) {
+			playlists =
+				JSON.parse(readFileSync(join(dirs.data, "playlists.json"), { encoding: "utf8" })) ??
+				{}
+		}
+	} catch (error) {
+		console.log(error)
+		// return false
+	}
+	try {
+		if (existsSync(join(playlistsDir, "display.json"))) {
+			display =
+				JSON.parse(
+					readFileSync(join(playlistsDir, "display.json"), { encoding: "utf8" })
+				) ?? null
+		}
+	} catch (error) {
+		console.log(error)
+		// return false
+	}
+	for (let p of playlists) {
+		if (!existsSync(join(playlistsDir, `${p.id}.pl`))) {
+			if (display) display.push(p.id)
+			await writeFile(join(playlistsDir, `${p.id}.pl`), JSON.stringify(p), {
+				encoding: "utf-8"
+			})
+		}
+	}
+	if (display) display = [...new Set([...display])]
+	const index = []
+	if (display && Array.isArray(display)) {
+		for (let p of display) {
+			if (existsSync(join(playlistsDir, `${p}.pl`))) {
+				const elt = {
+					...JSON.parse(
+						readFileSync(join(playlistsDir, `${p}.pl`), { encoding: "utf-8" })
+					)
+				}
+				elt.id = p
+				index.push(elt)
+			}
+		}
+	} else {
+		for (let p of await readdir(playlistsDir)) {
+			try {
+				const pid = basename(p, ".pl")
+				if (p.endsWith(".pl")) {
+					const elt = {
+						...JSON.parse(readFileSync(join(playlistsDir, p), { encoding: "utf-8" }))
+					}
+					elt.id = pid
+					index.push(elt)
+				}
+			} catch (error) {
+				console.log(error)
+			}
+		}
+	}
+	await writeFile(join(playlistsDir, "index.json"), JSON.stringify(index), { encoding: "utf8" })
+}
+
+const startupLyricsProcessing = async () => {
+	// check if cache.json exists
+	// extract it to individual files for each entry (if file does not already exist) as songName.lrc {data}
+	// generate index.json from existing files
+	let cache = {}
+	const lyricsDir = join(dirs.data, "lyrics")
+	await mkdir(lyricsDir, { recursive: true })
+	try {
+		if (existsSync(join(dirs.data, "cache.json"))) {
+			cache =
+				JSON.parse(
+					readFileSync(join(dirs.data, "cache.json"), {
+						encoding: "utf8"
+					})
+				).lyricsCache ?? {}
+		}
+	} catch (error) {
+		console.log(error)
+		// return false
+	}
+	for (let elt of Object.keys(cache)) {
+		if (!existsSync(join(lyricsDir, `${elt}.lrc`))) {
+			await writeFile(join(lyricsDir, `${elt}.lrc`), JSON.stringify(cache[elt]), {
+				encoding: "utf-8"
+			})
+		}
+	}
+	generateLyricsData()
+}
+
+const handleLyricsUpdate = async (lyricsData) => {
+	// check if lyrics directory exists
+	// check if index.json exists
+	// compare them and write files that differ
+	const lyricsDir = join(dirs.data, "lyrics")
+	await mkdir(lyricsDir, { recursive: true })
+	let prev = {}
+	try {
+		if (existsSync(join(lyricsDir, "index.json"))) {
+			prev =
+				JSON.parse(
+					readFileSync(join(lyricsDir, "index.json"), {
+						encoding: "utf8"
+					})
+				) ?? {}
+		}
+	} catch (error) {
+		console.log(error)
+		// return false
+	}
+	for (let song of Object.keys(lyricsData)) {
+		if (!existsSync(join(lyricsDir, `${song}.lrc`))) {
+			await writeFile(join(lyricsDir, `${song}.lrc`), JSON.stringify(lyricsData[song]), {
+				encoding: "utf8"
+			})
+		} else {
+			if (!prev[song] || JSON.stringify(prev[song]) != JSON.stringify(lyricsData[song])) {
+				await writeFile(join(lyricsDir, `${song}.lrc`), JSON.stringify(lyricsData[song]), {
+					encoding: "utf8"
+				})
+			}
+		}
+	}
+	return await generateLyricsData()
+}
+
+const handleCoversUpdate = async (coversData) => {
+	// filter coverData : only keep url sources
+	// remote = {...remote, ...filtered}
+	// overwrite remote.json
+	// for each value of filtered covers, if v != "#" and file does not exist : add to download queue
+	// start download queue
+	const coversDir = join(dirs.data, "covers")
+	await mkdir(coversDir, { recursive: true })
+	let prev = {}
+	try {
+		if (existsSync(join(coversDir, "remote.json"))) {
+			prev =
+				JSON.parse(
+					readFileSync(join(coversDir, "remote.json"), {
+						encoding: "utf8"
+					})
+				) ?? {}
+		}
+	} catch (error) {
+		console.log(error)
+		// return false
+	}
+	const filtered = {}
+	for (let elt of Object.keys(coversData)) {
+		if (coversData[elt].startsWith("https://") || coversData[elt] == "#") {
+			filtered[elt] = coversData[elt]
+		}
+	}
+	prev = { ...prev, ...filtered }
+	await writeFile(join(coversDir, "remote.json"), JSON.stringify(prev), {
+		encoding: "utf8"
+	})
+	downloadMissingCovers(filtered)
+	return true
+}
+
+const handlePlaylistsUpdate = async (playlistsData) => {
+	// overwrite display.json => playlistsData.map((e) => e.id)
+	// for each playlist element, write to file .pl
+	const playlistsDir = join(dirs.data, "playlists")
+	await mkdir(playlistsDir, { recursive: true })
+	await writeFile(
+		join(playlistsDir, "display.json"),
+		JSON.stringify(playlistsData.map((e) => e.id)),
+		{ encoding: "utf-8" }
+	)
+	for (let p of playlistsData) {
+		await writeFile(join(playlistsDir, `${p.id}.pl`), JSON.stringify(p), { encoding: "utf-8" })
+	}
+}
+
 const getRemoteInfo = async () => {
 	try {
 		const res = await (
@@ -363,6 +677,15 @@ app.whenReady().then(() => {
 			console.log(error)
 			return error
 		}
+	})
+	ipcMain.handle("update_lyrics", async (event, args) => {
+		return handleLyricsUpdate(args.lyricsData)
+	})
+	ipcMain.handle("update_covers", async (event, args) => {
+		return handleCoversUpdate(args.coversData)
+	})
+	ipcMain.handle("update_playlists", async (event, args) => {
+		return handlePlaylistsUpdate(args.playlistsData)
 	})
 	ipcMain.handle("ls_sorted", async (event, args) => {
 		try {
@@ -734,7 +1057,11 @@ app.whenReady().then(() => {
 		return YTDLP_READY
 	})
 
-	createWindow().then((w) => (appWindow = w))
+	startupCoversProcessing()
+		.then(startupLyricsProcessing)
+		.then(startupPlaylistProcessing)
+		.then(createWindow)
+		.then((w) => (appWindow = w))
 
 	app.on("activate", function () {
 		// On macOS it's common to re-create a window in the app when the
