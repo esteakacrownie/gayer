@@ -203,16 +203,39 @@ export default function Player() {
 
 	// system media metadata
 	useEffect(() => {
-		navigator.mediaSession.metadata = new MediaMetadata({
-			title: getSongName(currentTrack),
-			artwork: [
-				{
-					src: thumbnailCache[currentTrack] ?? "#",
-					sizes: "512x512",
-					type: "image/png"
-				}
-			]
-		})
+		if (
+			thumbnailCache[currentTrack] == "#" ||
+			!thumbnailCache[currentTrack] ||
+			!thumbnailCache[currentTrack].trim()
+		) {
+			navigator.mediaSession.metadata = new MediaMetadata({
+				title: getSongName(currentTrack),
+				artwork: [
+					{
+						src: "#",
+						sizes: "1024x1024",
+						type: "image/png"
+					}
+				]
+			})
+		} else {
+			fetch(thumbnailCache[currentTrack])
+				.then((res) => res.blob())
+				.then((b) => {
+					const url = URL.createObjectURL(b)
+					console.log(b)
+					navigator.mediaSession.metadata = new MediaMetadata({
+						title: getSongName(currentTrack),
+						artwork: [
+							{
+								src: url,
+								sizes: "1024x1024",
+								type: "image/png"
+							}
+						]
+					})
+				})
+		}
 	}, [currentTrack, thumbnailCache])
 
 	const volumeWheelHandler = useCallback(
@@ -358,7 +381,7 @@ export default function Player() {
 	)
 	// set lyrics when cache gets updated
 	useEffect(() => {
-		console.log(lyricsCache)
+		// console.log(lyricsCache)
 		const action = async () => {
 			if (lyricsCache[getSongName(currentTrack)]) {
 				const { lyrics: text, info, delay } = lyricsCache[getSongName(currentTrack)]
