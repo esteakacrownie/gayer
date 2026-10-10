@@ -29,6 +29,7 @@ import { useSettingsStore } from "../stores/useSettingsStore"
 import { cn } from "@sglara/cn"
 import { IoIosFolderOpen } from "react-icons/io"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
+import ActionButton from "./ActionButton"
 
 export default function FileSystemTab() {
 	const { setFiles, setFilesIgnoreExistenceCheck } = useFilesStore()
@@ -90,45 +91,32 @@ export default function FileSystemTab() {
 	return (
 		<>
 			<div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
-				<button
-					className="flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+				<ActionButton
+					iconChild={<MdPlaylistAdd size={16} />}
+					text="Add all to queue"
 					onClick={handleAddToQueue}
-				>
-					<MdPlaylistAdd size={16} />
-					<span>Add all to queue</span>
-				</button>
-				<button
-					className="flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+				/>
+				<ActionButton
+					iconChild={<MdPlayArrow size={16} />}
+					text="Play all"
 					onClick={handlePlayAll}
-				>
-					<MdPlayArrow size={16} />
-					<span>Play all</span>
-				</button>
-				<button
-					className="flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+				/>
+				<ActionButton
+					iconChild={<MdAddCircleOutline size={16} />}
+					text="Add all to playlist"
 					onClick={handleAddAllToPLaylist}
-				>
-					<MdAddCircleOutline size={16} />
-					<span>Add all to playlist</span>
-				</button>
-				<button
-					className={cn(
-						"flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer",
-						libraryLocations.includes(folder)
-							? "bg-pink-900 hover:bg-pink-800 border-pink-300"
-							: ""
-					)}
+				/>
+				<ActionButton
+					iconChild={
+						libraryLocations.includes(folder) ? (
+							<MdCheckCircleOutline size={16} />
+						) : (
+							<MdAddCircleOutline size={16} />
+						)
+					}
+					text={libraryLocations.includes(folder) ? "In Library" : "Add to Library"}
 					onClick={handleAddLibrary}
-				>
-					{libraryLocations.includes(folder) ? (
-						<MdCheckCircleOutline size={16} />
-					) : (
-						<MdAddCircleOutline size={16} />
-					)}
-					<span>
-						{libraryLocations.includes(folder) ? "In Library" : "Add to Library"}
-					</span>
-				</button>
+				/>
 				<PowerSavingButton />
 			</div>
 			<div

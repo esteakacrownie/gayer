@@ -21,6 +21,7 @@ import PowerSavingButton from "./PowerSavingButton"
 import SongElement from "./SongElement"
 import { useCallback } from "react"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
+import ActionButton from "./ActionButton"
 
 export default function QueueTab() {
 	const maxLength = 25
@@ -41,20 +42,16 @@ export default function QueueTab() {
 	return (
 		<>
 			<div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
-				<button
-					className="flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+				<ActionButton
+					iconChild={<MdPlaylistRemove size={16} />}
+					text="Clear queue"
 					onClick={clearQueue}
-				>
-					<MdPlaylistRemove size={16} />
-					<span>Clear queue</span>
-				</button>
-				<button
-					className="flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+				/>
+				<ActionButton
+					iconChild={<MdAddCircleOutline size={16} />}
+					text="Add all to playlist"
 					onClick={handleAddAllToPLaylist}
-				>
-					<MdAddCircleOutline size={16} />
-					<span>Add all to playlist</span>
-				</button>
+				/>
 				<div className="flex flex-row gap-1 outline-none justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700">
 					<MdInfoOutline size={16} />
 					<span>{queue.length} item(s) in queue</span>

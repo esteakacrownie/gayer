@@ -56,6 +56,8 @@ import FixMissingPlaylistTracksButton from "./FixMissingPlaylistTracksButton"
 import FixMissingPlaylistTracksIndicator from "./FixMissingPlaylistTracksIndicator"
 import { FuseWorker } from "fuse.js/worker"
 import { useCoversStore } from "../stores/useCoversStore"
+import ActionButton from "./ActionButton"
+import SubTabActionButton from "./SubTabACtionButton"
 
 export default function LibraryTab() {
 	const maxLength = 25
@@ -111,13 +113,13 @@ export default function LibraryTab() {
 	}
 
 	const handlePlayAll = () => {
-		if (filteredSongs.length == 0) return
 		let list =
 			libraryFilter == "songs"
 				? filteredSongs
 				: selectedPlaylist
 					? filteredSelectedAlbumSongs
 					: filteredAlbumsSongs
+		if (list.length == 0) return
 		// console.log(list)
 		if (shufflePlay) {
 			list = shuffleArray(list)
@@ -129,13 +131,13 @@ export default function LibraryTab() {
 	}
 
 	const handleAddAllToQueue = () => {
-		if (filteredSongs.length == 0) return
 		let list =
 			libraryFilter == "songs"
 				? filteredSongs
 				: selectedPlaylist
 					? filteredSelectedAlbumSongs
 					: filteredAlbumsSongs
+		if (list.length == 0) return
 		if (shufflePlay) {
 			list = shuffleArray(list)
 		}
@@ -144,6 +146,17 @@ export default function LibraryTab() {
 			setNextAction("setNext")
 		}
 		setTab("queue")
+	}
+
+	const handleAddAllToPLaylist = () => {
+		let list =
+			libraryFilter == "songs"
+				? filteredSongs
+				: selectedPlaylist
+					? filteredSelectedAlbumSongs
+					: filteredAlbumsSongs
+		if (list.length == 0) return
+		setSelectedSongPath(list)
 	}
 
 	const removeLocation = (l) => {
@@ -450,15 +463,12 @@ export default function LibraryTab() {
 			<CoverArtUpdater songs={songs} />
 			{/* Main toolbar */}
 			<div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
-				<button
-					className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+				<ActionButton
+					iconChild={<MdRefresh size={16} />}
+					text="Refresh"
 					onClick={refreshLocationsContent}
-				>
-					<MdRefresh size={16} />
-					<span>Refresh</span>
-					<div className="absolute w-full h-full top-0 left-0 mix-blend-multiply transition ease-out duration-200" />
-				</button>
-				{libraryFilter == "locations" && (
+				/>
+				{libraryFilter == "locations" ? (
 					<>
 						<button
 							className={cn(
@@ -473,23 +483,23 @@ export default function LibraryTab() {
 							<div className="absolute w-full h-full top-0 left-0 mix-blend-multiply transition ease-out duration-200" />
 						</button>
 					</>
-				)}
-				{libraryFilter != "locations" && (
+				) : (
 					<>
-						<button
-							className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+						<ActionButton
+							iconChild={<MdPlaylistAdd size={16} />}
+							text="Add all to queue"
 							onClick={handleAddAllToQueue}
-						>
-							<MdPlaylistAdd size={16} />
-							<span>Add all to queue</span>
-						</button>
-						<button
-							className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+						/>
+						<ActionButton
+							iconChild={<MdPlayArrow size={16} />}
+							text="Play all"
 							onClick={handlePlayAll}
-						>
-							<MdPlayArrow size={16} />
-							<span>Play all</span>
-						</button>
+						/>
+						<ActionButton
+							iconChild={<MdAddCircleOutline size={16} />}
+							text="Add all to playlist"
+							onClick={handleAddAllToPLaylist}
+						/>
 					</>
 				)}
 				<PowerSavingButton />
@@ -518,44 +528,22 @@ export default function LibraryTab() {
 			</div>
 			{/* Filter bar */}
 			<div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
-				<button
-					className={cn(
-						"flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
-						libraryFilter == "songs" && "brightness-105"
-					)}
+				<SubTabActionButton
+					iconChild={<IoMusicalNotes size={14} />}
+					text="Songs"
 					onClick={() => {
 						setLibraryFilter("songs")
 					}}
-				>
-					<IoMusicalNotes size={14} />
-					<span>Songs</span>
-					<div
-						className={cn(
-							"absolute w-full h-full rounded-full  top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-							libraryFilter == "songs" ? "bg-pink-300 outline-2 outline-pink-300" : ""
-						)}
-					/>
-				</button>
-				<button
-					className={cn(
-						"flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
-						libraryFilter == "playlists" && "brightness-105"
-					)}
+					highlightCondition={libraryFilter == "songs"}
+				/>
+				<SubTabActionButton
+					iconChild={<GiCompactDisc size={14} />}
+					text="Playlists"
 					onClick={() => {
 						setLibraryFilter("playlists")
 					}}
-				>
-					<GiCompactDisc size={14} />
-					<span>Playlists</span>
-					<div
-						className={cn(
-							"absolute w-full h-full rounded-full  top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-							libraryFilter == "playlists"
-								? "bg-pink-300 outline-2 outline-pink-300"
-								: ""
-						)}
-					/>
-				</button>
+					highlightCondition={libraryFilter == "playlists"}
+				/>
 				<button
 					className={cn(
 						"flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer shadow-purple-400/35 shadow-[0_0_3px_3px]",
@@ -595,15 +583,13 @@ export default function LibraryTab() {
 					)}
 				{libraryFilter == "playlists" && (
 					<>
-						<button
-							className="flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer"
+						<ActionButton
+							iconChild={<MdSettings size={16} />}
+							text="Manage playlists"
 							onClick={() => {
 								setSelectedSongPath("*")
 							}}
-						>
-							<MdSettings size={16} />
-							<span>Manage playlists</span>
-						</button>
+						/>
 					</>
 				)}
 				{libraryFilter == "playlists" && selectedPlaylist && (

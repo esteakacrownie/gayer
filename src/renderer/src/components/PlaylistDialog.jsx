@@ -103,7 +103,7 @@ export default function PlaylistDialog() {
 					idx += 1
 				}
 				if (idx < p.length) {
-					let songs = []
+					let songs
 					if (Array.isArray(selectedSongPath)) {
 						// console.log(p[idx].songs.filter((e) => !selectedSongPath.includes(e)))
 						songs = [
@@ -127,7 +127,7 @@ export default function PlaylistDialog() {
 					idx += 1
 				}
 				if (idx < p.length) {
-					let songs = []
+					let songs
 					if (Array.isArray(selectedSongPath)) {
 						songs = [...new Set([...p[idx].songs, ...selectedSongPath])]
 					} else {
@@ -237,7 +237,7 @@ export default function PlaylistDialog() {
 							<IoIosFolderOpen size={20} />
 						</motion.div>
 					</div>
-					<div className="relative w-full flex flex-row items-center gap-2">
+					<div className="relative mb-2 w-full flex flex-row items-center gap-2">
 						<input
 							className={cn(
 								"outline-none w-full bg-pink-950/50 border-2 border-pink-300 shadow-[0_0_5px_5px] not-focus:shadow-transparent rounded-lg p-2 pr-8 transition ease-out duration-200",

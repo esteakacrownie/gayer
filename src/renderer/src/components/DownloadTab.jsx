@@ -33,6 +33,7 @@ import { SiVivaldi } from "react-icons/si"
 import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 import { useHotkeys } from "react-hotkeys-hook"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
+import SubTabActionButton from "./SubTabACtionButton"
 
 export default function DownloadTab() {
 	const {
@@ -1489,78 +1490,40 @@ export default function DownloadTab() {
 			</div>
 			{/* Filter bar */}
 			<div className="flex flex-row flex-wrap gap-2 text-sm jutify-start items-center">
-				<button
-					className={cn(
-						"flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
-						filter == "songs" && "brightness-105"
-					)}
+				<SubTabActionButton
+					iconChild={<IoMusicalNotes size={14} />}
+					text="Songs"
 					onClick={() => {
 						setFilter("songs")
 					}}
-				>
-					<IoMusicalNotes size={14} />
-					<span>Songs</span>
-					<div
-						className={cn(
-							"absolute w-full h-full rounded-full  top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-							filter == "songs" && "bg-pink-300 outline-2 outline-pink-300"
-						)}
-					/>
-				</button>
-				<button
-					className={cn(
-						"flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
-						filter == "albums" && "brightness-105"
-					)}
+					highlightCondition={filter == "songs"}
+				/>
+				<SubTabActionButton
+					iconChild={<GiCompactDisc size={14} />}
+					text="Albums"
 					onClick={() => {
 						setFilter("albums")
 					}}
-				>
-					<GiCompactDisc size={14} />
-					<span>Albums</span>
-					<div
-						className={cn(
-							"absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-							filter == "albums" && "bg-pink-300 outline-2 outline-pink-300"
-						)}
-					/>
-				</button>
-				<button
-					className={cn(
-						"flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
-						filter == "downloaded" && "brightness-105"
-					)}
+					highlightCondition={filter == "albums"}
+				/>
+				<SubTabActionButton
+					iconChild={<MdCheckCircleOutline size={18} />}
+					text="Downloaded"
 					onClick={() => {
 						setFilter("downloaded")
 					}}
-				>
-					<MdCheckCircleOutline size={18} />
-					<span>Downloaded</span>
-					<div
-						className={cn(
-							"absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-							filter == "downloaded" && "bg-green-300 outline-2 outline-green-300"
-						)}
-					/>
-				</button>
-				<button
-					className={cn(
-						"flex flex-row relative outline-none gap-1 justify-center items-center bg-slate-800 rounded-full border border-slate-400 py-1 px-2 transition ease-out duration-200 hover:bg-slate-700 cursor-pointer  shadow-purple-400/35 shadow-[0_0_3px_3px]",
-						filter == "failed" && "brightness-105"
-					)}
+					highlightCondition={filter == "downloaded"}
+					highlightColor="green"
+				/>
+				<SubTabActionButton
+					iconChild={<MdErrorOutline size={18} />}
+					text="Failed"
 					onClick={() => {
 						setFilter("failed")
 					}}
-				>
-					<MdErrorOutline size={18} />
-					<span>Failed</span>
-					<div
-						className={cn(
-							"absolute w-full h-full rounded-full top-0 left-0 mix-blend-multiply transition ease-out duration-200",
-							filter == "failed" && "bg-red-300 outline-2 outline-red-300"
-						)}
-					/>
-				</button>
+					highlightCondition={filter == "failed"}
+					highlightColor="red"
+				/>
 			</div>
 			{/* Content */}
 			{linkEnabled ? (

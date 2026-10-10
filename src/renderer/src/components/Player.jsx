@@ -597,7 +597,7 @@ export default function Player() {
 										<RxTimer size={20} />
 									</motion.button>
 									<motion.button
-										title="Decrease lyrics delay"
+										title="Increase lyrics delay"
 										className="relative outline-none bg-pink-900/95 hover:bg-pink-700/95 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
 										onClick={() => handleChangeLyricsDelay(-0.2)}
 										initial={{
@@ -618,12 +618,12 @@ export default function Player() {
 											size={20}
 											className="translate-y-0.5 -translate-x-0.5 scale-85"
 										/>
-										<span className="absolute text-sm font-bold top-0.5 right-1">
-											-
+										<span className="absolute text-md font-bold top-0.5 right-1.5">
+											+
 										</span>
 									</motion.button>
 									<motion.button
-										title="Increase lyrics delay"
+										title="Decrease lyrics delay"
 										className="relative outline-none bg-pink-900/95 hover:bg-pink-700/95 pointer-events-auto p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
 										onClick={() => handleChangeLyricsDelay(0.2)}
 										initial={{
@@ -644,13 +644,13 @@ export default function Player() {
 											size={20}
 											className="translate-y-0.5 -translate-x-0.5 scale-85"
 										/>
-										<span className="absolute text-sm font-bold top-0.5 right-1">
-											+
+										<span className="absolute text-xl font-bold -top-0.5 right-1.75">
+											-
 										</span>
 									</motion.button>
 									<div className="line-clamp-1 min-w-max flex flex-row relative outline-none gap-1 justify-center items-center bg-pink-800 rounded-full border border-pink-400 py-1 px-2 transition ease-out duration-200 hover:bg-pink-700">
 										<MdInfoOutline size={16} />
-										<span>{`${lyricsDelay && lyricsDelay > 0 ? "+" : ""}${lyricsDelay ? Math.round(lyricsDelay * 10) / 10 : 0}s`}</span>
+										<span>{`${lyricsDelay && lyricsDelay < 0 ? "+" : ""}${lyricsDelay ? Math.round(-lyricsDelay * 10) / 10 : 0}s`}</span>
 									</div>
 								</motion.div>
 							</div>
