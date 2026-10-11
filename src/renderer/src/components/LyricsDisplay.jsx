@@ -87,7 +87,7 @@ export default function LyricsDisplay({ lyrics, lyricsRef, fullScreen, offset = 
 			>
 				{lyrics.length > 0 && lyrics[0].words.trim() && (
 					<LyricsLine
-						key={-1}
+						key={`-1${fullScreen}${lyrics.join(" ").length}`}
 						autoScroll={!manualScrolled}
 						highlighted={currentLine == -1}
 						fullScreen={fullScreen}
@@ -99,7 +99,7 @@ export default function LyricsDisplay({ lyrics, lyricsRef, fullScreen, offset = 
 				)}
 				{(lyrics || []).map((e, i) => (
 					<LyricsLine
-						key={i}
+						key={`${i}${fullScreen}${lyrics.join(" ").length}`}
 						autoScroll={!manualScrolled}
 						highlighted={currentLine == i}
 						fullScreen={fullScreen}
@@ -111,7 +111,7 @@ export default function LyricsDisplay({ lyrics, lyricsRef, fullScreen, offset = 
 				))}
 				{lyrics.length > 0 && lyrics[lyrics.length - 1].words.trim() && (
 					<LyricsLine
-						key={lyrics.length}
+						key={`${lyrics.length}${fullScreen}${lyrics.join(" ").length}`}
 						autoScroll={!manualScrolled}
 						highlighted={currentLine == lyrics.length}
 						fullScreen={fullScreen}

@@ -34,7 +34,7 @@ export const windowStateKeeper = async (windowName) => {
 
 	const track = async (win) => {
 		window = win
-		;["resize", "move", "close"].forEach((event) => {
+		;["maximize", "restore", "resize", "move", "close"].forEach((event) => {
 			win.on(event, saveState)
 		})
 	}

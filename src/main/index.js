@@ -565,7 +565,7 @@ async function createWindow() {
 	const mainWindow = new BrowserWindow({
 		name: "gayer",
 		x: mainWindowStateKeeper.x,
-		y: mainWindowStateKeeper.y,
+		// y: mainWindowStateKeeper.y, do not attempt to recover y position because of potential titlebar heigh offset miscalculated
 		width: mainWindowStateKeeper.width,
 		height: mainWindowStateKeeper.height,
 		minWidth: 592,
