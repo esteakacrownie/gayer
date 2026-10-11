@@ -1,0 +1,1 @@
+# Renderer process `src/renderer/`

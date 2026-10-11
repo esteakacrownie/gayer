@@ -17,9 +17,9 @@ Local music player and downloader :3
 ## Features
 
 - Play local audio in different ways:
-  - Drag and drop multiple files and folders from your file manager onto the app to add them to the queue
-  - Build and search your own custom audio library in app, by registering locations from your computer
-  - Manually select a folder to open
+    - Drag and drop multiple files and folders from your file manager onto the app to add them to the queue
+    - Build and search your own custom audio library in app, by registering locations from your computer
+    - Manually select a folder to open
 - Reorder and shuffle queue
 - Loop current or whole queue
 - Create your own playlists
@@ -62,6 +62,8 @@ Stay tuned and support the project by starring it >:3
 - [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
 ## Project Setup
+
+Before modifying the project, read [the documentation](./documentation/architecture.md)
 
 ### Requirements
 

@@ -35,7 +35,7 @@ export default function DragDropHandler() {
 			event.preventDefault()
 			// console.log(JSON.stringify(event.dataTransfer.files[0]))
 			let songs = await handleDropped(
-				window.api.getFilePaths(Object.values(event.dataTransfer.files))
+				window.electron.getFilePaths(Object.values(event.dataTransfer.files))
 			)
 			setFilesIgnoreExistenceCheck(songs)
 			if (shufflePlay) {
