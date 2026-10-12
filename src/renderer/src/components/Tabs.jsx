@@ -85,7 +85,7 @@ function Tab({ tab, tabName, icon }) {
 	return (
 		<div
 			className={cn(
-				"w-full flex flex-col gap-1 border-b-2 border-transparent items-center font-bold text-center select-none cursor-pointer -hue-rotate-15 p-2 transition ease-out duration-350 via-10% bg-linear-0 to-transparent to-110%",
+				"w-full flex flex-col gap-1 border-b-2 border-transparent items-center font-bold text-center select-none cursor-pointer -hue-rotate-15 p-2 transition ease-out duration-350 via-10% bg-linear-0 to-110%",
 				tab == tabName
 					? "border-pink-200 from-pink-500/70 via-pink-500/40"
 					: "hover:from-pink-400/15 hover:border-pink-300/15"

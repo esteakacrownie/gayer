@@ -540,7 +540,7 @@ export default function Player() {
 				</motion.div>
 				<div className="flex flex-col justify-center w-full h-full bg-linear-180 from-slate-950 to-pink-800 outline-2 outline-pink-300/80 from-[-75%] to-150% shadow-pink-400/40 shadow-[0_0_7px_7px] rounded-2xl overflow-clip gap-4 p-4">
 					{showLyricsPanel && currentTrack && (
-						<div className="relative flex flex-col w-screen justify-center items-center overflow-y-clip -m-4 pr-4 bg-linear-180 from-black/40 via-65% via-black/25 to-transparent">
+						<div className="relative flex flex-col w-screen justify-center items-center overflow-y-clip -m-4 pr-4 bg-linear-180 from-black/40 via-65% via-black/25">
 							<div className="absolute z-10 top-4 left-4 flex flex-col gap-2">
 								<motion.div
 									className="relative pointer-events-none flex flex-row gap-2 overflow-x-clip"
