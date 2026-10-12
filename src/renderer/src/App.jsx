@@ -32,6 +32,7 @@ import { useHotkeys } from "react-hotkeys-hook"
 import UpdatesDialog from "./components/UpdatesDialog"
 import { useCoversStore } from "./stores/useCoversStore"
 import { useLyricsStore } from "./stores/useLyricsStore"
+import CurrentTrackDetails from "./components/CurrentTrackDetails"
 
 function App() {
 	const { setQueue, setAutoplay, setNextAction, currentTrack } = usePlayerStore()
@@ -110,18 +111,23 @@ function App() {
 			ref={mainDiv}
 			className="text-white from-slate-950 to-pink-950 to-150% via-slate-950 via-30% bg-linear-180 flex flex-col justify-start overflow-y-scroll h-screen gap-4 pt-20 select-none"
 		>
-			<div className="px-8 flex flex-col w-full h-full justify-start gap-4 max-w-200 mx-auto">
-				<DownloadTab />
-				<LibraryTab />
-				<QueueTab />
-				<FileSystemTab />
-				<UpdatesDialog />
-				{/* scroll padding to compensate player height's offset */}
-				<div className={showLyricsPanel && currentTrack ? "min-h-68" : "min-h-34"}>
-					&nbsp;
+			<div className="flex flex-row items w-full gap-6 justify-center px-8">
+				<div className="flex flex-col w-full h-full justify-start gap-4 max-w-180">
+					<DownloadTab />
+					<LibraryTab />
+					<QueueTab />
+					<FileSystemTab />
+					{/* scroll padding to compensate player height's offset */}
+					<div className={showLyricsPanel && currentTrack ? "min-h-66" : "min-h-30"}>
+						&nbsp;
+					</div>
+				</div>
+				<div className="hidden lg:flex flex-col items-center w-fit h-fit">
+					<CurrentTrackDetails />
 				</div>
 			</div>
 			<Tabs />
+			<UpdatesDialog />
 			<DragDropHandler />
 			<PlaylistDialog />
 			<Player />

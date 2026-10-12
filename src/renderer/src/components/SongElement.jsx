@@ -31,7 +31,7 @@ import CoverImage from "./CoverImage"
 import { motion } from "motion/react"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { useSettingsStore } from "../stores/useSettingsStore"
-import useConfirm from "../hooks/useConfirmationButton"
+import useConfirm from "../hooks/useConfirm"
 import { useCallback, useMemo } from "react"
 import { useCoversStore } from "../stores/useCoversStore"
 

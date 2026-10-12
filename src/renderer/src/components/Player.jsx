@@ -515,13 +515,19 @@ export default function Player() {
 	return (
 		<div className="flex flex-col justify-center gap-4 fixed z-10 bottom-0 p-4 w-full">
 			<div className="relative">
-				<div className="overflow-clip w-full h-full absolute top-0 left-0 rounded-2xl flex flex-row justify-start items-center">
+				<motion.div className="overflow-clip w-full h-full absolute top-0 left-0 rounded-2xl flex flex-row justify-start items-center">
 					<AnimatePresence mode="popLayout">
 						<motion.img
 							key={coverArt}
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 0.3 }}
-							exit={{ opacity: 0 }}
+							initial={{ opacity: 0, scale: 1.1 }}
+							animate={{ opacity: 0.3, scale: 1.0 }}
+							exit={{ opacity: 0, scale: 1.1 }}
+							transition={{
+								scale: {
+									duration: 0.5,
+									ease: "easeOut"
+								}
+							}}
 							className={cn(
 								"w-full h-full object-cover scale-105 pointer-events-none",
 								coverArt != "#" ? "" : "hidden",
@@ -531,7 +537,7 @@ export default function Player() {
 							alt=""
 						/>
 					</AnimatePresence>
-				</div>
+				</motion.div>
 				<div className="flex flex-col justify-center w-full h-full bg-linear-180 from-slate-950 to-pink-800 outline-2 outline-pink-300/80 from-[-75%] to-150% shadow-pink-400/40 shadow-[0_0_7px_7px] rounded-2xl overflow-clip gap-4 p-4">
 					{showLyricsPanel && currentTrack && (
 						<div className="relative flex flex-col w-screen justify-center items-center overflow-y-clip -m-4 pr-4 bg-linear-180 from-black/40 via-65% via-black/25 to-transparent">

@@ -17,7 +17,7 @@ import { useCallback } from "react"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { MdDelete } from "react-icons/md"
-import useConfirm from "../hooks/useConfirmationButton"
+import useConfirm from "../hooks/useConfirm"
 import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 import { useSettingsStore } from "../stores/useSettingsStore"
 

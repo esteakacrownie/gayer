@@ -32,7 +32,7 @@ import { motion } from "motion/react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
-import useConfirm from "../hooks/useConfirmationButton"
+import useConfirm from "../hooks/useConfirm"
 import { useCoversStore } from "../stores/useCoversStore"
 
 export default function PlaylistElement({
