@@ -25,7 +25,6 @@ import { IoLogoChrome, IoLogoFirefox, IoMusicalNotes, IoWarningOutline } from "r
 import { GiCompactDisc, GiSpermWhale } from "react-icons/gi"
 import { usePlayerStore } from "../stores/usePlayerStore"
 import { MdCheckCircleOutline, MdErrorOutline } from "react-icons/md"
-import { useLibraryStore } from "../stores/useLibraryStore"
 import { toSanitized } from "../sanitize-filename"
 import { FaBrave, FaLink, FaOpera, FaSafari } from "react-icons/fa6"
 import { RiEdgeNewFill } from "react-icons/ri"
@@ -34,6 +33,7 @@ import usePlaylistUtils from "../hooks/usePlaylistsUtils"
 import { useHotkeys } from "react-hotkeys-hook"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import SubTabActionButton from "./SubTabACtionButton"
+import useLibraryUtils from "../hooks/useLibraryUtils"
 
 export default function DownloadTab() {
 	const {
@@ -54,7 +54,6 @@ export default function DownloadTab() {
 		showYtCookiesHint,
 		setShowYtCookiesHint
 	} = useSettingsStore()
-	const { setSearch: setLibrarySearch } = useLibraryStore()
 	const [search, setSearch] = useState("")
 	const [filter, setFilter] = useState("songs")
 	const { currentTrack, setNextAction, queue, setQueue, history, setHistory, setCurrentTrack } =
@@ -93,25 +92,7 @@ export default function DownloadTab() {
 		setSearch("")
 	}
 
-	const showSongInLibrary = useCallback(
-		(name) => {
-			setLibraryFilter("songs")
-			setTab("library")
-			setLibrarySearch(name)
-		},
-		[setLibraryFilter, setLibrarySearch, setTab]
-	)
-
-	const showAlbumInLibrary = useCallback(
-		(name) => {
-			setLibraryFilter("playlists")
-			setPlaylistsFolded(false)
-			setAlbumsFolded(false)
-			setTab("library")
-			setLibrarySearch(name)
-		},
-		[setAlbumsFolded, setLibraryFilter, setLibrarySearch, setPlaylistsFolded, setTab]
-	)
+	const { showSongInLibrary, showAlbumInLibrary } = useLibraryUtils()
 
 	const guideToLibraryLocations = () => {
 		setTab("library")

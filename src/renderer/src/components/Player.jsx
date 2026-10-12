@@ -223,7 +223,7 @@ export default function Player() {
 				.then((res) => res.blob())
 				.then((b) => {
 					const url = URL.createObjectURL(b)
-					console.log(b)
+					// console.log(b)x
 					navigator.mediaSession.metadata = new MediaMetadata({
 						title: getSongName(currentTrack),
 						artwork: [

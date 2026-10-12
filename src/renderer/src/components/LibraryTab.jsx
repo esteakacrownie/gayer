@@ -230,10 +230,12 @@ export default function LibraryTab() {
 		Object.keys(playlistSongsExistDb).map((e) => {
 			if (playlistSongsExistDb[e] === true) {
 				playlistSongsExist.push(e)
+			} else {
+				console.log(e)
 			}
 		})
 		allSongs = [...new Set(allSongs.concat(playlistSongsExist))]
-		// console.log(allSongs)
+		console.log(allSongs)
 		return allSongs
 	}, [playlists, libraryLocations])
 
