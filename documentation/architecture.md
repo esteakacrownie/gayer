@@ -21,6 +21,8 @@ Gayer, as an Electron application, is built in 3 distinct parts:
 
 The content of the project (the code that runs the application) is bundled in `src/`. The 3 parts mentioned above are bundled respectively in `src/main/`, `src/preload/`, and `src/renderer`.
 
+## Technical stack
+
 Gayer is built upon the following stack:
 
 - Electron-Vite (template, boilerplate)
@@ -29,6 +31,8 @@ Gayer is built upon the following stack:
 - Electron-Builder (bundler)
 - Prettier + Eslint (formatting and linting)
 - Tailwind CSS (styling framework)
+
+## Extra packages
 
 Gayer makes use of the following [extra packages](../package.json):
 
@@ -40,3 +44,9 @@ Gayer makes use of the following [extra packages](../package.json):
 - ytdlp-nodejs (yt-dlp binary wrapper for Node.js, to manage downloads from YouTube)
 - zustic (lightweight equivalent of Zustand, global reactive state manager)
 - appdirsjs (provides standard api to access global system user data directories)
+
+## User data management
+
+By default, Gayer has access to the whole user filesystem, with the user's access permissions. To achieve that in the [renderer process](./renderer.md), the main window gets granted permissions to access native filesystem paths when using the `file://` protocol. While this doesn't expose the use to risks any different from other native apps installed on their system, it's considered an edgy practice in web apps, hence worth specifying hereby.
+
+No sensitive user data gets sent over the network to any remote location, except for the user's host IP address (as in any https request), **unless you enable cookies access in the download tab**, in which case yt-dlp accesses user's YouTube cookies extracted from the selected browser's data, and includes them in any request to YouTube. This can be toggled anytime.

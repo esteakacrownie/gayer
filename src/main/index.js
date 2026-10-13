@@ -416,11 +416,6 @@ const checkForUpdates = async (window) => {
 	}
 }
 
-const startUpdatePolling = (window) => {
-	checkForUpdates(window)
-	setInterval(() => checkForUpdates(window), 30000)
-}
-
 const tryYTDLPInit = async () => {
 	try {
 		let ytdlp = new YtDlp()
@@ -465,30 +460,12 @@ const tryYTDLPInit = async () => {
 	}
 }
 
-const initYTModules = async () => {
-	let attempt = await tryYTDLPInit()
-	while (!attempt) {
-		console.log("Couldn't init yt-dlp modules. Retrying...")
-		await delay(2000)
-		attempt = await tryYTDLPInit()
-	}
-}
-
 const tryYTMInit = async () => {
 	try {
 		let attempt = await ytmusic.initialize()
 		return attempt
 	} catch {
 		return false
-	}
-}
-
-const initYTMusic = async () => {
-	let attempt = await tryYTMInit()
-	while (!attempt) {
-		console.log("Couldn't init YTMusic API. Retrying...")
-		await delay(2000)
-		attempt = await tryYTMInit()
 	}
 }
 
@@ -531,7 +508,31 @@ const sortedFileList = async (files, base) => {
 	return res
 }
 
-// protocol for handling playing local files
+// background processes
+const startUpdatePolling = (window) => {
+	checkForUpdates(window)
+	setInterval(() => checkForUpdates(window), 30000)
+}
+
+const initYTMusic = async () => {
+	let attempt = await tryYTMInit()
+	while (!attempt) {
+		console.log("Couldn't init YTMusic API. Retrying...")
+		await delay(2000)
+		attempt = await tryYTMInit()
+	}
+}
+
+const initYTModules = async () => {
+	let attempt = await tryYTDLPInit()
+	while (!attempt) {
+		console.log("Couldn't init yt-dlp modules. Retrying...")
+		await delay(2000)
+		attempt = await tryYTDLPInit()
+	}
+}
+
+// protocol for handling local files playback
 protocol.registerSchemesAsPrivileged([
 	{
 		scheme: "file",
