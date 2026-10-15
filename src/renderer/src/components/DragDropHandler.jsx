@@ -67,11 +67,11 @@ export default function DragDropHandler() {
 	const counter = useRef(0)
 
 	useEffect(() => {
-		const dragEnterFunc = (event) => {
+		const dragEnterFunc = () => {
 			counter.current += 1
 			setEnabled(true)
 		}
-		const dragLeaveFunc = (event) => {
+		const dragLeaveFunc = () => {
 			counter.current -= 1
 			if (counter.current == 0) {
 				setEnabled(false)

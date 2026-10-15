@@ -235,7 +235,7 @@ export default function LibraryTab() {
 			}
 		})
 		allSongs = [...new Set(allSongs.concat(playlistSongsExist))]
-		console.log(allSongs)
+		// console.log(allSongs)
 		return allSongs
 	}, [playlists, libraryLocations])
 
@@ -787,7 +787,12 @@ export default function LibraryTab() {
 }
 
 const CoverArtUpdater = ({ songs = [] }) => {
-	const { thumbnailCache, setThumbnailCache } = useCoversStore()
+	const {
+		thumbnailCache,
+		setThumbnailCache,
+		thumbnailCacheOverride,
+		clearThumbnailCacheOverride
+	} = useCoversStore()
 	const { files } = useFilesStore()
 	const { queue } = usePlayerStore()
 
@@ -801,6 +806,22 @@ const CoverArtUpdater = ({ songs = [] }) => {
 			let pathsFortThisThread = f
 			while (pathsFortThisThread.length > 0) {
 				const i = pathsFortThisThread[0]
+				const localArt = await window.electron.ipcRenderer.invoke("get_local_cover", {
+					track: i
+				})
+				console.log(localArt)
+				if (localArt) {
+					const r = {}
+					r[i] = `file://${localArt}`
+					// appending new found cover art
+					thumbnailCacheRef.current = { ...thumbnailCacheRef.current, ...r }
+					// appending to paths to ignore
+					alreadyFetchedArtPaths.current = [...alreadyFetchedArtPaths.current, i]
+					// removing to paths being processed
+					processingArtPaths.current = processingArtPaths.current.filter((e) => e != i)
+					pathsFortThisThread.splice(0, 1)
+					continue
+				}
 				try {
 					const art = await albumArtQueryForPath(i)
 					if (!thumbnailCacheRef.current[i] && typeof art == "string") {
@@ -884,22 +905,49 @@ const CoverArtUpdater = ({ songs = [] }) => {
 
 	// cache auto refresh
 	useEffect(() => {
-		const cacheUpdate = setInterval(() => {
+		const updateFn = () => {
 			const paths = Object.keys(thumbnailCache)
 			// console.log(paths)
-			const diff = alreadyFetchedArtPaths.current.filter((e) => !paths.includes(e))
-			if (diff.length > 0) {
+			let diff = 0
+			alreadyFetchedArtPaths.current.map((e) => {
+				if (!paths.includes(e)) diff += 1
+			})
+			for (let i of Object.keys(thumbnailCacheOverride)) {
+				if (thumbnailCacheOverride[i] != thumbnailCacheRef.current[i]) {
+					thumbnailCacheRef.current[i] = thumbnailCacheOverride[i]
+					diff += 1
+				}
+			}
+			if (diff > 0) {
 				console.log("applying new cached covers")
 				// console.log(diff)
 				setThumbnailCache(thumbnailCacheRef.current)
+				clearThumbnailCacheOverride()
 			} else {
 				console.log("nothing to update")
 			}
-		}, 5000)
+		}
+		const t = setTimeout(updateFn, 250)
+		const cacheUpdate = setInterval(updateFn, 5000)
 		return () => {
+			clearTimeout(t)
 			clearInterval(cacheUpdate)
 		}
-	}, [thumbnailCacheRef, thumbnailCache, queue, setThumbnailCache, fetchCoverArts])
+	}, [
+		thumbnailCacheRef,
+		thumbnailCache,
+		queue,
+		setThumbnailCache,
+		thumbnailCacheOverride,
+		fetchCoverArts
+	])
+
+	// useEffect(() => {
+	// 	thumbnailCacheRef.current = { ...thumbnailCacheRef.current, ...thumbnailCacheOverride }
+	// 	alreadyFetchedArtPaths.current = [
+	// 		...new Set([...alreadyFetchedArtPaths.current, Object.keys(thumbnailCacheOverride)])
+	// 	]
+	// }, [thumbnailCacheOverride])
 
 	return
 }

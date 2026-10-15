@@ -112,7 +112,7 @@ function App() {
 			className="text-white from-slate-950 to-pink-950 to-150% via-slate-950 via-30% bg-linear-180 flex flex-col justify-start overflow-y-scroll h-screen gap-4 pt-20 select-none"
 		>
 			<div className="flex flex-col w-full gap-4 justify-center px-8">
-				<div className="flex mx-auto w-[min(100%,1080px)] flex-row gap-5 justify-center bg-pink-400/5 rounded-xl shadow-pink-400/15 shadow-2xl px-2">
+				<div className="flex mx-auto min-h-[calc(100vh-128px)] w-[min(100%,1080px)] flex-row gap-5 justify-center rounded-xl shadow-[0_0_15px_15px]  bg-pink-400/3 shadow-pink-400/3 px-2">
 					<div className="flex flex-col w-full h-full justify-start gap-4 max-w-180">
 						<DownloadTab />
 						<LibraryTab />

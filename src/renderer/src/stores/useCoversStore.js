@@ -16,7 +16,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 import { create } from "zustic"
 
 const defaults = {
-	thumbnailCache: {}
+	thumbnailCache: {},
+	thumbnailCacheOverride: {}
 }
 
 const updateCovers = (v) => {
@@ -26,6 +27,16 @@ const updateCovers = (v) => {
 
 export const useCoversStore = create((set) => ({
 	thumbnailCache: defaults.thumbnailCache,
+	thumbnailCacheOverride: defaults.thumbnailCacheOverride,
 	setThumbnailCache: (v) => set((state) => ({ thumbnailCache: updateCovers(v) })),
+	setThumbnailTracksOverride: (tracks, replacement) =>
+		set((state) => {
+			const res = {}
+			for (let t of tracks) {
+				res[t] = replacement
+			}
+			return { thumbnailCacheOverride: res }
+		}),
+	clearThumbnailCacheOverride: () => set((state) => ({ thumbnailCacheOverride: {} })),
 	initThumbnailCache: (v) => set((state) => ({ thumbnailCache: v }))
 }))

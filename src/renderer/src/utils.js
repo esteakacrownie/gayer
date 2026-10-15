@@ -203,7 +203,7 @@ export const getSortedFilesAt = async (p, filterMusicFiles = false) => {
 }
 
 export const handleDropped = async (paths) => {
-	if (!paths) return
+	if (!paths || !Array.isArray(paths)) return
 	const potentialDirs = []
 	const dirs = []
 	let songs = paths.filter((v) => isMusicFile(v))

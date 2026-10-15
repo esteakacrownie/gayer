@@ -69,8 +69,6 @@ export default function Player() {
 
 	const { nextSong, previousSong, pause, resume, resetPlay } = usePlayerControls()
 
-	const [coverArt, setCoverArt] = useState("#")
-
 	const getVolumeLabel = (v) => {
 		return v > 0 ? (v > 0.5 ? "high" : "low") : "mute"
 	}
@@ -128,33 +126,6 @@ export default function Player() {
 				return <IoMdVolumeMute size={24} />
 		}
 	}, [uiVolume])
-
-	// dynamic cover art
-	useEffect(() => {
-		const action = async () => {
-			if (!currentTrack) {
-				setCoverArt("#")
-			} else {
-				if (Object.keys(thumbnailCache).includes(currentTrack)) {
-					setCoverArt(thumbnailCache[currentTrack])
-				} else {
-					setCoverArt("#")
-					// albumArtQueryForPath(currentTrack)
-					// 	.then((i) => {
-					// 		setCoverArt(i)
-					// 		const updated = { ...thumbnailCache }
-					// 		updated[currentTrack] = i
-					// 		setThumbnailCache(updated)
-					// 		// console.log(i)
-					// 	})
-					// 	.catch(() => {
-					// 		setCoverArt("#")
-					// 	})
-				}
-			}
-		}
-		action()
-	}, [currentTrack, thumbnailCache])
 
 	// action manager
 	useEffect(() => {
@@ -416,6 +387,7 @@ export default function Player() {
 							await delay(3000)
 						}
 					}
+					setLyricsPanelOpen(true)
 				}
 			} else {
 				setCurrentLyrics("")
@@ -518,7 +490,7 @@ export default function Player() {
 				<motion.div className="overflow-clip w-full h-full absolute top-0 left-0 rounded-2xl flex flex-row justify-start items-center">
 					<AnimatePresence mode="popLayout">
 						<motion.img
-							key={coverArt}
+							key={thumbnailCache[currentTrack] ?? "#"}
 							initial={{ opacity: 0, scale: 1.1 }}
 							animate={{ opacity: 0.3, scale: 1.0 }}
 							exit={{ opacity: 0, scale: 1.1 }}
@@ -530,10 +502,10 @@ export default function Player() {
 							}}
 							className={cn(
 								"w-full h-full object-cover scale-105 pointer-events-none",
-								coverArt != "#" ? "" : "hidden",
+								(thumbnailCache[currentTrack] ?? "#") != "#" ? "" : "hidden",
 								powerSavingMode ? "" : "blur-[2px]"
 							)}
-							src={coverArt ?? "#"}
+							src={thumbnailCache[currentTrack] ?? "#"}
 							alt=""
 						/>
 					</AnimatePresence>
@@ -716,15 +688,25 @@ export default function Player() {
 								)}
 							>
 								{lyricsPanelOpen ? (
-									<LyricsDisplay
-										lyrics={currentLyrics}
-										lyricsRef={lyricsRef}
-										fullScreen={lyricsFullscreen}
-										offset={lyricsDelay ?? 0}
-									/>
+									<>
+										{currentLyrics ? (
+											<LyricsDisplay
+												lyrics={currentLyrics}
+												lyricsRef={lyricsRef}
+												fullScreen={lyricsFullscreen}
+												offset={lyricsDelay ?? 0}
+											/>
+										) : (
+											<div className="w-full h-full -translate-x-2 translate-y-2 flex flex-col items-center justify-center">
+												<p className="font-bold text-2xl">
+													No lyrics found
+												</p>
+											</div>
+										)}
+									</>
 								) : (
-									<div className="w-full h-full flex flex-col items-center justify-center">
-										<p className="animate-pulse font-bold text-3xl">
+									<div className="w-full h-full -translate-x-2 translate-y-2 flex flex-col items-center justify-center">
+										<p className="animate-pulse font-bold text-2xl">
 											Fetching lyrics...
 										</p>
 									</div>

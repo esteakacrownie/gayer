@@ -26,7 +26,6 @@ import {
 } from "react-icons/md"
 import PowerSavingButton from "./PowerSavingButton"
 import { useSettingsStore } from "../stores/useSettingsStore"
-import { cn } from "@sglara/cn"
 import { IoIosFolderOpen } from "react-icons/io"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import ActionButton from "./ActionButton"

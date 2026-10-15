@@ -20,12 +20,32 @@ import { usePlayerStore } from "../stores/usePlayerStore"
 import { getFolderName, getSongName } from "../utils"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import { AnimatePresence, motion } from "motion/react"
+import { IoIosFolderOpen } from "react-icons/io"
+import { useCallback } from "react"
 
 export default function CurrentTrackDetails() {
 	const { currentTrack } = usePlayerStore()
-	const { thumbnailCache } = useCoversStore()
+	const { thumbnailCache, setThumbnailTracksOverride } = useCoversStore()
 	const { showLyricsPanel } = useSettingsStore()
 	const { showSongInLibrary, showAlbumInLibrary } = useLibraryUtils()
+
+	const handleReplaceCover = useCallback(async () => {
+		const img = await window.electron.ipcRenderer.invoke("open_image", {})
+		if (!img) return
+		let res = await window.electron.ipcRenderer.invoke("replace_cover", {
+			track: currentTrack,
+			path: img
+		})
+		if (!res.startsWith("file://")) {
+			if (res.startsWith("/")) {
+				res = res.slice(1)
+			}
+			res = `file:///${res}`
+		}
+		if (res) {
+			setThumbnailTracksOverride([currentTrack], res)
+		}
+	}, [currentTrack, setThumbnailTracksOverride])
 
 	if (!(currentTrack && currentTrack.trim())) return
 	return (
@@ -56,10 +76,36 @@ export default function CurrentTrackDetails() {
 						{thumbnailCache[currentTrack] &&
 							thumbnailCache[currentTrack] != "#" &&
 							thumbnailCache[currentTrack].trim() && (
-								<img
-									className="rounded-xl scale-95 select-none pointer-events-none"
-									src={thumbnailCache[currentTrack] ?? "#"}
-								/>
+								<div className="relative rounded-xl select-none pointer-events-auto group/cover">
+									<div className="flex flex-row justify-center aspect-square">
+										<div className="relative flex flex-row object-contain">
+											<img
+												className="scale-95 rounded-xl  select-none pointer-events-none group-hover/cover:brightness-55 transition ease-out duration-200"
+												src={thumbnailCache[currentTrack] ?? "#"}
+											/>
+											<motion.div
+												title="Replace this cover artwork for all songs and playlists"
+												className="absolute top-4 right-4 opacity-0 group-hover/cover:opacity-100 hover:text-white hover:bg-pink-400/50 hover:opacity-100 rounded-lg h-10 aspect-square flex flex-col justify-center items-center cursor-pointer transition ease-out duration-200"
+												onClick={handleReplaceCover}
+												initial={{
+													scale: 1.0
+												}}
+												animate={{
+													scale: 1.0
+												}}
+												whileTap={{
+													scale: 0.8
+												}}
+												transition={{
+													duration: 0.025,
+													ease: "easeOut"
+												}}
+											>
+												<IoIosFolderOpen size={20} />
+											</motion.div>
+										</div>
+									</div>
+								</div>
 							)}
 						<div
 							onClick={() => showSongInLibrary(getSongName(currentTrack))}

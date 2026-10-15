@@ -15,8 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 import appDirs from "appdirsjs"
 import { app, shell, BrowserWindow, ipcMain, protocol, dialog } from "electron"
-import { basename, dirname, join } from "node:path"
-import { readFile, writeFile, stat, readdir, mkdir, unlink, rm } from "node:fs/promises"
+import { basename, dirname, extname, join } from "node:path"
+import { readFile, writeFile, stat, readdir, mkdir, unlink, rm, copyFile } from "node:fs/promises"
 import { existsSync, readFileSync, createWriteStream } from "node:fs"
 import { Readable } from "node:stream"
 import { pipeline } from "node:stream/promises"
@@ -37,6 +37,8 @@ if (existsSync(join(process.resourcesPath, "updates/TOKEN"))) {
 	}
 }
 const bearer = "Bearer " + token
+const IMG_EXTS = ["jpg", "JPG", "jpeg", "JPEG", "webp", "WEBP", "gif", "GIF", "PNG", "png"]
+const ALLOWED_CHARS = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM0123456789"
 let appWindow = null
 let YTM_INITIALIZED = false
 let YTDLP_READY = false
@@ -49,6 +51,14 @@ const MAX_YTDLP_INSTANCES = 4
 let ytdlpInstancesCount = 0
 
 // utils
+const randomStr = (length, chars) => {
+	let res = ""
+	while (res.length < length) {
+		res += chars[Math.min(Math.round(Math.random() * (chars.length - 1)))]
+	}
+	return res
+}
+
 const download = async (url, path) => {
 	const response = await fetch(url)
 
@@ -57,30 +67,28 @@ const download = async (url, path) => {
 	}
 
 	await mkdir(dirname(path), { recursive: true })
-	await pipeline(Readable.fromWeb(response.body), createWriteStream(path))
+	if (!existsSync(path)) await pipeline(Readable.fromWeb(response.body), createWriteStream(path))
 }
 
 const downloadMissingCovers = async (data) => {
-	const coversDir = join(dirs.data, "covers")
-	await mkdir(coversDir, { recursive: true })
+	const coversDir = await initCoversDir()
 	const queue = []
 	const checkedIDs = []
 	// filter non-existing covers
 	for (let img of Object.values(data)) {
-		if (
-			img != "#" &&
-			img.trim() &&
-			!existsSync(join(coversDir, `${basename(img, ".png")}.png`)) &&
-			!checkedIDs.includes(basename(img, ".png"))
-		) {
-			queue.push({ url: img, path: join(coversDir, `${basename(img, ".png")}.png`) })
+		if (img != "#" && img.trim() && !checkedIDs.includes(basename(img, ".png"))) {
+			queue.push({
+				url: img,
+				path: join(coversDir, `${basename(img, ".png")}.png`)
+			})
 			checkedIDs.push(basename(img, ".png"))
 		}
 	}
 	// launch downloads
 	for (let elt of queue) {
 		try {
-			await download(elt.url, elt.path)
+			const res = imageExists(elt.path)
+			if (!res) await download(elt.url, elt.path)
 		} catch (error) {
 			console.log(error)
 		}
@@ -108,6 +116,74 @@ const generateLyricsData = async () => {
 	}
 }
 
+const imageExists = (img, replacement = false) => {
+	if (!img) return
+	const coversDir = join(dirs.data, "covers", replacement ? "replacements" : "")
+	for (let ext of IMG_EXTS) {
+		if (existsSync(join(coversDir, `${basename(img, `.${ext}`)}.${ext}`))) {
+			return { ext }
+		}
+	}
+	return false
+}
+
+const trackHasReplacementCover = async (track) => {
+	if (!track) return false
+	let replacements = {}
+	const coversDir = await initCoversDir()
+	try {
+		if (existsSync(join(coversDir, "replacements.json"))) {
+			replacements =
+				JSON.parse(
+					readFileSync(join(coversDir, "replacements.json"), {
+						encoding: "utf8"
+					})
+				) ?? {}
+		}
+	} catch (error) {
+		console.log(error)
+	}
+	if (replacements[track] && imageExists(replacements[track], true)) {
+		return replacements[track]
+	}
+	return false
+}
+
+const trackHasCachedCover = async (track) => {
+	if (!track) return false
+	let remote = {}
+	const coversDir = await initCoversDir()
+	try {
+		if (existsSync(join(coversDir, "remote.json"))) {
+			remote =
+				JSON.parse(
+					readFileSync(join(coversDir, "remote.json"), {
+						encoding: "utf8"
+					})
+				) ?? {}
+		}
+	} catch (error) {
+		console.log(error)
+	}
+	const ext = imageExists(remote[track]).ext ?? ""
+	if (remote[track] && ext) {
+		return join("/", join(coversDir, basename(remote[track], `.${ext}`) + `.${ext}`))
+	}
+	return false
+}
+
+const initCoversReplacementDir = async () => {
+	const coversReplacementDir = join(dirs.data, "covers/replacements")
+	await mkdir(coversReplacementDir, { recursive: true })
+	return coversReplacementDir
+}
+
+const initCoversDir = async () => {
+	const coversDir = join(dirs.data, "covers")
+	await mkdir(coversDir, { recursive: true })
+	return coversDir
+}
+
 const startupCoversProcessing = async () => {
 	// check if covers/remote.json exists
 	// check if cache.json exists
@@ -119,8 +195,9 @@ const startupCoversProcessing = async () => {
 	// start download queue
 	let cache = {}
 	let remote = {}
-	const coversDir = join(dirs.data, "covers")
-	await mkdir(coversDir, { recursive: true })
+	let replacements = {}
+	let disabled = []
+	const coversDir = await initCoversDir()
 	try {
 		if (existsSync(join(dirs.data, "cache.json"))) {
 			cache =
@@ -132,7 +209,6 @@ const startupCoversProcessing = async () => {
 		}
 	} catch (error) {
 		console.log(error)
-		// return false
 	}
 	try {
 		if (existsSync(join(coversDir, "remote.json"))) {
@@ -145,30 +221,80 @@ const startupCoversProcessing = async () => {
 		}
 	} catch (error) {
 		console.log(error)
-		// return false
 	}
+	try {
+		if (existsSync(join(coversDir, "replacements.json"))) {
+			replacements =
+				JSON.parse(
+					readFileSync(join(coversDir, "replacements.json"), {
+						encoding: "utf8"
+					})
+				) ?? {}
+		}
+	} catch (error) {
+		console.log(error)
+	}
+	try {
+		if (existsSync(join(coversDir, "disabled.json"))) {
+			disabled =
+				JSON.parse(
+					readFileSync(join(coversDir, "disabled.json"), {
+						encoding: "utf8"
+					})
+				) ?? []
+		}
+	} catch (error) {
+		console.log(error)
+	}
+	remote = { ...cache, ...remote }
 	const filtered = {}
 	for (let elt of Object.keys(remote)) {
-		if (
-			remote[elt].startsWith("https://") ||
-			remote[elt].startsWith("http://") ||
-			remote[elt] == "#"
-		) {
+		if (remote[elt].startsWith("https://")) {
 			filtered[elt] = remote[elt]
+		} else {
+			if (remote[elt] == "#") {
+				disabled.push(elt)
+			}
 		}
 	}
-	remote = { ...cache, ...filtered }
-	await writeFile(join(coversDir, "remote.json"), JSON.stringify(remote))
-	const index = { ...remote }
+	remote = { ...filtered }
+	const nullEntries = {}
+	disabled.map((e) => {
+		nullEntries[e] = "#"
+	})
+	let index = { ...remote }
 	const missing = {}
+	// replacing remote links with local paths when applicable
 	for (let elt of Object.keys(remote)) {
 		const img = remote[elt]
-		if (existsSync(join(coversDir, `${basename(img, ".png")}.png`))) {
-			index[elt] = "file://" + join("/", join(coversDir, `${basename(img, ".png")}.png`))
+		const res = imageExists(img)
+		if (res) {
+			index[elt] =
+				"file://" + join("/", join(coversDir, `${basename(img, `.${res.ext}`)}.${res.ext}`))
 		} else {
 			missing[elt] = remote[elt]
 		}
 	}
+	// cleaning replacements by getting rid of the non-existent images entries
+	for (let i of Object.keys(replacements)) {
+		if (!imageExists(replacements[i], true)) {
+			delete replacements[i]
+		}
+	}
+	await writeFile(join(coversDir, "replacements.json"), JSON.stringify(replacements), {
+		encoding: "utf-8"
+	})
+	// applying custom replacements and null entries
+	index = { ...index, ...replacements, ...nullEntries }
+	for (let i of Object.keys(index)) {
+		if (index[i] != "#" && !index[i].startsWith("file://")) {
+			index[i] = "file://" + join("/", index[i])
+		}
+	}
+	await writeFile(join(coversDir, "disabled.json"), JSON.stringify(disabled), {
+		encoding: "utf-8"
+	})
+	await writeFile(join(coversDir, "remote.json"), JSON.stringify(remote), { encoding: "utf-8" })
 	await writeFile(join(coversDir, "index.json"), JSON.stringify(index), { encoding: "utf-8" })
 	downloadMissingCovers(missing)
 }
@@ -190,7 +316,6 @@ const startupPlaylistProcessing = async () => {
 		}
 	} catch (error) {
 		console.log(error)
-		// return false
 	}
 	try {
 		if (existsSync(join(playlistsDir, "display.json"))) {
@@ -201,7 +326,6 @@ const startupPlaylistProcessing = async () => {
 		}
 	} catch (error) {
 		console.log(error)
-		// return false
 	}
 	for (let p of playlists) {
 		if (!existsSync(join(playlistsDir, `${p.id}.pl`))) {
@@ -262,7 +386,6 @@ const startupLyricsProcessing = async () => {
 		}
 	} catch (error) {
 		console.log(error)
-		// return false
 	}
 	for (let elt of Object.keys(cache)) {
 		if (!existsSync(join(lyricsDir, `${elt}.lrc`))) {
@@ -292,7 +415,6 @@ const handleLyricsUpdate = async (lyricsData) => {
 		}
 	} catch (error) {
 		console.log(error)
-		// return false
 	}
 	for (let song of Object.keys(lyricsData)) {
 		if (!existsSync(join(lyricsDir, `${song}.lrc`))) {
@@ -316,9 +438,9 @@ const handleCoversUpdate = async (coversData) => {
 	// overwrite remote.json
 	// for each value of filtered covers, if v != "#" and file does not exist : add to download queue
 	// start download queue
-	const coversDir = join(dirs.data, "covers")
-	await mkdir(coversDir, { recursive: true })
+	const coversDir = await initCoversDir()
 	let prev = {}
+	let disabled = []
 	try {
 		if (existsSync(join(coversDir, "remote.json"))) {
 			prev =
@@ -330,15 +452,42 @@ const handleCoversUpdate = async (coversData) => {
 		}
 	} catch (error) {
 		console.log(error)
-		// return false
 	}
-	const filtered = {}
+	try {
+		if (existsSync(join(coversDir, "disabled.json"))) {
+			disabled =
+				JSON.parse(
+					readFileSync(join(coversDir, "disabled.json"), {
+						encoding: "utf8"
+					})
+				) ?? []
+		}
+	} catch (error) {
+		console.log(error)
+	}
+	const filtered = {} // remote urls to save
 	for (let elt of Object.keys(coversData)) {
-		if (coversData[elt].startsWith("https://") || coversData[elt] == "#") {
-			filtered[elt] = coversData[elt]
+		if (coversData[elt] == "#") {
+			disabled.push(elt)
+		} else {
+			// un-disable entries that contain data
+			disabled = disabled.filter((e) => e != elt)
+			if (coversData[elt].startsWith("https://")) {
+				filtered[elt] = coversData[elt]
+			}
 		}
 	}
 	prev = { ...prev, ...filtered }
+	// strip null entries in remote, since disabled are listed in disabled.json
+	for (let i of Object.keys(prev)) {
+		if (prev[i] == "#") {
+			delete prev[i]
+		}
+	}
+	disabled = [...new Set([...disabled])]
+	await writeFile(join(coversDir, "disabled.json"), JSON.stringify(disabled), {
+		encoding: "utf8"
+	})
 	await writeFile(join(coversDir, "remote.json"), JSON.stringify(prev), {
 		encoding: "utf8"
 	})
@@ -360,6 +509,82 @@ const handlePlaylistsUpdate = async (playlistsData) => {
 		await writeFile(join(playlistsDir, `${p.id}.pl`), JSON.stringify(p), { encoding: "utf-8" })
 	}
 }
+
+const handleReplacementCoverForTrack = async (track, path) => {
+	// check if image exists
+	// check if covers/replacements/index.json keys have image path and if so, use the existing one
+	// else :
+	// generate unused ID that is not in the covers/replacements/index.json values
+	// copy image as covers/replacements/ID.${ext}
+	// add track: replacementPath to the covers/replacements/index.json
+	// clean replacements : remove unused replacement images, remove replacement entries where replacement image does not exist
+	if (!path) return
+	const ext = existsSync(path) ? extname(path) : ""
+	const coversDir = await initCoversDir()
+	const replacementsDir = await initCoversReplacementDir()
+	if (ext) {
+		let index = {} // original: ID in replacements folder
+		let replacements = {}
+		try {
+			if (existsSync(join(replacementsDir, "index.json"))) {
+				index =
+					JSON.parse(
+						readFileSync(join(replacementsDir, "index.json"), {
+							encoding: "utf8"
+						})
+					) ?? {}
+			}
+		} catch (error) {
+			console.log(error)
+		}
+		try {
+			if (existsSync(join(coversDir, "replacements.json"))) {
+				replacements =
+					JSON.parse(
+						readFileSync(join(coversDir, "replacements.json"), {
+							encoding: "utf8"
+						})
+					) ?? {}
+			}
+		} catch (error) {
+			console.log(error)
+		}
+		let res
+		if (index[path] && imageExists(index[path], true)) {
+			res = index[path]
+		} else {
+			const vals = Object.values(index)
+			res = randomStr(32, ALLOWED_CHARS)
+			while (vals.includes(res)) {
+				res = randomStr(32, ALLOWED_CHARS)
+			}
+			index[path] = res
+		}
+		const replacementPath = join(replacementsDir, `${basename(res, ext)}${ext}`)
+		replacements[track] = replacementPath
+		await copyFile(path, replacementPath)
+		for (let i of Object.keys(index)) {
+			if (!imageExists(index[i], true)) {
+				delete index[i]
+			}
+		}
+		for (let i of Object.keys(replacements)) {
+			if (!existsSync(replacements[i])) {
+				delete replacements[i]
+			}
+		}
+		await writeFile(join(coversDir, "replacements.json"), JSON.stringify(replacements), {
+			encoding: "utf-8"
+		})
+		await writeFile(join(replacementsDir, "index.json"), JSON.stringify(index), {
+			encoding: "utf-8"
+		})
+		return replacementPath
+	}
+	return false
+}
+
+const handleRemoveReplacementCoverForTrack = async (track) => {}
 
 const getRemoteInfo = async () => {
 	try {
@@ -621,7 +846,7 @@ async function createWindow() {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
 	// Set app user model id for windows
-	electronApp.setAppUserModelId("com.electron")
+	electronApp.setAppUserModelId("com.integraxseras.Gayer")
 
 	// Default open or close DevTools by F12 in development
 	// and ignore CommandOrControl + R in production.
@@ -677,6 +902,22 @@ app.whenReady().then(() => {
 		} catch (error) {
 			console.log(error)
 			return error
+		}
+	})
+	ipcMain.handle("replace_cover", async (event, args) => {
+		try {
+			return await handleReplacementCoverForTrack(args.track, args.path)
+		} catch (error) {
+			console.log(error)
+			return false
+		}
+	})
+	ipcMain.handle("remove_replacement_cover", async (event, args) => {
+		try {
+			return await handleRemoveReplacementCoverForTrack(args.track)
+		} catch (error) {
+			console.log(error)
+			return false
 		}
 	})
 	ipcMain.handle("update_lyrics", async (event, args) => {
@@ -764,6 +1005,35 @@ app.whenReady().then(() => {
 		} catch (error) {
 			console.log(error)
 			return error
+		}
+	})
+	ipcMain.handle("open_image", async () => {
+		try {
+			const file = await dialog.showOpenDialog({
+				title: "Select an image",
+				filters: [
+					{
+						name: "Images",
+						extensions: IMG_EXTS
+					}
+				],
+				properties: ["openFile"]
+			})
+			return file.filePaths[0]
+		} catch (error) {
+			console.log(error)
+			return error
+		}
+	})
+	ipcMain.handle("get_local_cover", async (event, args) => {
+		try {
+			const rep = await trackHasReplacementCover(args.track)
+			const cached = await trackHasCachedCover(args.track)
+			const res = rep || cached || ""
+			return res
+		} catch (error) {
+			console.log(error)
+			return false
 		}
 	})
 	ipcMain.handle("file_exists", async (event, args) => {
