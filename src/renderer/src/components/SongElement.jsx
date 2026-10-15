@@ -24,7 +24,8 @@ import {
 	MdImage,
 	MdImageNotSupported,
 	MdPlaylistAdd,
-	MdPlaylistRemove
+	MdPlaylistRemove,
+	MdRefresh
 } from "react-icons/md"
 import { IoMusicalNotes } from "react-icons/io5"
 import CoverImage from "./CoverImage"
@@ -32,8 +33,9 @@ import { motion } from "motion/react"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import { useSettingsStore } from "../stores/useSettingsStore"
 import useConfirm from "../hooks/useConfirm"
-import { useCallback, useMemo } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useCoversStore } from "../stores/useCoversStore"
+import { useContextMenuStore } from "../stores/useContextMenuStore"
 
 export default function SongElement({
 	song,
@@ -50,16 +52,18 @@ export default function SongElement({
 	highlightIfPlaying = true
 }) {
 	const { currentTrack } = usePlayerStore()
-
 	const { setSelectedSongPath } = usePlaylistsStore()
-
 	const { setForceRefreshLocationsTracker } = useSettingsStore()
-
-	const { thumbnailCache, setThumbnailCache } = useCoversStore()
-
+	const {
+		thumbnailCache,
+		setThumbnailCache,
+		setThumbnailTracksOverride,
+		removeThumbnailEntries
+	} = useCoversStore()
 	const { handlePlayNext, handleAddToQueue, handleRemoveFromQueue, playFromQueue, setMusic } =
 		usePlayerControls()
-
+	const { setContextMenu } = useContextMenuStore()
+	const [hasReplacementCover, setHasReplacementCover] = useState(false)
 	const handleAddToPlaylist = () => {
 		setSelectedSongPath(song)
 	}
@@ -80,6 +84,99 @@ export default function SongElement({
 		}
 	}, [thumbnailCache, setThumbnailCache, song, songThumbEnabled])
 
+	const handleReplaceCover = useCallback(async () => {
+		const img = await window.electron.ipcRenderer.invoke("open_image", {})
+		if (!img) return
+		let res = await window.electron.ipcRenderer.invoke("replace_cover", {
+			track: song,
+			path: img
+		})
+		if (res) {
+			if (!res.startsWith("file://")) {
+				if (res.startsWith("/")) {
+					res = res.slice(1)
+				}
+				res = `file:///${res}`
+			}
+
+			setThumbnailTracksOverride([song], res)
+		}
+	}, [song, setThumbnailTracksOverride])
+
+	const handleRemoveReplacementCover = useCallback(async () => {
+		if (!hasReplacementCover) return
+		let res = await window.electron.ipcRenderer.invoke("remove_replacement_cover", {
+			track: song
+		})
+		if (res) {
+			if (!res.startsWith("file://")) {
+				if (res.startsWith("/")) {
+					res = res.slice(1)
+				}
+				res = `file:///${res}`
+			}
+			setThumbnailTracksOverride([song], res)
+		} else {
+			removeThumbnailEntries([song])
+		}
+	}, [song, hasReplacementCover, setThumbnailTracksOverride, removeThumbnailEntries])
+
+	const contextEntries = useMemo(() => {
+		const res = []
+		if (showThumbnailToggle) {
+			res.push({
+				text: songThumbEnabled ? "Disable cover" : "Enable cover",
+				title: songThumbEnabled
+					? "Disable cover art fetching for this song"
+					: "Enable cover art fetching for this song",
+				icon: songThumbEnabled ? <MdImageNotSupported size={20} /> : <MdImage size={20} />,
+				callback: handleToggleThumbnail
+			})
+		}
+		res.push({
+			text: "Customize cover",
+			title: "Replace default cover artwork with a local image",
+			icon: <MdImage size={20} />,
+			callback: handleReplaceCover
+		})
+		if (hasReplacementCover) {
+			res.push({
+				text: "Remove custom cover",
+				title: "Fallback to the default fetched cover",
+				icon: <MdImageNotSupported size={20} />,
+				callback: handleRemoveReplacementCover
+			})
+		}
+
+		return res
+	}, [
+		showThumbnailToggle,
+		songThumbEnabled,
+		handleToggleThumbnail,
+		hasReplacementCover,
+		handleReplaceCover,
+		handleRemoveReplacementCover
+	])
+
+	const handleContextMenu = useCallback(
+		(e) => {
+			setContextMenu(e.clientX, e.clientY, contextEntries, getSongName(song))
+		},
+		[contextEntries, setContextMenu, song]
+	)
+
+	useEffect(() => {
+		window.electron.ipcRenderer
+			.invoke("has_replacement_cover", { track: song })
+			.then((e) => setHasReplacementCover(!!e))
+		const unsub = window.electron.ipcRenderer.on("tracks_with_replacement", (e, v) =>
+			setHasReplacementCover((v.tracks ?? []).includes(song))
+		)
+		return () => {
+			unsub()
+		}
+	}, [song])
+
 	const [deleting, setDeleting] = useConfirm()
 	const handleRemoveTrack = useCallback(async () => {
 		if (deleting) {
@@ -93,6 +190,7 @@ export default function SongElement({
 
 	return (
 		<motion.div
+			onContextMenu={handleContextMenu}
 			className={cn(
 				"relative flex flex-row overflow-clip jutify-start items-center rounded-lg bg-linear-90 font-bold text-white/75 from-slate-800 to-slate-700 transition ease-out duration-200 select-none",
 				highlightIfPlaying && currentTrack == song
@@ -246,39 +344,6 @@ export default function SongElement({
 						}}
 					>
 						<MdAddCircleOutline size={20} />
-					</motion.div>
-				)}
-				{showThumbnailToggle && (
-					<motion.div
-						title={
-							songThumbEnabled
-								? "Disable cover art fetching for this song"
-								: "Enable cover art fetching for this song"
-						}
-						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col outline-none justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
-						onClick={(e) => {
-							e.stopPropagation()
-							handleToggleThumbnail()
-						}}
-						initial={{
-							scale: 1.0
-						}}
-						animate={{
-							scale: 1.0
-						}}
-						whileTap={{
-							scale: 0.8
-						}}
-						transition={{
-							duration: 0.025,
-							ease: "easeOut"
-						}}
-					>
-						{songThumbEnabled ? (
-							<MdImageNotSupported size={20} />
-						) : (
-							<MdImage size={20} />
-						)}
 					</motion.div>
 				)}
 				{showDelete && (

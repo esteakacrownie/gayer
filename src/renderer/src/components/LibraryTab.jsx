@@ -915,6 +915,7 @@ const CoverArtUpdater = ({ songs = [] }) => {
 			for (let i of Object.keys(thumbnailCacheOverride)) {
 				if (thumbnailCacheOverride[i] != thumbnailCacheRef.current[i]) {
 					thumbnailCacheRef.current[i] = thumbnailCacheOverride[i]
+					console.log("marked as different")
 					diff += 1
 				}
 			}
@@ -927,7 +928,7 @@ const CoverArtUpdater = ({ songs = [] }) => {
 				console.log("nothing to update")
 			}
 		}
-		const t = setTimeout(updateFn, 250)
+		const t = setTimeout(updateFn, 50)
 		const cacheUpdate = setInterval(updateFn, 5000)
 		return () => {
 			clearTimeout(t)
@@ -939,7 +940,8 @@ const CoverArtUpdater = ({ songs = [] }) => {
 		queue,
 		setThumbnailCache,
 		thumbnailCacheOverride,
-		fetchCoverArts
+		fetchCoverArts,
+		clearThumbnailCacheOverride
 	])
 
 	// useEffect(() => {

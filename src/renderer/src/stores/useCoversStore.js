@@ -29,6 +29,17 @@ export const useCoversStore = create((set) => ({
 	thumbnailCache: defaults.thumbnailCache,
 	thumbnailCacheOverride: defaults.thumbnailCacheOverride,
 	setThumbnailCache: (v) => set((state) => ({ thumbnailCache: updateCovers(v) })),
+	removeThumbnailEntries: (v) =>
+		set((state) => {
+			if (!Array.isArray(v)) return
+			const res = { ...state.thumbnailCache }
+			for (let i of v) {
+				if (res[i]) {
+					delete res[i]
+				}
+			}
+			return { thumbnailCache: res }
+		}),
 	setThumbnailTracksOverride: (tracks, replacement) =>
 		set((state) => {
 			const res = {}

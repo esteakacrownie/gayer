@@ -23,7 +23,7 @@ export const useClickOutside = (ref, callback, addEventListener = true, outsideR
 	}
 
 	useEffect(() => {
-		const elt = outsideRef.current || document
+		const elt = outsideRef?.current || document
 		if (addEventListener) {
 			elt.addEventListener("click", handleClick)
 		}

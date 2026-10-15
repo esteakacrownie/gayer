@@ -598,6 +598,9 @@ const handleReplacementCoverForTrack = async (track, path) => {
 		await writeFile(join(replacementsDir, "index.json"), JSON.stringify(index), {
 			encoding: "utf-8"
 		})
+		appWindow.webContents.send("tracks_with_replacement", {
+			tracks: Object.keys(replacements)
+		})
 		return replacementPath
 	}
 	return false
@@ -626,6 +629,8 @@ const handleRemoveReplacementCoverForTrack = async (track) => {
 	await writeFile(join(coversDir, "replacements.json"), JSON.stringify(replacements), {
 		encoding: "utf-8"
 	})
+	appWindow.webContents.send("tracks_with_replacement", { tracks: Object.keys(replacements) })
+	return await trackHasCachedCover(track)
 }
 
 const getRemoteInfo = async () => {
@@ -1073,6 +1078,15 @@ app.whenReady().then(() => {
 			const cached = await trackHasCachedCover(args.track)
 			const res = rep || cached || ""
 			return res
+		} catch (error) {
+			console.log(error)
+			return false
+		}
+	})
+	ipcMain.handle("has_replacement_cover", async (event, args) => {
+		try {
+			const res = await trackHasReplacementCover(args.track)
+			return res || ""
 		} catch (error) {
 			console.log(error)
 			return false

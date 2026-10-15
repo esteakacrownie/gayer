@@ -33,6 +33,7 @@ import UpdatesDialog from "./components/UpdatesDialog"
 import { useCoversStore } from "./stores/useCoversStore"
 import { useLyricsStore } from "./stores/useLyricsStore"
 import CurrentTrackDetails from "./components/CurrentTrackDetails"
+import ContextMenu from "./components/ContextMenu"
 
 function App() {
 	const { setQueue, setAutoplay, setNextAction, currentTrack } = usePlayerStore()
@@ -132,6 +133,7 @@ function App() {
 			<UpdatesDialog />
 			<DragDropHandler />
 			<PlaylistDialog />
+			<ContextMenu />
 			<Player />
 		</main>
 	)
