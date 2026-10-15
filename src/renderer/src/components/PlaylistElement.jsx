@@ -34,6 +34,7 @@ import { useSettingsStore } from "../stores/useSettingsStore"
 import { usePlaylistsStore } from "../stores/usePlaylistsStore"
 import useConfirm from "../hooks/useConfirm"
 import { useCoversStore } from "../stores/useCoversStore"
+import { useContextMenuStore } from "../stores/useContextMenuStore"
 
 export default function PlaylistElement({
 	playlist,
@@ -55,15 +56,18 @@ export default function PlaylistElement({
 		currentTrack,
 		setSelectedPlaylist
 	} = usePlayerStore()
-
 	const { shufflePlay, setForceRefreshLocationsTracker } = useSettingsStore()
-
-	const { thumbnailCache, setThumbnailCache } = useCoversStore()
-
+	const {
+		thumbnailCache,
+		setThumbnailCache,
+		setThumbnailTracksOverride,
+		setThumbnailTracksOverrides,
+		removeThumbnailEntries
+	} = useCoversStore()
 	const { playSongs, playBatchNext } = usePlayerControls()
-
 	const { playlists, setPlaylists, setSelectedSongPath } = usePlaylistsStore()
-
+	const { setContextMenu } = useContextMenuStore()
+	const [hasReplacementCover, setHasReplacementCover] = useState([]) // contains only songs that have custom covers
 	const [songs, setSongs] = useState([])
 
 	const handleAddToPlaylist = useCallback(() => {
@@ -78,6 +82,12 @@ export default function PlaylistElement({
 		}
 		return null
 	}, [songs, thumbnailCache])
+
+	const playlistName = useMemo(() => {
+		return isPlaylist
+			? playlists.filter((e) => e.id == playlist)[0].name
+			: getFolderName(playlist)
+	}, [isPlaylist, playlist, playlists])
 
 	const songThumbEnabled = useMemo(() => {
 		for (let s of songs) {
@@ -107,6 +117,122 @@ export default function PlaylistElement({
 			setThumbnailCache(updated)
 		}
 	}, [thumbnailCache, setThumbnailCache, songs, songThumbEnabled])
+
+	const handleReplaceCovers = useCallback(async () => {
+		const img = await window.electron.ipcRenderer.invoke("open_image", {})
+		if (!img) return
+		let res = await window.electron.ipcRenderer.invoke("replace_covers", {
+			tracks: songs,
+			path: img
+		})
+		if (
+			typeof res == "object" &&
+			Object.keys(res).length == songs.length &&
+			[...new Set([...Object.values(res)])].length == 1
+		) {
+			let replacement = Object.values(res)[0]
+			if (replacement && !replacement.startsWith("file://")) {
+				if (replacement.startsWith("/")) {
+					replacement = replacement.slice(1)
+				}
+				replacement = `file:///${replacement}`
+			}
+			setThumbnailTracksOverride(songs, replacement)
+		}
+	}, [songs, setThumbnailTracksOverride])
+
+	const handleRemoveReplacementCovers = useCallback(async () => {
+		if (!hasReplacementCover) return
+		let res = await window.electron.ipcRenderer.invoke("remove_replacement_covers", {
+			tracks: songs
+		})
+		if (typeof res == "object" && Object.keys(res).length == songs.length) {
+			const tracks = {}
+			const toRemove = []
+			for (let i of Object.keys(res)) {
+				if (res[i]) {
+					if (!res[i].startsWith("file://")) {
+						if (res[i].startsWith("/")) {
+							res[i] = res[i].slice(1)
+						}
+						res[i] = `file:///${res[i]}`
+						tracks[i] = res[i]
+					}
+				} else {
+					toRemove.push(i)
+				}
+			}
+
+			setThumbnailTracksOverrides(tracks)
+			removeThumbnailEntries(toRemove)
+		}
+	}, [songs, hasReplacementCover, setThumbnailTracksOverrides, removeThumbnailEntries])
+
+	const contextEntries = useMemo(() => {
+		const res = []
+		if (showThumbnailToggle) {
+			res.push({
+				text: songThumbEnabled ? "Disable covers" : "Enable covers",
+				title: songThumbEnabled
+					? "Disable cover artworks fetching for this song"
+					: "Enable cover artworks fetching for this song",
+				icon: songThumbEnabled ? <MdImageNotSupported size={20} /> : <MdImage size={20} />,
+				callback: handleToggleThumbnail
+			})
+		}
+		res.push({
+			text: "Customize covers",
+			title: "Replace default cover artworks with a local image",
+			icon: <MdImage size={20} />,
+			callback: handleReplaceCovers
+		})
+		if (hasReplacementCover) {
+			res.push({
+				text: "Remove custom covers",
+				title: "Fallback to the default fetched covers",
+				icon: <MdImageNotSupported size={20} />,
+				callback: handleRemoveReplacementCovers
+			})
+		}
+
+		return res
+	}, [
+		showThumbnailToggle,
+		songThumbEnabled,
+		handleToggleThumbnail,
+		hasReplacementCover,
+		handleReplaceCovers,
+		handleRemoveReplacementCovers
+	])
+
+	const handleContextMenu = useCallback(
+		(e) => {
+			setContextMenu(e.clientX, e.clientY, contextEntries, playlistName)
+		},
+		[contextEntries, setContextMenu, playlistName]
+	)
+
+	useEffect(() => {
+		window.electron.ipcRenderer
+			.invoke("have_replacement_covers", { tracks: songs })
+			.then((e) => {
+				if (typeof e == "object" && Object.values(e).filter((e) => !!e).length > 0) {
+					return setHasReplacementCover(true)
+				}
+				return setHasReplacementCover(false)
+			})
+		const unsub = window.electron.ipcRenderer.on("tracks_with_replacement", (e, v) => {
+			for (let song of songs) {
+				if ((v.tracks ?? []).includes(song)) {
+					return setHasReplacementCover(true)
+				}
+			}
+			return setHasReplacementCover(false)
+		})
+		return () => {
+			unsub()
+		}
+	}, [songs])
 
 	const fetchSongs = useCallback(async () => {
 		const { songs: res } = await getSortedFilesAt(playlist)
@@ -170,6 +296,7 @@ export default function PlaylistElement({
 
 	return (
 		<motion.div
+			onContextMenu={handleContextMenu}
 			className={cn(
 				"relative flex flex-row overflow-clip jutify-start items-center rounded-lg bg-linear-90 font-bold text-white/75 from-slate-800 to-slate-700 transition ease-out duration-200 select-none brightness-110 hover:brightness-150 border-2 border-slate-400/50",
 				isGrabbable ? "cursor-grab" : "cursor-pointer"
@@ -299,39 +426,6 @@ export default function PlaylistElement({
 						<MdAddCircleOutline size={20} />
 					</motion.div>
 				)}
-				{showThumbnailToggle && (
-					<motion.div
-						title={
-							songThumbEnabled
-								? `Disable cover art fetching for this ${isPlaylist ? "playlist" : "album"}`
-								: `Enable cover art fetching for this playlist ${isPlaylist ? "playlist" : "album"}`
-						}
-						className="hover:bg-pink-600/50 rounded-lg aspect-square flex flex-col outline-none justify-center items-center h-10 w-10 max-w-10 transition ease-out duration-200 cursor-pointer"
-						onClick={(e) => {
-							e.stopPropagation()
-							handleToggleThumbnail()
-						}}
-						initial={{
-							scale: 1.0
-						}}
-						animate={{
-							scale: 1.0
-						}}
-						whileTap={{
-							scale: 0.8
-						}}
-						transition={{
-							duration: 0.025,
-							ease: "easeOut"
-						}}
-					>
-						{songThumbEnabled ? (
-							<MdImageNotSupported size={20} />
-						) : (
-							<MdImage size={20} />
-						)}
-					</motion.div>
-				)}
 				{showDelete && (
 					<motion.div
 						title={`Delete ${isPlaylist ? "Playlist" : "Album"}`}
@@ -384,11 +478,7 @@ export default function PlaylistElement({
 				}}
 				className="ml-2 pr-6 text-shadow-lg text-shadow-black/75"
 			>
-				<p className="line-clamp-1">
-					{isPlaylist
-						? playlists.filter((e) => e.id == playlist)[0].name
-						: getFolderName(playlist)}
-				</p>
+				<p className="line-clamp-1">{playlistName}</p>
 				<p className="line-clamp-1 text-xs brightness-90">{`${count} item(s)`}</p>
 			</motion.div>
 		</motion.div>

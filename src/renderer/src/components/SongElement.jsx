@@ -127,8 +127,8 @@ export default function SongElement({
 			res.push({
 				text: songThumbEnabled ? "Disable cover" : "Enable cover",
 				title: songThumbEnabled
-					? "Disable cover art fetching for this song"
-					: "Enable cover art fetching for this song",
+					? "Disable cover artwork fetching for this song"
+					: "Enable cover artwork fetching for this song",
 				icon: songThumbEnabled ? <MdImageNotSupported size={20} /> : <MdImage size={20} />,
 				callback: handleToggleThumbnail
 			})

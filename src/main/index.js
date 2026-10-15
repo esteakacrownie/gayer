@@ -959,9 +959,37 @@ app.whenReady().then(() => {
 			return false
 		}
 	})
+	ipcMain.handle("replace_covers", async (event, args) => {
+		try {
+			if (!Array.isArray(args.tracks) || args.tracks.length == 0) return false
+			const result = {}
+			for (let i of args.tracks) {
+				const res = await handleReplacementCoverForTrack(i, args.path)
+				result[i] = res
+			}
+			return result
+		} catch (error) {
+			console.log(error)
+			return false
+		}
+	})
 	ipcMain.handle("remove_replacement_cover", async (event, args) => {
 		try {
 			return await handleRemoveReplacementCoverForTrack(args.track)
+		} catch (error) {
+			console.log(error)
+			return false
+		}
+	})
+	ipcMain.handle("remove_replacement_covers", async (event, args) => {
+		try {
+			if (!Array.isArray(args.tracks) || args.tracks.length == 0) return false
+			const result = {}
+			for (let i of args.tracks) {
+				const res = await handleRemoveReplacementCoverForTrack(i)
+				result[i] = res
+			}
+			return result
 		} catch (error) {
 			console.log(error)
 			return false
@@ -1087,6 +1115,19 @@ app.whenReady().then(() => {
 		try {
 			const res = await trackHasReplacementCover(args.track)
 			return res || ""
+		} catch (error) {
+			console.log(error)
+			return false
+		}
+	})
+	ipcMain.handle("have_replacement_covers", async (event, args) => {
+		try {
+			const result = {}
+			for (let i of args.tracks) {
+				const res = await trackHasReplacementCover(i)
+				result[i] = res
+			}
+			return result
 		} catch (error) {
 			console.log(error)
 			return false
