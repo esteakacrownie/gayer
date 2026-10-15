@@ -879,12 +879,14 @@ export default function DownloadTab() {
 								</div>
 							) : (
 								<>
-									<div
-										title="Downloading..."
-										className="h-10 aspect-square flex flex-col justify-center items-center transition ease-out duration-200"
-									>
-										<TbLoader2 className="animate-spin" size={20} />
-									</div>
+									{urlDownloadingSongs.includes(e) && (
+										<div
+											title="Downloading..."
+											className="h-10 aspect-square flex flex-col justify-center items-center transition ease-out duration-200"
+										>
+											<TbLoader2 className="animate-spin" size={20} />
+										</div>
+									)}
 								</>
 							)}
 						</>

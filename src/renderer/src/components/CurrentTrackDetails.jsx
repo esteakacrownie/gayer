@@ -78,9 +78,9 @@ export default function CurrentTrackDetails() {
 							thumbnailCache[currentTrack].trim() && (
 								<div className="relative rounded-xl select-none pointer-events-auto group/cover">
 									<div className="flex flex-row justify-center aspect-square">
-										<div className="relative flex flex-row object-contain">
+										<div className="relative flex flex-row w-full">
 											<img
-												className="scale-95 rounded-xl  select-none pointer-events-none group-hover/cover:brightness-55 transition ease-out duration-200"
+												className="scale-95 w-full object-cover rounded-xl select-none pointer-events-none group-hover/cover:brightness-55 transition ease-out duration-200"
 												src={thumbnailCache[currentTrack] ?? "#"}
 											/>
 											<motion.div

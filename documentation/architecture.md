@@ -50,3 +50,13 @@ Gayer makes use of the following [extra packages](../package.json):
 By default, Gayer has access to the whole user filesystem, with the user's access permissions. To achieve that in the [renderer process](./renderer.md), the main window gets granted permissions to access native filesystem paths when using the `file://` protocol. While this doesn't expose the use to risks any different from other native apps installed on their system, it's considered an edgy practice in web apps, hence worth specifying hereby.
 
 No sensitive user data gets sent over the network to any remote location, except for the user's host IP address (as in any https request), **unless you enable cookies access in the download tab**, in which case yt-dlp accesses user's YouTube cookies extracted from the selected browser's data, and includes them in any request to YouTube. This can be toggled anytime.
+
+## Local data storage
+
+Gayer has the ability to download media files inside user-specified folders. In addition, it also manages files in its own application data folder (`~/.local/share/com.integraxseras.Gayer` on linux, `%APPDATA/com.integraxseras.Gayer` on Windows). The local appdata structure looks like so:
+
+- `modules/` stores yt-dlp and ffmpeg binaries, automatically downloaded and updated by Gayer, and required to download and extract songs
+- `covers/` stores cached cover artworks, remote sources for these cached artworks as a json files, and optional custom replacement images for individual tracks
+- `lyrics/` stores cached timed lyrics for individual tracks as json files
+- `playlists/` stores individual user playlists as json files
+- `settings.json` stores Gayer's settings

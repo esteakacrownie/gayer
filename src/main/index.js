@@ -127,6 +127,11 @@ const imageExists = (img, replacement = false) => {
 	return false
 }
 
+const isImage = (path) => {
+	const ext = extname(path)
+	return ext && IMG_EXTS.includes(ext.slice("1"))
+}
+
 const trackHasReplacementCover = async (track) => {
 	if (!track) return false
 	let replacements = {}
@@ -193,11 +198,12 @@ const startupCoversProcessing = async () => {
 	// replacing the urls by the path to cover if it exists
 	// else add cover to the download queue
 	// start download queue
-	let cache = {}
-	let remote = {}
-	let replacements = {}
-	let disabled = []
+	let cache = {} // compatibility
+	let remote = {} // remote links
+	let replacements = {} // custom images
+	let disabled = [] // tracks with thumbnails disabled
 	const coversDir = await initCoversDir()
+	const coversReplacementDir = await initCoversReplacementDir()
 	try {
 		if (existsSync(join(dirs.data, "cache.json"))) {
 			cache =
@@ -262,7 +268,7 @@ const startupCoversProcessing = async () => {
 	disabled.map((e) => {
 		nullEntries[e] = "#"
 	})
-	let index = { ...remote }
+	let index = { ...remote } // compiled json from remote and overrides
 	const missing = {}
 	// replacing remote links with local paths when applicable
 	for (let elt of Object.keys(remote)) {
@@ -284,6 +290,19 @@ const startupCoversProcessing = async () => {
 	await writeFile(join(coversDir, "replacements.json"), JSON.stringify(replacements), {
 		encoding: "utf-8"
 	})
+	// removing unused replacement pictures
+	let replacementCovers = []
+	try {
+		replacementCovers = (await readdir(coversReplacementDir)) ?? []
+	} catch (error) {
+		console.log(error)
+	}
+	for (let i of replacementCovers) {
+		const path = join(coversReplacementDir, i)
+		if (isImage(i) && !Object.values(replacements).includes(path)) {
+			await unlink(path)
+		}
+	}
 	// applying custom replacements and null entries
 	index = { ...index, ...replacements, ...nullEntries }
 	for (let i of Object.keys(index)) {
@@ -584,7 +603,30 @@ const handleReplacementCoverForTrack = async (track, path) => {
 	return false
 }
 
-const handleRemoveReplacementCoverForTrack = async (track) => {}
+const handleRemoveReplacementCoverForTrack = async (track) => {
+	// remove track entry in covers/replacements.json
+	if (!track) return
+	const coversDir = await initCoversDir()
+	let replacements = {}
+	try {
+		if (existsSync(join(coversDir, "replacements.json"))) {
+			replacements =
+				JSON.parse(
+					readFileSync(join(coversDir, "replacements.json"), {
+						encoding: "utf8"
+					})
+				) ?? {}
+		}
+	} catch (error) {
+		console.log(error)
+	}
+	if (replacements[track]) {
+		delete replacements[track]
+	}
+	await writeFile(join(coversDir, "replacements.json"), JSON.stringify(replacements), {
+		encoding: "utf-8"
+	})
+}
 
 const getRemoteInfo = async () => {
 	try {
