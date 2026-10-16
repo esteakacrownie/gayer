@@ -6,20 +6,16 @@ Local music player and downloader :3
 
 ## Screenshots
 
-<div>
-
-<img src="./screenshots/download.png" width="32%" alt="Download tab screenshot">
-<img src="./screenshots/library.png" width="32%" alt="Library tab screenshot">
-<img src="./screenshots/queue.png" width="32%" alt="Queue tab screenshot">
-
-</div>
+<img src="./screenshots/download.png" width="55%" alt="Download tab screenshot">
+<img src="./screenshots/library.png" width="55%" alt="Library tab screenshot">
+<img src="./screenshots/queue.png" width="55%" alt="Queue tab screenshot">
 
 ## Features
 
 - Play local audio in different ways:
-    - Drag and drop multiple files and folders from your file manager onto the app to add them to the queue
-    - Build and search your own custom audio library in app, by registering locations from your computer
-    - Manually select a folder to open
+  - Drag and drop multiple files and folders from your file manager onto the app to add them to the queue
+  - Build and search your own custom audio library in app, by registering locations from your computer
+  - Manually select a folder to open
 - Reorder and shuffle queue
 - Loop current or whole queue
 - Create your own playlists
@@ -30,14 +26,14 @@ Local music player and downloader :3
 - Lyrics auto fetching from song file name + caching
 - Change lyrics source if they are incorrect or sync is broken
 - Power saving / appearance toggle, if your machine struggles with pretty blurs and overly long queues :p
-- Automatically fetches album cover art using filename and parent directory name + caching
-- Enable / disable auto cover art fetching
+- Automatically fetches album cover artworks using filename and parent directory name + caching
+- Enable / disable auto cover artworks fetching
+- Customize cover artworks by importing local images
 - Link your Youtube account (by using your browser's cookies) to download content that fails otherwise
 - Looks cute and pretty :3
 
 ### Planned
 
-- Fix incorrect cover art manually when it fails to find your music
 - Audio visualizer
 
 <br/>
