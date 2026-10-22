@@ -461,6 +461,9 @@ export default function Player() {
 		"ctrl+k",
 		(e) => {
 			e.preventDefault()
+			if (showLyricsPanel && lyricsFullscreen) {
+				setLyricsFullscreen(false)
+			}
 			handleAddToPlaylist()
 		},
 		{ enableOnFormTags: true }

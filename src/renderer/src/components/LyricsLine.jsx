@@ -61,8 +61,8 @@ export default function LyricsLine({
 				textShadow: highlighted
 					? [
 							"none",
-							"0 0 30px rgb(255, 255, 255, 0.35",
-							"0 0 10px rgb(255, 255, 255, 0.25"
+							"0 0 30px rgb(255, 255, 255, 0.35)",
+							"0 0 10px rgb(255, 255, 255, 0.25)"
 						]
 					: "none",
 				transition: {

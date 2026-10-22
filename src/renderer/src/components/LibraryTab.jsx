@@ -430,6 +430,12 @@ export default function LibraryTab() {
 		},
 		{ enableOnFormTags: true }
 	)
+	useHotkeys(["alt+left", "alt+backspace"], (e) => {
+		e.preventDefault()
+		if (tab == "library" && selectedPlaylist != "" && libraryFilter == "playlists") {
+			setSelectedPlaylist("")
+		}
+	})
 	const toNextFilter = (f) => {
 		switch (f) {
 			case "songs":
