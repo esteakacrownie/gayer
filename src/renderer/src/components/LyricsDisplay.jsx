@@ -32,12 +32,7 @@ export default function LyricsDisplay({ lyrics, lyricsRef, fullScreen, offset = 
 			}
 			idx += 1
 		}
-		// if last line is empty, highlight it as a note
-		if (!lyrics[lyrics.length - 1].words.trim()) {
-			return lyrics.length - 1
-		}
-		// otherwise, add a note at the end and highlight it
-		return lyrics.length
+		return lyrics.length - 1
 	}
 
 	const repeat = useCallback(() => {
@@ -109,22 +104,6 @@ export default function LyricsDisplay({ lyrics, lyricsRef, fullScreen, offset = 
 						seekFn={seekTo}
 					/>
 				))}
-				{lyrics.length > 0 && lyrics[lyrics.length - 1].words.trim() && (
-					<LyricsLine
-						key={`${lyrics.length}${fullScreen}${lyrics.join(" ").length}`}
-						autoScroll={!manualScrolled}
-						highlighted={currentLine == lyrics.length}
-						fullScreen={fullScreen}
-						words=""
-						containerRef={containerRef}
-						startTimeMs={
-							lyrics[lyrics.length - 1].startTimeMs +
-							lyrics[lyrics.length - 1].durationMs +
-							1
-						}
-						seekFn={seekTo}
-					/>
-				)}
 			</motion.div>
 		</>
 	)

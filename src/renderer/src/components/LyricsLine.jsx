@@ -48,29 +48,15 @@ export default function LyricsLine({
 			ref={scrollRef}
 			onClick={handleClick}
 			className={cn(
-				"font-bold text-2xl md:text-3xl transition duration-200 ease-out cursor-pointer",
+				"font-bold text-2xl md:text-3xl text-shadow-[0_0_10px_rgb(255,255,255,0.25)] transition duration-200 ease-out cursor-pointer",
 				highlighted ? "opacity-100" : "opacity-30",
 				fullScreen && "lg:text-4xl lg:my-2 xl:text-5xl xl:my-4 2xl:text-6xl 2xl:my-10"
 			)}
 			initial={{
-				scale: 0.8,
-				textShadow: "none"
+				scale: 0.8
 			}}
 			animate={{
-				scale: highlighted ? 1 : 0.95,
-				textShadow: highlighted
-					? [
-							"none",
-							"0 0 30px rgb(255, 255, 255, 0.35)",
-							"0 0 10px rgb(255, 255, 255, 0.25)"
-						]
-					: "none",
-				transition: {
-					textShadow: {
-						duration: 1,
-						times: [0.0, 0.2, 1]
-					}
-				}
+				scale: highlighted ? 1 : 0.95
 			}}
 			transition={{
 				type: "spring",
@@ -91,24 +77,6 @@ export default function LyricsLine({
 						highlighted ? "animate-bounce" : ""
 					)}
 				>
-					<motion.div
-						className="absolute"
-						initial={{
-							opacity: 0
-						}}
-						animate={{
-							opacity: highlighted ? [0, 0.35, 0] : 0,
-							transition: {
-								opacity: {
-									duration: 1,
-									times: [0.0, 0.2, 1]
-								}
-							}
-						}}
-					>
-						<IoMusicalNote className="absolute blur-2xl opacity-100" size={64} />
-						<IoMusicalNote className="absolute blur-lg opacity-100" size={64} />
-					</motion.div>
 					<IoMusicalNote
 						className={cn(
 							"absolute opacity-0 blur-md transition ease-out duration-500",
