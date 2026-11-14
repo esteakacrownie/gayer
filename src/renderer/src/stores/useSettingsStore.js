@@ -35,7 +35,9 @@ const persist = () => (set, get) => (next) => async (partial) => {
 			ytCookiesEnabled: s.ytCookiesEnabled ?? defaults.ytCookiesEnabled,
 			ytCookiesBrowser: s.ytCookiesBrowser ?? defaults.ytCookiesBrowser,
 			showYtCookiesHint: s.showYtCookiesHint ?? defaults.showYtCookiesHint,
-			showLyricsPanel: s.showLyricsPanel ?? defaults.showLyricsPanel
+			showLyricsPanel: s.showLyricsPanel ?? defaults.showLyricsPanel,
+			sortSongsBy: defaults.sortSongsBy,
+			sortAlbumsBy: defaults.sortAlbumsBy
 		})
 	})
 }
@@ -55,7 +57,9 @@ const defaults = {
 	ytCookiesEnabled: false,
 	ytCookiesBrowser: "",
 	showYtCookiesHint: true,
-	showLyricsPanel: false
+	showLyricsPanel: false,
+	sortSongsBy: "date+",
+	sortAlbumsBy: "date+"
 }
 
 export const useSettingsStore = create(
@@ -75,6 +79,8 @@ export const useSettingsStore = create(
 		ytCookiesBrowser: defaults.ytCookiesBrowser,
 		showYtCookiesHint: defaults.showYtCookiesHint,
 		showLyricsPanel: defaults.showLyricsPanel,
+		sortSongsBy: defaults.sortSongsBy,
+		sortAlbumsBy: defaults.sortAlbumsBy,
 		forceRefreshLocationsTracker: defaults.forceRefreshLocationsTracker,
 		setVolume: (v) => set((state) => ({ volume: v })),
 		setDefaultAutoplay: (v) => set((state) => ({ defaultAutoplay: v })),
@@ -91,6 +97,8 @@ export const useSettingsStore = create(
 		setYtCookiesBrowser: (v) => set((state) => ({ ytCookiesBrowser: v })),
 		setShowYtCookiesHint: (v) => set((state) => ({ showYtCookiesHint: v })),
 		setShowLyricsPanel: (v) => set((state) => ({ showLyricsPanel: v })),
+		setSortSongsBy: (v) => set((state) => ({ sortSongsBy: v })),
+		setSortAlbumsBy: (v) => set((state) => ({ sortAlbumsBy: v })),
 		setForceRefreshLocationsTracker: (v) =>
 			set((state) => ({ forceRefreshLocationsTracker: v })),
 		setSettings: (s) =>
@@ -110,7 +118,9 @@ export const useSettingsStore = create(
 				ytCookiesBrowser: s.ytCookiesBrowser ?? defaults.ytCookiesBrowser,
 				showYtCookiesHint: s.showYtCookiesHint ?? defaults.showYtCookiesHint,
 				showLyricsPanel: s.showLyricsPanel ?? defaults.showLyricsPanel,
-				forceRefreshLocationsTracker: defaults.forceRefreshLocationsTracker
+				forceRefreshLocationsTracker: defaults.forceRefreshLocationsTracker,
+				sortSongsBy: s.sortSongsBy ?? defaults.sortSongsBy,
+				sortAlbumsBy: s.sortAlbumsBy ?? defaults.sortAlbumsBy
 			}))
 	}),
 	[persist()]

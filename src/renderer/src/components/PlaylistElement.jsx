@@ -56,7 +56,7 @@ export default function PlaylistElement({
 		currentTrack,
 		setSelectedPlaylist
 	} = usePlayerStore()
-	const { shufflePlay, setForceRefreshLocationsTracker } = useSettingsStore()
+	const { shufflePlay, setForceRefreshLocationsTracker, sortAlbumsBy } = useSettingsStore()
 	const {
 		thumbnailCache,
 		setThumbnailCache,
@@ -235,9 +235,26 @@ export default function PlaylistElement({
 	}, [songs])
 
 	const fetchSongs = useCallback(async () => {
-		const { songs: res } = await getSortedFilesAt(playlist)
+		let res = []
+		switch (sortAlbumsBy) {
+			case "name+":
+				res = (await window.electron.ipcRenderer.invoke("ls", { path: playlist })).sort()
+				break
+			case "name-":
+				res = await window.electron.ipcRenderer
+					.invoke("ls", { path: playlist })
+					.sort()
+					.reverse()
+				break
+			case "date+":
+				res = (await getSortedFilesAt(playlist, true)).songs
+				break
+			case "date-":
+				res = (await getSortedFilesAt(playlist, true)).songs.reverse()
+				break
+		}
 		if (res) setSongs(res)
-	}, [playlist])
+	}, [playlist, sortAlbumsBy])
 
 	useEffect(() => {
 		const action = async () => {

@@ -170,7 +170,7 @@ const trackHasCachedCover = async (track) => {
 	} catch (error) {
 		console.log(error)
 	}
-	const ext = imageExists(remote[track]).ext ?? ""
+	const ext = imageExists(remote[track])?.ext ?? ""
 	if (remote[track] && ext) {
 		return join("/", join(coversDir, basename(remote[track], `.${ext}`) + `.${ext}`))
 	}

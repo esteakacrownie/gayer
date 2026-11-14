@@ -115,6 +115,11 @@ export const pathToCoverArtQuery = (p) => {
 	return res
 }
 
+export const capitalize = (p) => {
+	if (!p || typeof p != "string" || p.length < 1) return
+	return p[0].toUpperCase() + p.slice(1)
+}
+
 export const albumArtQueryForPath = (p) => {
 	let failed = true
 	while (failed) {
