@@ -18,7 +18,7 @@ import { GiCompactDisc } from "react-icons/gi"
 import { PiPlaylistFill } from "react-icons/pi"
 import usePlayerControls from "../hooks/usePlayerControls"
 import { usePlayerStore } from "../stores/usePlayerStore"
-import { getFolderName, getSortedFilesAt, shuffleArray } from "../utils"
+import { getFolderName, getSortedFilesAt, lowerCaseSortFn, shuffleArray } from "../utils"
 import { FaPlay, FaStepForward } from "react-icons/fa"
 import {
 	MdAddCircleOutline,
@@ -238,12 +238,14 @@ export default function PlaylistElement({
 		let res = []
 		switch (sortAlbumsBy) {
 			case "name+":
-				res = (await window.electron.ipcRenderer.invoke("ls", { path: playlist })).sort()
+				res = (await window.electron.ipcRenderer.invoke("ls", { path: playlist })).sort(
+					lowerCaseSortFn
+				)
 				break
 			case "name-":
 				res = await window.electron.ipcRenderer
 					.invoke("ls", { path: playlist })
-					.sort()
+					.sort(lowerCaseSortFn)
 					.reverse()
 				break
 			case "date+":

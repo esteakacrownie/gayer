@@ -36,8 +36,8 @@ const persist = () => (set, get) => (next) => async (partial) => {
 			ytCookiesBrowser: s.ytCookiesBrowser ?? defaults.ytCookiesBrowser,
 			showYtCookiesHint: s.showYtCookiesHint ?? defaults.showYtCookiesHint,
 			showLyricsPanel: s.showLyricsPanel ?? defaults.showLyricsPanel,
-			sortSongsBy: defaults.sortSongsBy,
-			sortAlbumsBy: defaults.sortAlbumsBy
+			sortSongsBy: s.sortSongsBy ?? defaults.sortSongsBy,
+			sortAlbumsBy: s.sortAlbumsBy ?? defaults.sortAlbumsBy
 		})
 	})
 }

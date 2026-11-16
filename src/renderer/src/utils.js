@@ -167,11 +167,18 @@ export const toSearchString = (s) => {
 	return s.toLocaleLowerCase().replaceAll(" ", "")
 }
 
-export const getSortedFiles = async (f) => {
+export const lowerCaseSortFn = (a, b) => {
+	a = "" + a
+	b = "" + b
+	if (a.toLowerCase() > b.toLowerCase()) return 1
+	if (a.toLowerCase() < b.toLowerCase()) return -1
+	return 0
+}
+
+export const getSortedFiles = async (f, filterMusicFiles = false) => {
 	const t = await window.electron.ipcRenderer.invoke("sort_created", {
-		files: f.filter((elt) => isMusicFile(elt))
+		files: filterMusicFiles ? f.filter((elt) => isMusicFile(elt)) : f
 	})
-	// [ { Hybrid Theory/Pushing Me Away - Linkin Park.mp3: {mtimeMs: 1787336506, atimeMs: 648301400} } ]
 	let timed = t.map((elt) => {
 		const key = Object.keys(elt)[0]
 		return {
@@ -180,16 +187,15 @@ export const getSortedFiles = async (f) => {
 		}
 	})
 	timed = timed.toSorted((a, b) => a.created - b.created)
-	const songs = timed.map((elt) => elt.path)
+	const files = timed.map((elt) => elt.path)
 
-	return { songs, timed }
+	return { files, timed }
 }
 
 export const getSortedFilesAt = async (p, filterMusicFiles = false) => {
 	const t = await window.electron.ipcRenderer.invoke("ls_sorted", {
 		path: p
 	})
-	// [ { Hybrid Theory/Pushing Me Away - Linkin Park.mp3: {mtimeMs: 1787336506, atimeMs: 648301400} } ]
 	let timed = t.map((elt) => {
 		const key = Object.keys(elt)[0]
 		return {
@@ -205,6 +211,22 @@ export const getSortedFilesAt = async (p, filterMusicFiles = false) => {
 		.filter((elt) => (filterMusicFiles ? isMusicFile(elt) : true))
 
 	return { songs, timed }
+}
+
+export const getSortedDirsAt = async (p) => {
+	const d = await window.electron.ipcRenderer.invoke("ls_dirs", { path: p })
+	const { timed: t } = await getSortedFiles(d)
+	let timed = t.map((elt) => {
+		return {
+			path: elt.path,
+			created: elt.mtimeMs
+		}
+	})
+	timed = timed.toSorted((a, b) => a.created - b.created)
+	const dirs = timed.map((elt) => elt.path)
+	console.log(t)
+
+	return { dirs, timed }
 }
 
 export const handleDropped = async (paths) => {
@@ -230,7 +252,7 @@ export const handleDropped = async (paths) => {
 	for (let elt of dirs) {
 		const ls = await window.electron.ipcRenderer.invoke("ls", { path: elt })
 		// console.log(ls)
-		const { songs: files } = await getSortedFiles(ls)
+		const { files } = await getSortedFiles(ls, true)
 		songs = [...songs, ...files]
 	}
 	return songs

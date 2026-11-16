@@ -774,7 +774,7 @@ const sortedFileList = async (files, base) => {
 			continue
 		}
 		const elt = {}
-		elt[path] = { mtimeMs: (await stat(path)).mtimeMs, atimeMs: (await stat(path)).atimeMs }
+		elt[path] = { mtimeMs: (await stat(path)).mtimeMs }
 		res.push(elt)
 	}
 	return res

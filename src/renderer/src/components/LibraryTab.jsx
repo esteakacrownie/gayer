@@ -38,7 +38,9 @@ import {
 	albumArtQueryForPath,
 	toKeywords,
 	delay,
-	capitalize
+	capitalize,
+	lowerCaseSortFn,
+	getSortedDirsAt
 } from "../utils"
 import SongElement from "./SongElement"
 import { usePlayerStore } from "../stores/usePlayerStore"
@@ -181,70 +183,68 @@ export default function LibraryTab() {
 
 	const sortLabel = useMemo(() => {
 		let res = ""
-		switch (libraryFilter) {
-			case "songs":
-				res = capitalize(sortSongsBy.slice(0, sortSongsBy.length - 1))
-				break
-			case "playlists":
-				res = capitalize(sortAlbumsBy.slice(0, sortAlbumsBy.length - 1))
-				break
+		if (libraryFilter == "songs" || selectedPlaylist) {
+			res = capitalize(sortSongsBy.slice(0, sortSongsBy.length - 1))
+		} else if (libraryFilter == "playlists") {
+			res = capitalize(sortAlbumsBy.slice(0, sortAlbumsBy.length - 1))
 		}
 		return res
-	}, [libraryFilter, sortSongsBy, sortAlbumsBy])
+	}, [libraryFilter, sortSongsBy, sortAlbumsBy, selectedPlaylist])
 
 	const sortDirection = useMemo(() => {
 		let res = 1
-		switch (libraryFilter) {
-			case "songs":
-				res = sortSongsBy.endsWith("-") ? -1 : 1
-				break
-			case "playlists":
-				res = sortAlbumsBy.endsWith("-") ? -1 : 1
-				break
+		if (libraryFilter == "songs" || selectedPlaylist) {
+			res = sortSongsBy.endsWith("-") ? -1 : 1
+		} else if (libraryFilter == "playlists") {
+			res = sortAlbumsBy.endsWith("-") ? -1 : 1
 		}
 		return res
-	}, [libraryFilter, sortAlbumsBy, sortSongsBy])
+	}, [libraryFilter, sortAlbumsBy, sortSongsBy, selectedPlaylist])
 
 	const toggleLibrarySorting = useCallback(() => {
-		switch (libraryFilter) {
-			case "songs":
-				switch (sortSongsBy) {
-					case "date+":
-						setSortSongsBy("date-")
-						break
-					case "date-":
-						setSortSongsBy("name+")
-						break
-					case "name+":
-						setSortSongsBy("name-")
-						break
-					case "name-":
-						setSortSongsBy("date+")
-						break
-					default:
-						setSortSongsBy("date+")
-				}
-				break
-			case "playlists":
-				switch (sortAlbumsBy) {
-					case "date+":
-						setSortAlbumsBy("date-")
-						break
-					case "date-":
-						setSortAlbumsBy("name+")
-						break
-					case "name+":
-						setSortAlbumsBy("name-")
-						break
-					case "name-":
-						setSortAlbumsBy("date+")
-						break
-					default:
-						setSortAlbumsBy("date+")
-				}
-				break
+		if (libraryFilter == "songs" || selectedPlaylist) {
+			switch (sortSongsBy) {
+				case "date+":
+					setSortSongsBy("date-")
+					break
+				case "date-":
+					setSortSongsBy("name+")
+					break
+				case "name+":
+					setSortSongsBy("name-")
+					break
+				case "name-":
+					setSortSongsBy("date+")
+					break
+				default:
+					setSortSongsBy("date+")
+			}
+		} else if (libraryFilter == "playlists") {
+			switch (sortAlbumsBy) {
+				case "date+":
+					setSortAlbumsBy("date-")
+					break
+				case "date-":
+					setSortAlbumsBy("name+")
+					break
+				case "name+":
+					setSortAlbumsBy("name-")
+					break
+				case "name-":
+					setSortAlbumsBy("date+")
+					break
+				default:
+					setSortAlbumsBy("date+")
+			}
 		}
-	}, [libraryFilter, sortSongsBy, sortAlbumsBy, setSortSongsBy, setSortAlbumsBy])
+	}, [
+		libraryFilter,
+		sortSongsBy,
+		sortAlbumsBy,
+		setSortSongsBy,
+		setSortAlbumsBy,
+		selectedPlaylist
+	])
 
 	const [filteredSongs, setFilteredSongs] = useState([])
 	useEffect(() => {
@@ -302,19 +302,30 @@ export default function LibraryTab() {
 					break
 			}
 			allSongs = [...new Set(allSongs.concat(sorted))]
-			const dirs = await window.electron.ipcRenderer.invoke("ls_dirs", { path: i })
-			for (let j of sortAlbumsBy.startsWith("name") ? dirs.sort() : dirs) {
+			let { dirs } = await getSortedDirsAt(i)
+			switch (sortSongsBy) {
+				case "name+":
+					dirs = dirs.sort(lowerCaseSortFn)
+					break
+				case "name-":
+					dirs = dirs.sort(lowerCaseSortFn).reverse()
+					break
+				case "date-":
+					dirs = dirs.reverse()
+					break
+			}
+			for (let j of dirs) {
 				let album_sorted = []
 				switch (sortSongsBy) {
 					case "name+":
 						album_sorted = (await window.electron.ipcRenderer.invoke("ls", { path: j }))
-							.sort()
+							.sort(lowerCaseSortFn)
 							.filter((e) => isMusicFile(e))
 						break
 					case "name-":
 						album_sorted = (await window.electron.ipcRenderer.invoke("ls", { path: j }))
 							.filter((e) => isMusicFile(e))
-							.sort()
+							.sort(lowerCaseSortFn)
 							.reverse()
 						break
 					case "date+":
@@ -347,12 +358,12 @@ export default function LibraryTab() {
 		allSongs = [...new Set(allSongs.concat(playlistSongsExist))]
 		// console.log(allSongs)
 		return allSongs
-	}, [playlists, libraryLocations, sortSongsBy, sortAlbumsBy])
+	}, [playlists, libraryLocations, sortSongsBy])
 
 	const fetchSelectedAlbumSongs = useCallback(async () => {
 		if (!idInPlaylists(selectedPlaylist)) {
 			let album_sorted = []
-			switch (sortAlbumsBy) {
+			switch (sortSongsBy) {
 				case "name+":
 					album_sorted = (
 						await window.electron.ipcRenderer.invoke("ls", { path: selectedPlaylist })
@@ -377,20 +388,23 @@ export default function LibraryTab() {
 		} else {
 			setSelectedAlbumSongs(getPlaylistFromId(selectedPlaylist).songs)
 		}
-	}, [selectedPlaylist, idInPlaylists, setSelectedAlbumSongs, getPlaylistFromId, sortAlbumsBy])
+	}, [selectedPlaylist, idInPlaylists, setSelectedAlbumSongs, getPlaylistFromId, sortSongsBy])
 
 	// [ {AlbumPath: song count} ]
 	const fetchAlbumsSongsCount = useCallback(async () => {
 		let allAlbums = []
 		for (let i of libraryLocations) {
 			allAlbums.push(i)
-			let dirs = await window.electron.ipcRenderer.invoke("ls_dirs", { path: i })
+			let { dirs } = await getSortedDirsAt(i)
 			switch (sortAlbumsBy) {
 				case "name+":
-					dirs = dirs.sort()
+					dirs = dirs.sort(lowerCaseSortFn)
 					break
 				case "name-":
-					dirs = dirs.sort().reverse()
+					dirs = dirs.sort(lowerCaseSortFn).reverse()
+					break
+				case "date-":
+					dirs = dirs.reverse()
 					break
 			}
 			allAlbums = allAlbums.concat(dirs)
@@ -653,33 +667,35 @@ export default function LibraryTab() {
 			</div>
 			{/* Search bar */}
 			<div className="relative w-full flex flex-row gap-2">
-				<motion.button
-					title="Change sorting method"
-					className={cn(
-						"hover:bg-pink-400/30 pointer-events-auto aspect-square relative flex flex-col items-center justify-center p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
-						shufflePlay && "bg-pink-400/50 outline-2 outline-pink-300"
-					)}
-					onClick={toggleLibrarySorting}
-					initial={{
-						scale: 1.0
-					}}
-					animate={{
-						scale: 1.0
-					}}
-					whileTap={{
-						scale: 0.8
-					}}
-					transition={{
-						duration: 0.025,
-						ease: "easeOut"
-					}}
-				>
-					<FaSortAmountDown
-						className={cn("translate-y-2", sortDirection == -1 && "rotate-180")}
-						size={16}
-					/>
-					<p className="absolute top-1 left-0 w-full text-xs">{sortLabel}</p>
-				</motion.button>
+				{libraryFilter != "locations" && !idInPlaylists(selectedPlaylist) && (
+					<motion.button
+						title="Change sorting method"
+						className={cn(
+							"hover:bg-pink-400/30 pointer-events-auto aspect-square relative flex flex-col items-center justify-center p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
+							shufflePlay && "bg-pink-400/50 outline-2 outline-pink-300"
+						)}
+						onClick={toggleLibrarySorting}
+						initial={{
+							scale: 1.0
+						}}
+						animate={{
+							scale: 1.0
+						}}
+						whileTap={{
+							scale: 0.8
+						}}
+						transition={{
+							duration: 0.025,
+							ease: "easeOut"
+						}}
+					>
+						<FaSortAmountDown
+							className={cn("translate-y-2", sortDirection == -1 && "rotate-180")}
+							size={16}
+						/>
+						<p className="absolute top-1 left-0 w-full text-xs">{sortLabel}</p>
+					</motion.button>
+				)}
 				<input
 					ref={inputField}
 					className={cn(
