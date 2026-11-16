@@ -671,8 +671,7 @@ export default function LibraryTab() {
 					<motion.button
 						title="Change sorting method"
 						className={cn(
-							"hover:bg-pink-400/30 pointer-events-auto aspect-square relative flex flex-col items-center justify-center p-2 rounded-lg transition ease-out duration-200 cursor-pointer",
-							shufflePlay && "bg-pink-400/50 outline-2 outline-pink-300"
+							"hover:bg-pink-400/30 pointer-events-auto aspect-square relative flex flex-col items-center justify-center p-2 rounded-lg transition ease-out duration-200 cursor-pointer"
 						)}
 						onClick={toggleLibrarySorting}
 						initial={{
